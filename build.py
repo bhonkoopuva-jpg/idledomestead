@@ -1,5 +1,5 @@
 import sys
-order=['util','scan','trees','robot','assets','audio','world','game','econ','ui','main']
+order=['util','scan','trees','robot','ucsrc','assets','audio','world','game','econ','ui','main']
 tpl=open('src/tpl.html').read()
 three=open('/tmp/claude-0/t3/tj/build/three.min.js').read()
 js='\n'.join(open('src/%s.js'%n).read() for n in order)
