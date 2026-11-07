@@ -63,7 +63,10 @@ function logic(dt){frameN++;
 function occluded(){for(const n of nodes){if(!n.alive||n.type==='ore')continue;const dz=n.z-P.z;if(dz<0||dz>16)continue;const rr=(n.type==='tree'?3.2:n.type==='stone'?1.6:1.4)*n.sc;if(Math.abs(n.x-P.x)<rr+1.4&&(n.type==='tree'||dz<8))return true}return false}
 function draw(){cam.layers.set(0);renderer.autoClear=true;renderer.render(scene,cam);
  return;cam.layers.set(1);scene.overrideMaterial=xray;renderer.autoClear=false;const bg=scene.background,fg=scene.fog;scene.background=null;scene.fog=null;renderer.render(scene,cam);scene.background=bg;scene.fog=fg;scene.overrideMaterial=null;renderer.autoClear=true;cam.layers.set(0)}
-function frame(){requestAnimationFrame(frame);const dt=Math.min(.05,clock.getDelta());for(let i=0;i<(S.spd||1);i++)logic(dt);draw()}
+let _fa=0,_fn=0;
+function frame(){requestAnimationFrame(frame);const dt=Math.min(.05,clock.getDelta());
+ if(dt<.2){_fa+=dt;_fn++;if(_fn>=90){const avg=_fa/_fn;_fa=0;_fn=0;if(avg>.034&&RPR>1.1){RPR=Math.max(1,RPR-.25);renderer.setPixelRatio(RPR);renderer.setSize(innerWidth,innerHeight,false)}}}
+for(let i=0;i<(S.spd||1);i++)logic(dt);draw()}
 // ================= INIT =================
 function offlineGain(){const el=Math.min((Date.now()-S.saved)/1000,3*3600);if(el<45||!S.saved)return;const e0=S.coins;
  const dr={wood:0,stone:0,ore:0,crystal:0};for(let i=0;i<S.drones;i++){dr.wood+=.12*el*.5;if(S.up.dtier>=1)dr.ore+=.04*el*.5}

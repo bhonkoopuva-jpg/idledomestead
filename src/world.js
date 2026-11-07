@@ -1,8 +1,8 @@
 // ================= WORLD: renderer, terrain, zones =================
 const MOBILE=matchMedia('(pointer:coarse)').matches;
 const glc=document.getElementById('gl');
-const renderer=new THREE.WebGLRenderer({canvas:glc,antialias:!MOBILE,powerPreference:'high-performance',preserveDrawingBuffer:false});
-renderer.setPixelRatio(Math.min(devicePixelRatio,MOBILE?1.5:2));renderer.setSize(innerWidth,innerHeight,false);
+const renderer=new THREE.WebGLRenderer({canvas:glc,antialias:true,powerPreference:'high-performance',preserveDrawingBuffer:false});
+let RPR=Math.min(devicePixelRatio,2);renderer.setPixelRatio(RPR);renderer.setSize(innerWidth,innerHeight,false);
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.95;renderer.outputColorSpace=THREE.SRGBColorSpace;
 const scene=new THREE.Scene();scene.background=new THREE.Color('#dc7d52');scene.fog=new THREE.Fog('#e3916a',48,118);
