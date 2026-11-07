@@ -394,13 +394,13 @@ function makeCrate(){const g=new THREE.Group();const br=std('#a9805a',{roughness
 // ---- Upgrade Center: domed habitat with dish, antenna and greenhouse bay (from the user's model sheet) ----
 const _ucG={};let _ucMat=null;
 function ucMat(){if(_ucMat)return _ucMat;const ld=u=>{const t=new THREE.Texture();const im=new Image();im.onload=()=>{t.image=im;t.needsUpdate=true};im.src=u;t.flipY=false;t.anisotropy=4;return t};
- const mp=ld(UC_TEX.b);mp.colorSpace=THREE.SRGBColorSpace;_ucMat=new THREE.MeshStandardMaterial({map:mp,normalMap:ld(UC_TEX.n),roughness:.6,metalness:.05,emissiveMap:mp,emissive:new THREE.Color(1,1,1),emissiveIntensity:.14});_ucMat.color.setScalar(1.2);
- _ucMat.onBeforeCompile=sh=>{sh.fragmentShader=sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n {float ul=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));vec3 uc=mix(vec3(ul),diffuseColor.rgb,1.8);uc=mix(uc,uc*vec3(1.08,1.0,.94),.5);diffuseColor.rgb=clamp(uc*1.3,0.,1.);}')};_ucMat.customProgramCacheKey=()=>'ucgrade';return _ucMat}
+ const mp=ld(UC_TEX.b);mp.colorSpace=THREE.SRGBColorSpace;_ucMat=new THREE.MeshStandardMaterial({map:mp,normalMap:ld(UC_TEX.n),normalScale:new THREE.Vector2(.55,.55),roughness:.6,metalness:.05,emissiveMap:mp,emissive:new THREE.Color(1,1,1),emissiveIntensity:.14});_ucMat.color.setScalar(1.2);
+ _ucMat.onBeforeCompile=sh=>{sh.fragmentShader=sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n {float ul=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));vec3 uc=mix(vec3(ul),diffuseColor.rgb,1.8);uc=mix(uc,uc*vec3(1.08,1.0,.94),.5);uc=uc*1.3;float ul2=dot(uc,vec3(.2126,.7152,.0722));uc=mix(uc,vec3(.2,.17,.2),(1.-smoothstep(.05,.3,ul2))*.55);diffuseColor.rgb=clamp(uc,0.,1.);}')};_ucMat.customProgramCacheKey=()=>'ucgrade';return _ucMat}
 function ucPart(i){if(_ucG[i])return _ucG[i];const S0=UCP[0],dec=b=>{const s=atob(b),u=new Uint8Array(s.length);for(let j=0;j<s.length;j++)u[j]=s.charCodeAt(j);return u.buffer};
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(dec(S0.p)),3));g.setAttribute('uv',new THREE.BufferAttribute(new Uint16Array(dec(S0.t)),2,true));
- g.setAttribute('normal',new THREE.BufferAttribute(new Int8Array(dec(S0.n)),3,true));g.setIndex(new THREE.BufferAttribute(new Uint16Array(dec(S0.i)),1));return _ucG[i]=g}
+ g.setAttribute('normal',new THREE.BufferAttribute(new Int8Array(dec(S0.n)),3,true));g.setIndex(new THREE.BufferAttribute(new Uint32Array(dec(S0.i)),1));return _ucG[i]=g}
 function makeScanUC(i=4,scale=1){const g=new THREE.Group();const m=new THREE.Mesh(ucPart(i),ucMat());m.scale.setScalar(scale);g.add(m);g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=false}});return g}
-function makeUpgradeCenter(){if(typeof UCP!=='undefined'&&!window.__oldUC){const g=makeScanUC(0,26.5);g.userData.gears=[new THREE.Object3D(),new THREE.Object3D()];return g}
+function makeUpgradeCenter(){if(typeof UCP!=='undefined'&&!window.__oldUC){const g=makeScanUC(0,42.4);g.userData.gears=[new THREE.Object3D(),new THREE.Object3D()];return g}
 const g=new THREE.Group();
  const tan=std('#c8b4a2',{roughness:.7}),tanL=std('#d2c0af',{roughness:.7}),slate=std('#5a5a80',{roughness:.55}),slate2=std('#6c6c90',{roughness:.55}),rib=std('#a99886',{roughness:.7}),teal=std('#3a9e92',{roughness:.5}),
   grey=std('#b7bdc9',{roughness:.4,metalness:.25}),greyD=std('#8a90a0',{roughness:.45,metalness:.2}),wood=std('#d8b98c',{roughness:.7}),brown=std('#9b6a42',{roughness:.75}),dkb=std('#6a4a34',{roughness:.85}),

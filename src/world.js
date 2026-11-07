@@ -107,7 +107,7 @@ function heightRaw(x,z){const r0=Math.hypot(x,z);let h=(fbm(x*.07+3,0,z*.07)-.5)
 const FLATS=[];function addFlat(x,z,R){FLATS.push({x,z,R,R2:R*1.7,h:undefined})}
 function heightAt(x,z){let h=heightRaw(x,z);for(let i=0;i<FLATS.length;i++){const f=FLATS[i],dx=x-f.x,dz=z-f.z;if(dx>f.R2||dx<-f.R2||dz>f.R2||dz<-f.R2)continue;const d=Math.hypot(dx,dz);if(d>=f.R2)continue;if(f.h===undefined)f.h=heightRaw(f.x,f.z);h+=(f.h-h)*(1-smoothstep(f.R,f.R2,d))}return h}
 ZONES.forEach(z=>(z.pads||[]).forEach(p=>addFlat(z.x+p.x,z.z+p.z,p.gath?9:p.mill?7:6)));
-addFlat(14,80,12);addFlat(0,-7,13);for(const b of Object.values(BASE_POS)){const a=b.a*Math.PI/180;addFlat(Math.cos(a)*b.r,Math.sin(a)*b.r,6)}
+addFlat(14,80,12);addFlat(0,-10,21);for(const b of Object.values(BASE_POS)){const a=b.a*Math.PI/180;addFlat(Math.cos(a)*b.r,Math.sin(a)*b.r,6)}
 const gy=heightAt;
 // ---- terrain mesh ----
 const TW=620,TCX=-10,TCZ=14,TS=MOBILE?360:440;
@@ -184,7 +184,7 @@ function refreshTerritory(snap){applyDecor();buildWall();if(snap)WALLS.forEach(W
 function scatter(baked,list){baked.children.forEach(ch=>{if(!ch.isMesh)return;const im=new THREE.InstancedMesh(ch.geometry,ch.material,list.length);list.forEach((m,i)=>im.setMatrixAt(i,m));im.castShadow=im.receiveShadow=true;im.frustumCulled=false;scene.add(im)})}
 const _d=new THREE.Object3D();
 function decorPos(n,minR,maxR,avoid){const out=[];let guard=0;while(out.length<n&&guard++<n*10){const x=-205+R()*390,z=-240+R()*510;if(Math.hypot(x,z)<minR||allVal(x,z)<2.5)continue;if(avoid&&avoid(x,z))continue;out.push([x,z])}return out}
-const nearFactory=(x,z)=>Math.hypot(x,z+7)<17||Math.hypot(x,z)<5;
+const nearFactory=(x,z)=>Math.hypot(x,z+10)<27||Math.hypot(x,z)<5;
 { // pebbles
  const pg=new THREE.IcosahedronGeometry(1,1);const cols=['#f3b684','#e29c68','#c97c4a','#f0c492','#a35a36'];
  cols.forEach((c,k)=>{const pos=decorPos(480,0,0,nearFactory);const im=new THREE.InstancedMesh(pg,std(c,{roughness:.8}),pos.length);pos.forEach(([x,z],i)=>{const s=RR(.07,.22);_d.position.set(x,gy(x,z)+s*.3,z);_d.scale.set(s,s*.7,s);_d.rotation.y=R()*6;_d.updateMatrix();im.setMatrixAt(i,_d.matrix)});im.castShadow=true;im.receiveShadow=true;im.frustumCulled=false;scene.add(im)})}

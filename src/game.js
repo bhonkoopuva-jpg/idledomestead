@@ -36,7 +36,7 @@ const refineMul=()=>(1+.1*S.up.refine)*(1+.1*bl('pad'));
 // ================= LAYOUT (home) =================
 const START={x:0,z:7};
 const SELL={x:0,z:5.4};           // factory intake pad
-const FACT={x:0,z:-7};const FACT2={x:14,z:80};
+const FACT={x:0,z:-10};const FACT2={x:14,z:80};
 const HOPPER={x:15,z:-2};
 const PADS=[];
 const HOME_PADS=[{x:-6,z:12,k:'wood'},{x:18,z:10,k:'stone'},{x:-13,z:-9,k:'ore'}];
@@ -218,7 +218,7 @@ function collide(){
  for(const p of PADS){if(!p.obj)continue;const dx=P.x-p.x,dz=P.z-p.z,d=Math.hypot(dx,dz),m=1.9+PR;if(d<m&&d>1e-4){P.x=p.x+dx/d*m;P.z=p.z+dz/d*m}}
  for(const b of BASE){if(!BASE_ON||!bl(b.id)||!BCOLR[b.id])continue;const dx=P.x-b.x,dz=P.z-b.z,d=Math.hypot(dx,dz),m=BCOLR[b.id]+PR;if(d<m&&d>1e-4){P.x=b.x+dx/d*m;P.z=b.z+dz/d*m}}
  if(S.unl[1]&&S.storeBuilt){const dx=P.x-FACT2.x,dz=P.z-FACT2.z,d=Math.hypot(dx*.75,dz*1.0),m=6.4;if(d<m&&d>1e-4){const k=m/d;P.x=FACT2.x+dx*k;P.z=FACT2.z+dz*k}}
- {const dx=P.x-FACT.x,dz=P.z-FACT.z,d=Math.hypot(dx*.75,dz*1.0),m=8.3;if(d<m&&d>1e-4){const k=m/d;P.x=FACT.x+dx*k;P.z=FACT.z+dz*k}}
+ {const dx=P.x-FACT.x,dz=P.z-FACT.z,d=Math.hypot(dx*.75,dz*1.0),m=13.3;if(d<m&&d>1e-4){const k=m/d;P.x=FACT.x+dx*k;P.z=FACT.z+dz*k}}
  {const lim=-6,band=4,v0=terrVal(P.x,P.z);if(P.lx!==undefined&&v0<lim+band){const e=.5,gx=(terrVal(P.x+e,P.z)-terrVal(P.x-e,P.z))/(2*e),gz=(terrVal(P.x,P.z+e)-terrVal(P.x,P.z-e))/(2*e),gm=Math.hypot(gx,gz);
   if(gm>.05){const ux=gx/gm,uz=gz/gm,dn=-((P.x-P.lx)*ux+(P.z-P.lz)*uz);if(dn>0){const t=Math.max(0,Math.min(1,(lim+band-v0)/band)),f=t*t*(3-2*t);P.x+=ux*dn*f;P.z+=uz*dn*f}}}}
  {const lim=-6;if(terrVal(P.x,P.z)<lim){for(let it=0;it<6;it++){const v=terrVal(P.x,P.z);if(v>=lim)break;const e=.4,gx=(terrVal(P.x+e,P.z)-terrVal(P.x-e,P.z))/(2*e),gz=(terrVal(P.x,P.z+e)-terrVal(P.x,P.z-e))/(2*e),gm=Math.hypot(gx,gz);if(gm<.05)break;const st=Math.min(3,(lim-v)/Math.max(gm,.3));P.x+=gx/gm*st;P.z+=gz/gm*st}}}P.lx=P.x;P.lz=P.z}
