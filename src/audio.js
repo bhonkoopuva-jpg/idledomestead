@@ -1,0 +1,17 @@
+// ================= AUDIO (synthesized) =================
+const AU={ctx:null,on:true,master:null,last:{},
+ init(){if(this.ctx){if(this.ctx.state==='suspended')this.ctx.resume();return}try{const C=window.AudioContext||window.webkitAudioContext;this.ctx=new C();this.master=this.ctx.createGain();this.master.gain.value=.55;this.master.connect(this.ctx.destination);this.nbuf=this.ctx.createBuffer(1,this.ctx.sampleRate*.5,this.ctx.sampleRate);const d=this.nbuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1}catch(e){this.ctx=null}},
+ ok(key,gap){const t=performance.now();if(this.last[key]&&t-this.last[key]<gap)return false;this.last[key]=t;return this.on&&this.ctx},
+ tone(f,d,type='sine',vol=.2,slide=0,delay=0){const c=this.ctx,t=c.currentTime+delay;const o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,f*slide),t+d);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0008,t+d);o.connect(g);g.connect(this.master);o.start(t);o.stop(t+d+.02)},
+ noise(d,vol,freq=1200,q=.8,delay=0,type='bandpass'){const c=this.ctx,t=c.currentTime+delay;const s=c.createBufferSource();s.buffer=this.nbuf;const f=c.createBiquadFilter();f.type=type;f.frequency.value=freq;f.Q.value=q;const g=c.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0008,t+d);s.connect(f);f.connect(g);g.connect(this.master);s.start(t);s.stop(t+d+.02)},
+ hit(type){if(!this.ok('hit',70))return;if(type==='tree'){this.noise(.12,.5,900,1.2);this.tone(150+Math.random()*30,.1,'triangle',.25,.6)}else if(type==='stone'){this.noise(.1,.55,2400,1.5);this.tone(260+Math.random()*60,.07,'square',.08,.5)}else{this.noise(.09,.35,3200,2);this.tone(900+Math.random()*300,.16,'sine',.14,1.2);this.tone(1350,.2,'sine',.07,1.1,.02)}},
+ brk(type){if(!this.ok('brk',90))return;this.noise(.35,.7,type==='tree'?500:1800,.7);this.tone(type==='tree'?110:180,.3,'triangle',.3,.4);if(type==='ore'||type==='crystal'){this.tone(1200,.3,'sine',.12,1.5,.05);this.tone(1800,.35,'sine',.1,1.3,.1)}},
+ pick(i=0){if(!this.ok('pick',45))return;this.tone(700+i*60,.09,'sine',.1,1.5)},
+ coin(i=0){if(!this.ok('coin',50))return;const f=1000+Math.min(i,8)*70;this.tone(f,.1,'square',.06,1);this.tone(f*1.5,.16,'sine',.1,1,.06)},
+ buy(){if(!this.ok('buy',100))return;[523,659,784,1047].forEach((f,i)=>this.tone(f,.2,'triangle',.16,1,i*.06))},
+ unlock(){if(!this.ok('unl',300))return;[392,494,587,784,988,1175].forEach((f,i)=>this.tone(f,.5,'triangle',.18,1,i*.09));this.noise(.9,.3,300,.5,0,'lowpass')},
+ click(){if(!this.ok('click',40))return;this.tone(520,.06,'sine',.12,1.3)},
+ deny(){if(!this.ok('deny',150))return;this.tone(180,.18,'sawtooth',.1,.7)},
+ quest(){if(!this.ok('quest',300))return;[659,880,1175].forEach((f,i)=>this.tone(f,.25,'sine',.15,1,i*.08))},
+ whoosh(){if(!this.ok('wh',120))return;this.noise(.25,.2,1500,.6,0,'highpass')},
+ ring(){if(!this.ok('ring',250))return;this.tone(330,.35,'sine',.1,1.6)}};
