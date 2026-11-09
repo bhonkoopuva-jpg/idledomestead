@@ -898,9 +898,18 @@ renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.95;renderer.outputColorSpace=THREE.SRGBColorSpace;
 const scene=new THREE.Scene();scene.background=new THREE.Color('#dc7d52');scene.fog=new THREE.Fog('#e3916a',48,118);
 const cam=new THREE.PerspectiveCamera(32,innerWidth/innerHeight,1,260);
-scene.add(new THREE.HemisphereLight('#ffd8c0','#8c3a28',.75));
+scene.add(new THREE.HemisphereLight('#ffd8c0','#8c3a28',.3));
 const sun=new THREE.DirectionalLight('#ffe8cc',2.4);sun.castShadow=true;sun.shadow.mapSize.set(MOBILE?1536:3072,MOBILE?1536:3072);
 Object.assign(sun.shadow.camera,{left:-56,right:56,top:50,bottom:-52,near:1,far:150});sun.shadow.bias=-.0004;sun.shadow.normalBias=.04;sun.shadow.radius=4;
+// ---- soft studio-style environment (pastel sky dome + warm key panel) for natural reflections / ambient light ----
+{const es=new THREE.Scene();
+ const dome=new THREE.Mesh(new THREE.SphereGeometry(20,32,16),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,
+  vertexShader:'varying vec3 vp;void main(){vp=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+  fragmentShader:'varying vec3 vp;void main(){float h=vp.y;vec3 top=vec3(.95,.86,.78)*.5,mid=vec3(.95,.62,.48)*.4,low=vec3(.5,.28,.24)*.25;vec3 c=h>0.?mix(mid,top,smoothstep(0.,.8,h)):mix(mid,low,smoothstep(0.,-.6,h));gl_FragColor=vec4(c,1.);}'}));
+ es.add(dome);
+ const panel=(x,y,z,s,c)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(s,s),new THREE.MeshBasicMaterial({color:c,side:THREE.DoubleSide}));m.position.set(x,y,z);m.lookAt(0,0,0);es.add(m)};
+ panel(-9,12,7,9,new THREE.Color(1.6,1.4,1.1));panel(10,5,10,7,new THREE.Color(.6,.45,.4));
+ const pm=new THREE.PMREMGenerator(renderer);scene.environment=pm.fromScene(es,.05).texture;pm.dispose()}
 const SUNOFF=new THREE.Vector3(-16,28,12);scene.add(sun);scene.add(sun.target);
 const fillL=new THREE.DirectionalLight('#ffb090',.5);fillL.position.set(12,8,14);scene.add(fillL);
 
