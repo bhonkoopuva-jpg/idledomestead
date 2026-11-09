@@ -219,7 +219,7 @@ function collide(){
  for(const n of nodes){if(!n.alive||(n.zone>0&&!S.unl[n.zone]))continue;const dx=P.x-n.x,dz=P.z-n.z;if(Math.abs(dx)>6||Math.abs(dz)>6)continue;const d=Math.hypot(dx,dz),m=n.r+PR;if(d<m&&d>1e-4){P.x=n.x+dx/d*m;P.z=n.z+dz/d*m}}
  for(const p of PADS){if(!p.obj)continue;const dx=P.x-p.x,dz=P.z-p.z,d=Math.hypot(dx,dz),m=1.9+PR;if(d<m&&d>1e-4){P.x=p.x+dx/d*m;P.z=p.z+dz/d*m}}
  for(const b of BASE){if(!BASE_ON||!bl(b.id)||!BCOLR[b.id])continue;const dx=P.x-b.x,dz=P.z-b.z,d=Math.hypot(dx,dz),m=BCOLR[b.id]+PR;if(d<m&&d>1e-4){P.x=b.x+dx/d*m;P.z=b.z+dz/d*m}}
- if(S.unl[1]&&S.storeBuilt){const dx=P.x-FACT2.x,dz=P.z-FACT2.z,d=Math.hypot(dx*.75,dz*1.0),m=6.4;if(d<m&&d>1e-4){const k=m/d;P.x=FACT2.x+dx*k;P.z=FACT2.z+dz*k}}
+ if(S.unl[1]&&S.storeBuilt){const dx=P.x-FACT2.x,dz=P.z-FACT2.z,cr=Math.cos(LAY.store.r||0),sr=Math.sin(LAY.store.r||0),lx=dx*cr-dz*sr,lz=dx*sr+dz*cr,d=Math.hypot(lx*.75,lz*1.0),m=6.4;if(d<m&&d>1e-4){const k=m/d,nx=lx*k,nz=lz*k;P.x=FACT2.x+nx*cr+nz*sr;P.z=FACT2.z-nx*sr+nz*cr}}
  {const dx=P.x-FACT.x,dz=P.z-FACT.z,d=Math.hypot(dx,dz);if(d>1e-4){const f=((Math.atan2(dz,dx)+(FACROT-.698)+Math.PI*5)%(Math.PI*2))/(2*Math.PI)*48,i0=Math.floor(f)%48,i1=(i0+1)%48,t=f-Math.floor(f),m=FAC_R[i0]*(1-t)+FAC_R[i1]*t+1.2;if(d<m){const k=m/d;P.x=FACT.x+dx*k;P.z=FACT.z+dz*k}}}
  if(!EDIT.on){const lim=-6,band=4,v0=terrVal(P.x,P.z);if(P.lx!==undefined&&v0<lim+band){const e=.5,gx=(terrVal(P.x+e,P.z)-terrVal(P.x-e,P.z))/(2*e),gz=(terrVal(P.x,P.z+e)-terrVal(P.x,P.z-e))/(2*e),gm=Math.hypot(gx,gz);
   if(gm>.05){const ux=gx/gm,uz=gz/gm,dn=-((P.x-P.lx)*ux+(P.z-P.lz)*uz);if(dn>0){const t=Math.max(0,Math.min(1,(lim+band-v0)/band)),f=t*t*(3-2*t);P.x+=ux*dn*f;P.z+=uz*dn*f}}}}

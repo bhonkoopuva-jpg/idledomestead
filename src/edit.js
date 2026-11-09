@@ -37,7 +37,7 @@ function delProp(){const o=PROPOBJ[sel.i];if(o)scene.remove(o);ED.props[sel.i]=n
 function delNode(){if(sel&&sel.prop)return delProp();if(!sel||!sel.node)return;const n=sel.n;n.alive=false;n.t=-1e9;n.respawnIn=1e12;for(const o of [n.obj,n.stump,n.cur,n.rub])if(o){o.visible=false;scene.remove(o)}n.cur=null;ED.nodes[sel.i]=null;nodesDirty=true;scene.remove(sel.mk);const k=H.indexOf(sel);if(k>=0)H.splice(k,1);sel=null;refresh()}
 function build(){H=[];
  H.push({key:'uc',name:'Upgrade Center',rad:11,col:'#7ff0ff',rot:1,get:()=>ED.uc,sizeBy(f){ED.uc.s=Math.max(.4,Math.min(3,+((ED.uc.s||1)*f).toFixed(3)));props.fac.scale.setScalar(1.45*ED.uc.s)},set(x,z){ED.uc.x=x;ED.uc.z=z;const f=props.fac;f.position.set(x,gy(x,z)+(ED.uc.h||0),z);f.rotation.y=ED.uc.r}});
- H.push({key:'store',name:'Log Storage',rad:6,col:'#ffd24a',get:()=>ED.store,sizeBy(f){ED.store.s=Math.max(.4,Math.min(3,+((ED.store.s||1)*f).toFixed(3)));props.fac2.scale.setScalar(1.05*ED.store.s)},set(x,z){ED.store.x=x;ED.store.z=z;for(const o of [props.fac2,props.fac2g])o&&o.position.set(x,gy(x,z)+(ED.store.h||0)+(o===props.fac2g?.2:0),z);if(props.fac2l)props.fac2l.position.set(x,gy(x,z)+10.5,z)}});
+ H.push({key:'store',name:'Log Storage',rad:6,col:'#ffd24a',rot:1,get:()=>ED.store,sizeBy(f){ED.store.s=Math.max(.4,Math.min(3,+((ED.store.s||1)*f).toFixed(3)));props.fac2.scale.setScalar(1.05*ED.store.s)},set(x,z){ED.store.x=x;ED.store.z=z;for(const o of [props.fac2,props.fac2g])o&&o.position.set(x,gy(x,z)+(ED.store.h||0)+(o===props.fac2g?.2:0),z);if(props.fac2)props.fac2.rotation.y=ED.store.r||0;if(props.fac2l)props.fac2l.position.set(x,gy(x,z)+10.5,z)}});
  H.push({key:'sell',name:'Sell pad',rad:2.6,col:'#8fff8f',get:()=>ED.sell,set(x,z){ED.sell.x=x;ED.sell.z=z;props.sell.position.set(x,gy(x,z)+.2+(ED.sell.h||0),z)}});
  PADS.forEach(p=>{const kind=p.gath?'wood gatherer':p.mill?(p.k==='stone'?'slab press':'sawmill'):p.k==='wood'?'harvester':'drill ('+p.k+')';
   H.push({key:'pad:'+p.id,name:'Zone '+p.zone+' '+kind,rad:p.gath?6:5,col:p.mill?'#ffd24a':({wood:'#9affc8',stone:'#ffb08a',ore:'#b49aff'}[p.k]||'#fff'),
@@ -72,7 +72,7 @@ function enter(){if(EDIT.on)return;EDIT.on=1;build();sel=H[0];
  s.onchange=()=>{sel=H.find(h=>h.key===s.value);refresh()};
  q('edgo').onclick=()=>{const c=sel.get();P.x=c.x;P.z=c.z+Math.max(9,sel.rad+3);P.moveTo=null;P.vx=P.vz=0;refresh()};
  q('edme').onclick=()=>{sel.set(rd(P.x),rd(P.z));refresh()};
- const rot=d=>{if(sel&&(sel.node||sel.prop)){sel.rotate(d);refresh();return}if(sel&&sel.rot){ED.uc.r=+(ED.uc.r+d).toFixed(3);sel.set(ED.uc.x,ED.uc.z);refresh()}};
+ const rot=d=>{if(sel&&(sel.node||sel.prop)){sel.rotate(d);refresh();return}if(sel&&sel.rot){if(sel.key==='store'){ED.store.r=+(((ED.store.r||0)+Math.sign(d)*Math.PI/2)%(Math.PI*2)).toFixed(4);sel.set(ED.store.x,ED.store.z);refresh();return}ED.uc.r=+(ED.uc.r+d).toFixed(3);sel.set(ED.uc.x,ED.uc.z);refresh()}};
  const hgt=d=>{const c=sel.get();c.h=+((c.h||0)+d).toFixed(2);sel.set(c.x,c.z);refresh()};q('edup').onclick=()=>hgt(.5);q('eddn').onclick=()=>hgt(-.5);
  q('edbg').onclick=()=>{if(sel&&sel.sizeBy){sel.sizeBy(1.15);refresh()}};q('edsm').onclick=()=>{if(sel&&sel.sizeBy){sel.sizeBy(1/1.15);refresh()}};
  q('edl').onclick=()=>rot(-Math.PI/12);q('edr').onclick=()=>rot(Math.PI/12);

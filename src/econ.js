@@ -49,11 +49,12 @@ function makeLink(p,tgt,free){const c=linkCost(p,tgt);if(!free){if(S.coins<c){AU
 function dropLink(p,refund){const q=[p.id];while(q.length){const id=q.pop();if(S.links[id]){for(const k in S.links)if(S.links[k]===id)q.push(k);if(refund&&id===p.id)addCoins(Math.floor(linkCost(padById(id),S.links[id])*.5));delete S.links[id];killSeg(id)}}save()}
 // ---- belt routing: orthogonal paths with rounded 90-degree corners, joined to machine ports ----
 const BDIRS=[[0,1],[1,0],[0,-1],[-1,0]],BR=1.9,BDECK=.74;
+const F2Q=Math.round((LAY.store.r||0)/(Math.PI/2));function f2p(ox,oz,dx,dz){const k=((F2Q%4)+4)%4;let a=[ox,oz,dx,dz];for(let i=0;i<k;i++)a=[a[1],-a[0],a[3],-a[2]];return{x:FACT2.x+a[0],z:FACT2.z+a[1],dx:a[2],dz:a[3]}}
 function portsOut(p){if(p.gath)return[{x:p.x-2.18,z:p.z+1.73,dx:0,dz:1}];
- if(p===FAC2)return[{x:FACT2.x+8.93,z:FACT2.z-1.26,dx:1,dz:0}];
+ if(p===FAC2)return[f2p(8.93,-1.26,1,0)];
  if(p.mill)return p.k==='stone'?[{x:p.x+4.64,z:p.z,dx:1,dz:0}]:[{x:p.x,z:p.z+4.64,dx:0,dz:1}];
  return BDIRS.map(d=>({x:p.x+d[0]*2.7,z:p.z+d[1]*2.7,dx:d[0],dz:d[1]}))}
-function portsIn(t){if(t==='F2')return[{x:FACT2.x-8.09,z:FACT2.z-1.05,dx:1,dz:0}];
+function portsIn(t){if(t==='F2')return[f2p(-8.09,-1.05,1,0)];
  if(t==='F'){const c=FACT;return BDIRS.map(d=>({x:c.x-d[0]*10.2,z:c.z-d[1]*8.4,dx:d[0],dz:d[1]}))}
  const c=padById(t);if(c&&c.mill)return c.k==='stone'?[{x:c.x-4.64,z:c.z,dx:1,dz:0}]:[{x:c.x,z:c.z-4.64,dx:0,dz:1}];
  return BDIRS.map(d=>({x:c.x-d[0]*2.7,z:c.z-d[1]*2.7,dx:d[0],dz:d[1]}))}

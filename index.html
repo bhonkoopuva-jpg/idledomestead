@@ -921,7 +921,7 @@ const EDIT={on:0};
 const LOOK={on:!/[?&]look=0/.test(location.search)};const TERR_SOFT={value:LOOK.on?1:0};
 const LAYOUT_KEY='idle-domestead-layout-v1';
 const DEFAULT_LAYOUT=null;
-const LAY=(()=>{const d={uc:{x:0,z:-10,r:.698},store:{x:14,z:80},sell:{x:0,z:5.4},pads:{},nodes:null,props:[],decorDel:[]};let s=null;try{s=JSON.parse(localStorage.getItem(LAYOUT_KEY)||'null')}catch(e){}s=s||DEFAULT_LAYOUT;
+const LAY=(()=>{const d={uc:{x:0,z:-10,r:.698},store:{x:14,z:80,r:0},sell:{x:0,z:5.4},pads:{},nodes:null,props:[],decorDel:[]};let s=null;try{s=JSON.parse(localStorage.getItem(LAYOUT_KEY)||'null')}catch(e){}s=s||DEFAULT_LAYOUT;
  if(s){for(const k of ['uc','store','sell'])if(s[k]&&isFinite(s[k].x)&&isFinite(s[k].z))d[k]=Object.assign(d[k],s[k]);if(s.pads)d.pads=s.pads;if(Array.isArray(s.nodes))d.nodes=s.nodes;if(Array.isArray(s.props))d.props=s.props;if(Array.isArray(s.decorDel))d.decorDel=s.decorDel}return d})();
 function applyLayoutZones(zs){zs.forEach(z=>(z.pads||[]).forEach((p,i)=>{if(p.ox===undefined){p.ox=p.x;p.oz=p.z}const o=LAY.pads[z.id+i];if(o&&isFinite(o.x)&&isFinite(o.z)){p.x=o.x-z.x;p.z=o.z-z.z}}))}
 
@@ -1465,7 +1465,7 @@ function collide(){
  for(const n of nodes){if(!n.alive||(n.zone>0&&!S.unl[n.zone]))continue;const dx=P.x-n.x,dz=P.z-n.z;if(Math.abs(dx)>6||Math.abs(dz)>6)continue;const d=Math.hypot(dx,dz),m=n.r+PR;if(d<m&&d>1e-4){P.x=n.x+dx/d*m;P.z=n.z+dz/d*m}}
  for(const p of PADS){if(!p.obj)continue;const dx=P.x-p.x,dz=P.z-p.z,d=Math.hypot(dx,dz),m=1.9+PR;if(d<m&&d>1e-4){P.x=p.x+dx/d*m;P.z=p.z+dz/d*m}}
  for(const b of BASE){if(!BASE_ON||!bl(b.id)||!BCOLR[b.id])continue;const dx=P.x-b.x,dz=P.z-b.z,d=Math.hypot(dx,dz),m=BCOLR[b.id]+PR;if(d<m&&d>1e-4){P.x=b.x+dx/d*m;P.z=b.z+dz/d*m}}
- if(S.unl[1]&&S.storeBuilt){const dx=P.x-FACT2.x,dz=P.z-FACT2.z,d=Math.hypot(dx*.75,dz*1.0),m=6.4;if(d<m&&d>1e-4){const k=m/d;P.x=FACT2.x+dx*k;P.z=FACT2.z+dz*k}}
+ if(S.unl[1]&&S.storeBuilt){const dx=P.x-FACT2.x,dz=P.z-FACT2.z,cr=Math.cos(LAY.store.r||0),sr=Math.sin(LAY.store.r||0),lx=dx*cr-dz*sr,lz=dx*sr+dz*cr,d=Math.hypot(lx*.75,lz*1.0),m=6.4;if(d<m&&d>1e-4){const k=m/d,nx=lx*k,nz=lz*k;P.x=FACT2.x+nx*cr+nz*sr;P.z=FACT2.z-nx*sr+nz*cr}}
  {const dx=P.x-FACT.x,dz=P.z-FACT.z,d=Math.hypot(dx,dz);if(d>1e-4){const f=((Math.atan2(dz,dx)+(FACROT-.698)+Math.PI*5)%(Math.PI*2))/(2*Math.PI)*48,i0=Math.floor(f)%48,i1=(i0+1)%48,t=f-Math.floor(f),m=FAC_R[i0]*(1-t)+FAC_R[i1]*t+1.2;if(d<m){const k=m/d;P.x=FACT.x+dx*k;P.z=FACT.z+dz*k}}}
  if(!EDIT.on){const lim=-6,band=4,v0=terrVal(P.x,P.z);if(P.lx!==undefined&&v0<lim+band){const e=.5,gx=(terrVal(P.x+e,P.z)-terrVal(P.x-e,P.z))/(2*e),gz=(terrVal(P.x,P.z+e)-terrVal(P.x,P.z-e))/(2*e),gm=Math.hypot(gx,gz);
   if(gm>.05){const ux=gx/gm,uz=gz/gm,dn=-((P.x-P.lx)*ux+(P.z-P.lz)*uz);if(dn>0){const t=Math.max(0,Math.min(1,(lim+band-v0)/band)),f=t*t*(3-2*t);P.x+=ux*dn*f;P.z+=uz*dn*f}}}}
@@ -1756,11 +1756,12 @@ function makeLink(p,tgt,free){const c=linkCost(p,tgt);if(!free){if(S.coins<c){AU
 function dropLink(p,refund){const q=[p.id];while(q.length){const id=q.pop();if(S.links[id]){for(const k in S.links)if(S.links[k]===id)q.push(k);if(refund&&id===p.id)addCoins(Math.floor(linkCost(padById(id),S.links[id])*.5));delete S.links[id];killSeg(id)}}save()}
 // ---- belt routing: orthogonal paths with rounded 90-degree corners, joined to machine ports ----
 const BDIRS=[[0,1],[1,0],[0,-1],[-1,0]],BR=1.9,BDECK=.74;
+const F2Q=Math.round((LAY.store.r||0)/(Math.PI/2));function f2p(ox,oz,dx,dz){const k=((F2Q%4)+4)%4;let a=[ox,oz,dx,dz];for(let i=0;i<k;i++)a=[a[1],-a[0],a[3],-a[2]];return{x:FACT2.x+a[0],z:FACT2.z+a[1],dx:a[2],dz:a[3]}}
 function portsOut(p){if(p.gath)return[{x:p.x-2.18,z:p.z+1.73,dx:0,dz:1}];
- if(p===FAC2)return[{x:FACT2.x+8.93,z:FACT2.z-1.26,dx:1,dz:0}];
+ if(p===FAC2)return[f2p(8.93,-1.26,1,0)];
  if(p.mill)return p.k==='stone'?[{x:p.x+4.64,z:p.z,dx:1,dz:0}]:[{x:p.x,z:p.z+4.64,dx:0,dz:1}];
  return BDIRS.map(d=>({x:p.x+d[0]*2.7,z:p.z+d[1]*2.7,dx:d[0],dz:d[1]}))}
-function portsIn(t){if(t==='F2')return[{x:FACT2.x-8.09,z:FACT2.z-1.05,dx:1,dz:0}];
+function portsIn(t){if(t==='F2')return[f2p(-8.09,-1.05,1,0)];
  if(t==='F'){const c=FACT;return BDIRS.map(d=>({x:c.x-d[0]*10.2,z:c.z-d[1]*8.4,dx:d[0],dz:d[1]}))}
  const c=padById(t);if(c&&c.mill)return c.k==='stone'?[{x:c.x-4.64,z:c.z,dx:1,dz:0}]:[{x:c.x,z:c.z-4.64,dx:0,dz:1}];
  return BDIRS.map(d=>({x:c.x-d[0]*2.7,z:c.z-d[1]*2.7,dx:d[0],dz:d[1]}))}
@@ -2328,7 +2329,7 @@ const props={belts:[],smoke:[],crates:[]};
 function placeBelt(len,sx,sz,ex,ez,y0){const b=makeBelt(len);const dx=ex-sx,dz=ez-sz;b.rotation.y=Math.atan2(-dz,dx);b.position.set(sx,gy(sx,sz)+(y0||0),sz);scene.add(b);props.belts.push(b);return b}
 function buildProps(){
  const fy=gy(FACT.x,FACT.z)+FACH;
- const fac=makeUpgradeCenter();fac.position.set(FACT.x,fy,FACT.z);fac.rotation.y=FACROT;fac.scale.setScalar(1.45*FACS);scene.add(fac);props.fac=fac;{const f2=makeLogStorage();f2.position.set(FACT2.x,gy(FACT2.x,FACT2.z)+F2H,FACT2.z);f2.rotation.y=0;f2.scale.setScalar(1.05*F2S);f2.visible=false;scene.add(f2);props.fac2=f2;
+ const fac=makeUpgradeCenter();fac.position.set(FACT.x,fy,FACT.z);fac.rotation.y=FACROT;fac.scale.setScalar(1.45*FACS);scene.add(fac);props.fac=fac;{const f2=makeLogStorage();f2.position.set(FACT2.x,gy(FACT2.x,FACT2.z)+F2H,FACT2.z);f2.rotation.y=LAY.store.r||0;f2.scale.setScalar(1.05*F2S);f2.visible=false;scene.add(f2);props.fac2=f2;
   const gh=padRing('#ffd24a',FACT2.x,FACT2.z,1.6);gh.position.set(FACT2.x,gy(FACT2.x,FACT2.z)+.2+F2H,FACT2.z);gh.visible=false;scene.add(gh);props.fac2g=gh;
   const lb=new THREE.Sprite(new THREE.SpriteMaterial({transparent:true,depthWrite:false,fog:false}));lb.scale.set(9,3.2,1);lb.position.set(FACT2.x,gy(FACT2.x,FACT2.z)+10.5,FACT2.z);lb.visible=false;scene.add(lb);props.fac2l=lb}
  // sell pad
@@ -2471,7 +2472,7 @@ function delProp(){const o=PROPOBJ[sel.i];if(o)scene.remove(o);ED.props[sel.i]=n
 function delNode(){if(sel&&sel.prop)return delProp();if(!sel||!sel.node)return;const n=sel.n;n.alive=false;n.t=-1e9;n.respawnIn=1e12;for(const o of [n.obj,n.stump,n.cur,n.rub])if(o){o.visible=false;scene.remove(o)}n.cur=null;ED.nodes[sel.i]=null;nodesDirty=true;scene.remove(sel.mk);const k=H.indexOf(sel);if(k>=0)H.splice(k,1);sel=null;refresh()}
 function build(){H=[];
  H.push({key:'uc',name:'Upgrade Center',rad:11,col:'#7ff0ff',rot:1,get:()=>ED.uc,sizeBy(f){ED.uc.s=Math.max(.4,Math.min(3,+((ED.uc.s||1)*f).toFixed(3)));props.fac.scale.setScalar(1.45*ED.uc.s)},set(x,z){ED.uc.x=x;ED.uc.z=z;const f=props.fac;f.position.set(x,gy(x,z)+(ED.uc.h||0),z);f.rotation.y=ED.uc.r}});
- H.push({key:'store',name:'Log Storage',rad:6,col:'#ffd24a',get:()=>ED.store,sizeBy(f){ED.store.s=Math.max(.4,Math.min(3,+((ED.store.s||1)*f).toFixed(3)));props.fac2.scale.setScalar(1.05*ED.store.s)},set(x,z){ED.store.x=x;ED.store.z=z;for(const o of [props.fac2,props.fac2g])o&&o.position.set(x,gy(x,z)+(ED.store.h||0)+(o===props.fac2g?.2:0),z);if(props.fac2l)props.fac2l.position.set(x,gy(x,z)+10.5,z)}});
+ H.push({key:'store',name:'Log Storage',rad:6,col:'#ffd24a',rot:1,get:()=>ED.store,sizeBy(f){ED.store.s=Math.max(.4,Math.min(3,+((ED.store.s||1)*f).toFixed(3)));props.fac2.scale.setScalar(1.05*ED.store.s)},set(x,z){ED.store.x=x;ED.store.z=z;for(const o of [props.fac2,props.fac2g])o&&o.position.set(x,gy(x,z)+(ED.store.h||0)+(o===props.fac2g?.2:0),z);if(props.fac2)props.fac2.rotation.y=ED.store.r||0;if(props.fac2l)props.fac2l.position.set(x,gy(x,z)+10.5,z)}});
  H.push({key:'sell',name:'Sell pad',rad:2.6,col:'#8fff8f',get:()=>ED.sell,set(x,z){ED.sell.x=x;ED.sell.z=z;props.sell.position.set(x,gy(x,z)+.2+(ED.sell.h||0),z)}});
  PADS.forEach(p=>{const kind=p.gath?'wood gatherer':p.mill?(p.k==='stone'?'slab press':'sawmill'):p.k==='wood'?'harvester':'drill ('+p.k+')';
   H.push({key:'pad:'+p.id,name:'Zone '+p.zone+' '+kind,rad:p.gath?6:5,col:p.mill?'#ffd24a':({wood:'#9affc8',stone:'#ffb08a',ore:'#b49aff'}[p.k]||'#fff'),
@@ -2506,7 +2507,7 @@ function enter(){if(EDIT.on)return;EDIT.on=1;build();sel=H[0];
  s.onchange=()=>{sel=H.find(h=>h.key===s.value);refresh()};
  q('edgo').onclick=()=>{const c=sel.get();P.x=c.x;P.z=c.z+Math.max(9,sel.rad+3);P.moveTo=null;P.vx=P.vz=0;refresh()};
  q('edme').onclick=()=>{sel.set(rd(P.x),rd(P.z));refresh()};
- const rot=d=>{if(sel&&(sel.node||sel.prop)){sel.rotate(d);refresh();return}if(sel&&sel.rot){ED.uc.r=+(ED.uc.r+d).toFixed(3);sel.set(ED.uc.x,ED.uc.z);refresh()}};
+ const rot=d=>{if(sel&&(sel.node||sel.prop)){sel.rotate(d);refresh();return}if(sel&&sel.rot){if(sel.key==='store'){ED.store.r=+(((ED.store.r||0)+Math.sign(d)*Math.PI/2)%(Math.PI*2)).toFixed(4);sel.set(ED.store.x,ED.store.z);refresh();return}ED.uc.r=+(ED.uc.r+d).toFixed(3);sel.set(ED.uc.x,ED.uc.z);refresh()}};
  const hgt=d=>{const c=sel.get();c.h=+((c.h||0)+d).toFixed(2);sel.set(c.x,c.z);refresh()};q('edup').onclick=()=>hgt(.5);q('eddn').onclick=()=>hgt(-.5);
  q('edbg').onclick=()=>{if(sel&&sel.sizeBy){sel.sizeBy(1.15);refresh()}};q('edsm').onclick=()=>{if(sel&&sel.sizeBy){sel.sizeBy(1/1.15);refresh()}};
  q('edl').onclick=()=>rot(-Math.PI/12);q('edr').onclick=()=>rot(Math.PI/12);
