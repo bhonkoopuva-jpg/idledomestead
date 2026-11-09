@@ -1,7 +1,7 @@
 // ================= GAME STATE =================
 const RES=['wood','stone','ore','crystal'];
 const RNAME={stick:'Wood',wood:'Wood',stone:'Stone',ore:'Ore',crystal:'Crystal',coins:'Coins'};
-const RCOL={wood:'#5ff0d8',stone:'#d9b8a4',ore:'#41e0e8',crystal:'#6cb8ff',coins:'#ffd24a'};
+const RCOL={stick:'#c98f5a',wood:'#5ff0d8',stone:'#d9b8a4',ore:'#41e0e8',crystal:'#6cb8ff',coins:'#ffd24a'};
 const VAL={wood:3,stone:5,ore:9,crystal:20};
 const TOOLS=[
  {n:'Rusty Pick',pow:1,yld:1,cost:0,d:'Basic mining kit.'},
