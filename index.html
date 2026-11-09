@@ -906,7 +906,7 @@ const AU={ctx:null,on:true,master:null,last:{},
 
 // ================= LAYOUT (placed by the in-game edit mode; saved in localStorage, bake a copy into DEFAULT_LAYOUT) =================
 const EDIT={on:0};
-const LOOK={on:(()=>{let v='1';try{v=localStorage.getItem('idle-domestead-look')||'1'}catch(e){}const m=/[?&]look=(\d)/.exec(location.search);if(m)v=m[1];return v!=='0'})()};const TERR_SOFT={value:LOOK.on?1:0};
+const LOOK={on:!/[?&]look=0/.test(location.search)};const TERR_SOFT={value:LOOK.on?1:0};
 const LAYOUT_KEY='idle-domestead-layout-v1';
 const DEFAULT_LAYOUT=null;
 const LAY=(()=>{const d={uc:{x:0,z:-10,r:.698},store:{x:14,z:80},sell:{x:0,z:5.4},pads:{},nodes:null,props:[],decorDel:[]};let s=null;try{s=JSON.parse(localStorage.getItem(LAYOUT_KEY)||'null')}catch(e){}s=s||DEFAULT_LAYOUT;
@@ -2124,7 +2124,6 @@ const UI={panel:null,tab:'tools',openId:null,qEls:[],pillEls:{},tagEls:[],fullT:
    r.appendChild(m);if(!un){const bt=document.createElement('button');bt.className='btn';bt.textContent='TRACK';bt.onclick=()=>{S.track={x:z.gate.x,z:z.gate.z,t:14};this.closeAll()};r.appendChild(bt)}b.appendChild(r)})},
  rSet(b){const mk=(t,fn,cls)=>{const bt=document.createElement('button');bt.className='btn '+(cls||'');bt.textContent=t;bt.style.cssText='width:100%;height:44px';bt.onclick=fn;b.appendChild(bt)};
   mk(S.sound?'Sound: ON':'Sound: OFF',()=>{this.toggleMute()});mk('Save now',()=>{save();this.toast('Progress saved')});
-  mk(LOOK.on?'Soft look: ON (tap to turn off)':'Soft look: OFF (tap to turn on)',function(){LOOK.on=!LOOK.on;TERR_SOFT.value=LOOK.on?1:0;try{localStorage.setItem('idle-domestead-look',LOOK.on?'1':'0')}catch(e){}this.textContent=LOOK.on?'Soft look: ON (tap to turn off)':'Soft look: OFF (tap to turn on)'});
   mk('Reset all progress',function(){if(this.dataset.c){NOSAVE=1;try{localStorage.removeItem(SAVEKEY)}catch(e){}location.reload()}else{this.dataset.c=1;this.textContent='Tap again to erase everything';this.style.background='#c4553f'}},'dis');
   const t=document.createElement('div');t.className='sec';t.style.lineHeight='1.5';t.textContent='Move: WASD / arrows / drag the joystick. Stand next to a resource to harvest it. Menu (#): pickaxe, robot and drone upgrades.';b.appendChild(t)},
  // ---- HUD ----
