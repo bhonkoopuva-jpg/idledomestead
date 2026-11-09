@@ -101,7 +101,7 @@ const RB={};function rubble(type){if(RB[type])return RB[type].clone();const cols
  gr.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});RB[type]=bake(gr);return RB[type].clone()}
 const stumpGeo=new THREE.CylinderGeometry(.7,1.0,.7,14);const stumpMat=new THREE.MeshStandardMaterial({color:'#8c8e9a',roughness:.9});
 let nid=0;
-function spawnNode(type,kind,x,z,sc,zi,v){if(type==='stone'&&typeof SCAN2!=='undefined'&&(v==null||v<3))v=nid%5;sc*=1.35;if(type==='stone')sc*=.96;
+function spawnNode(type,kind,x,z,sc,zi,v){if(type==='stone'&&typeof SCAN2!=='undefined'&&(v==null||v<3))v=nid%SCAN2.length;sc*=1.35;if(type==='stone')sc*=.96;
  const rot=R()*6.28;const obj=variant(type,kind,v).clone();const base=type==='tree'?.82:1;
  const y=gy(x,z);obj.position.set(x,y,z);obj.rotation.y=rot;obj.scale.setScalar(sc*base);scene.add(obj);
  const stump=new THREE.Mesh(stumpGeo,stumpMat);stump.position.set(x,y+.2,z);stump.scale.setScalar(sc*.9);stump.visible=false;stump.castShadow=true;if(type==='tree')scene.add(stump);

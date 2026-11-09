@@ -129,7 +129,8 @@ function trackPose(t,s){const {R,HL,L}=t;s=((s%L)+L)%L;const arc=Math.PI*R;
 function rollRobot(rb,d){const u=rb.userData;if(!u.ridges)return;u.roll=(u.roll||0)+d;for(const h of u.hubs)h.rotation.x+=d/.22;for(const r of u.ridges){const p=trackPose(u.trk,r.s0+u.roll);r.m.position.y=p[0];r.m.position.z=p[1];r.m.rotation.x=p[2]}}
 const _rbG={};let _rbMat=null;
 function robotMat(){if(_rbMat)return _rbMat;const ld=u=>{const t=new THREE.Texture();const im=new Image();im.onload=()=>{t.image=im;t.needsUpdate=true};im.src=u;t.flipY=false;t.anisotropy=4;return t};
- const mp=ld(ROBOT_TEX.b);mp.colorSpace=THREE.SRGBColorSpace;_rbMat=new THREE.MeshStandardMaterial({map:mp,normalMap:ld(ROBOT_TEX.n),roughness:.55,metalness:.1});_rbMat.color.setScalar(1.15);return _rbMat}
+ const mp=ld(ROBOT_TEX.b);mp.colorSpace=THREE.SRGBColorSpace;_rbMat=new THREE.MeshStandardMaterial({map:mp,normalMap:ld(ROBOT_TEX.n),roughness:.55,metalness:.1});_rbMat.color.setScalar(1.15);
+ _rbMat.onBeforeCompile=sh=>{sh.fragmentShader=sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n{vec3 c=pow(max(diffuseColor.rgb/1.15,0.),vec3(.4545));float mx=max(c.r,max(c.g,c.b)),mn=min(c.r,min(c.g,c.b));float sat=(mx-mn)/max(mx,1e-4);float hr=(c.g-c.b)/max(c.r-c.b,1e-4);float w=smoothstep(.25,.4,sat)*smoothstep(.22,.38,hr)*step(c.g,c.r+.02)*step(c.b,c.g);vec3 tg=clamp(vec3(.945,.76,.196)*(mx/.79),0.,1.);diffuseColor.rgb=mix(diffuseColor.rgb,pow(tg,vec3(2.2))*1.15,w);}')};_rbMat.customProgramCacheKey=()=>'rbY';return _rbMat}
 function robotPart(i){if(_rbG[i])return _rbG[i];const S0=ROBOT[0],dec=b=>{const s=atob(b),u=new Uint8Array(s.length);for(let j=0;j<s.length;j++)u[j]=s.charCodeAt(j);return u.buffer};
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(dec(S0.p)),3));g.setAttribute('uv',new THREE.BufferAttribute(new Uint16Array(dec(S0.t)),2,true));
  g.setAttribute('normal',new THREE.BufferAttribute(new Int8Array(dec(S0.n)),3,true));g.setIndex(new THREE.BufferAttribute(new Uint16Array(dec(S0.i)),1));return _rbG[i]=g}
@@ -316,7 +317,7 @@ function scanPart2(i){if(_scanG2[i])return _scanG2[i];const S0=SCAN2[i],dec=b=>{
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(dec(S0.p)),3));g.setAttribute('uv',new THREE.BufferAttribute(new Uint16Array(dec(S0.t)),2,true));
  g.setAttribute('normal',new THREE.BufferAttribute(new Int8Array(dec(S0.n)),3,true));g.setIndex(new THREE.BufferAttribute(new Uint16Array(dec(S0.i)),1));return _scanG2[i]=g}
 function makeScanStone(stage,sd=1){const g=new THREE.Group();
- if(stage>=3&&typeof SCAN2!=='undefined'){const m=new THREE.Mesh(scanPart2(((sd-1)%5+5)%5),scanMat2());m.scale.setScalar(15);m.position.y=-.1;m.rotation.y=sd*2.1;g.add(m);g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});return g}
+ if(stage>=3&&typeof SCAN2!=='undefined'){const m=new THREE.Mesh(scanPart2(((sd-1)%SCAN2.length+SCAN2.length)%SCAN2.length),scanMat2());m.scale.setScalar(15);m.position.y=-.1;m.rotation.y=sd*2.1;g.add(m);g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});return g}
  const m=new THREE.Mesh(scanPart((stage-1)*2+(sd%2)),scanMat());m.scale.set(12.6,12.6,12.6);m.position.y=-.1;m.rotation.y=sd*2.1;g.add(m);g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});return g}
 function makeStoneStage(stage,sd=1){
  if(stage>=1&&typeof SCAN!=='undefined')return makeScanStone(stage,sd);
