@@ -11,7 +11,7 @@ function nodeHandle(n,i){const d={x:n.x,z:n.z,h:0},nm={tree:'Boom',stone:'Steen'
   h.rotate=dr=>{n.rot=(n.rot||0)+dr;ED.nodes[i][7]=+n.rot.toFixed(3);nodesDirty=true;n.obj.rotation.y=n.rot;if(n.cur)n.cur.rotation.y=n.rot};
   h.sizeBy=f=>{const a=ED.nodes[i],ns=Math.max(.3,Math.min(4,+(a[4]*f).toFixed(3))),k=ns/a[4];a[4]=ns;nodesDirty=true;n.sc*=k;n.r*=k;n.obj.scale.setScalar(n.sc*n.base);if(n.stump)n.stump.scale.setScalar(n.sc*.9);if(n.cur)n.cur.scale.multiplyScalar(k);h.rad=Math.max(1.8,n.r*1.1)};
   H.push(h);return h}
-const TYPES=[['tree:teal','Boom groen'],['tree:deep','Boom donkergroen'],['tree:blue','Boom blauw'],['stone:','Steen'],['ore:','Erts'],['crystal:','Kristal'],['p:mound','Rubbelhoop'],['p:chunks','Steenbrokken'],['p:pile','Teal puin'],['p:peb','Kiezels'],['p:scrap','Schroot'],['p:shard','Scherf'],['p:agave0','Agave'],['p:agave1','Agave 2'],['p:gem','Edelstenen'],['p:cairn','Steenhoop'],['p:bone','Botten']];
+const TYPES=[['tree:teal','Boom groen'],['tree:deep','Boom donkergroen'],['tree:blue','Boom blauw'],['stone:','Steen'],['ore:','Erts'],['p:mound','Rubbelhoop'],['p:chunks','Steenbrokken'],['p:pile','Teal puin'],['p:peb','Kiezels'],['p:scrap','Schroot'],['p:agave0','Agave'],['p:agave1','Agave 2'],['p:gem','Edelstenen'],['p:cairn','Steenhoop'],['p:bone','Botten']];
 const PN={};TYPES.forEach(t=>{if(t[0][0]==='p')PN[t[0].slice(2)]=t[1]});
 let curType='tree:teal';const erase={on:0,r:2.5};let brush=null;
 function propHandle(o,i){const a=ED.props[i],d={x:a[1],z:a[2],h:0};

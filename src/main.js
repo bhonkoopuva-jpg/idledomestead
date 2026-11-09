@@ -33,7 +33,12 @@ const FFN=70,ffP=new Float32Array(FFN*3),ffS=new Float32Array(FFN);for(let i=0;i
 const ffG=new THREE.BufferGeometry();ffG.setAttribute('position',new THREE.BufferAttribute(ffP,3));
 const ffM=new THREE.PointsMaterial({color:'#ffe9a0',size:.2,transparent:true,opacity:.85,depthWrite:false,blending:THREE.AdditiveBlending,sizeAttenuation:true});
 const ffPts=new THREE.Points(ffG,ffM);ffPts.frustumCulled=false;scene.add(ffPts);
-function lifeStep(dt,t){
+const STEAM=[];const stG=new THREE.SphereGeometry(1,10,8);
+function steamVent(){const th=FACROT,k=61.5,lx=-.127*k,lz=-.071*k;return{x:FACT.x+lx*Math.cos(th)+lz*Math.sin(th),z:FACT.z-lx*Math.sin(th)+lz*Math.cos(th),y:gy(FACT.x,FACT.z)+FACH+.165*k}}
+function steamStep(dt){if(!props.fac)return;if(!STEAM.length)for(let i=0;i<9;i++){const m=new THREE.Mesh(stG,new THREE.MeshBasicMaterial({color:'#fff3ea',transparent:true,opacity:0,depthWrite:false,fog:true}));m.userData.ph=i/9;m.renderOrder=5;m.frustumCulled=false;scene.add(m);STEAM.push(m)}
+ if(Math.hypot(P.x-FACT.x,P.z-FACT.z)>70){for(const m of STEAM)m.visible=false;return}const v=steamVent();
+ for(const m of STEAM){const u=m.userData;u.ph=(u.ph+dt*.16)%1;const k=u.ph;m.visible=true;m.position.set(v.x+k*3.2+Math.sin(k*6+u.ph*2)*.25,v.y+k*9,v.z-k*1.4);m.scale.setScalar(.45+k*2.1);m.material.opacity=.5*(1-k)*Math.min(1,k*7)}}
+function lifeStep(dt,t){steamStep(dt);
  for(const n of nodes){if(n.type!=='tree'||!n.alive||n.shake>0||!n.obj.visible)continue;if(Math.abs(n.x-P.x)>50||Math.abs(n.z-P.z)>50)continue;n.obj.rotation.z=Math.sin(t*.8+n.id*1.7)*.016;n.obj.rotation.x=Math.cos(t*.65+n.id*1.3)*.011}
  try{ucMat().emissiveIntensity=.14+.05*Math.sin(t*1.5)}catch(e){}
  const a=ffG.attributes.position.array;for(let i=0;i<FFN;i++){const s=ffS[i];a[i*3]+=Math.sin(t*.5+s)*dt*.5;a[i*3+1]+=Math.cos(t*.7+s*2)*dt*.25;a[i*3+2]+=Math.cos(t*.4+s*3)*dt*.5;if(a[i*3+1]<.4)a[i*3+1]=.4;if(a[i*3+1]>4.2)a[i*3+1]=4.2}
