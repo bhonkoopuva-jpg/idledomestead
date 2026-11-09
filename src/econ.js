@@ -7,9 +7,10 @@ const GOODS={
  module:{n:'Machine Module',in:{plate:2,circuit:1},v:100,tier:2,col:'#ffd35a'},
  core:{n:'Quantum Core',in:{circuit:2,cell:1},v:210,tier:2,col:'#ff9ae8'},
  plank:{n:'Plank',in:{wood:2},v:10,tier:1,col:'#2fc4c0',mill:1},
- slab:{n:'Stone Slab',in:{stone:2},v:14,tier:1,col:'#9aa0aa',mill:1}};
+ slab:{n:'Stone Slab',in:{stone:2},v:14,tier:1,col:'#9aa0aa',mill:1},
+ stick:{n:'Stick',in:{wood:2},v:12,tier:1,col:'#c98f5a',mill:1}};
 const GKEYS=Object.keys(GOODS);for(const k of GKEYS){lootGeo[k]=new THREE.BoxGeometry(.5,.34,.5);lootMat[k]=std(GOODS[k].col,{roughness:.6})}
-const MILLS={wood:{n:'Plank Mill',out:'plank',need:2,base:400,rate:.5,g:{wood:20,stone:10}},stone:{n:'Slab Press',out:'slab',need:2,base:650,rate:.5,g:{plank:6,stone:12}}};
+const MILLS={stick:{n:'Stick Lathe',out:'stick',need:2,base:900,rate:.55,g:{plank:8,slab:4}},wood:{n:'Plank Mill',out:'plank',need:2,base:400,rate:.5,g:{wood:20,stone:10}},stone:{n:'Slab Press',out:'slab',need:2,base:650,rate:.5,g:{plank:6,stone:12}}};
 const mkOf=p=>p.mill?MILLS[p.k]:MK[p.k];
 const GCARRY=6,GBUF=20,GCAP=100,MBUF=10,BSPEED=3.6,BELT_COST=3;
 const beltRate=()=>1.5+.75*S.up.belt;
@@ -20,8 +21,8 @@ const canPay=c=>{for(const k in c)if(haveOf(k)<c[k])return false;return true};
 const payCost=c=>{for(const k in c){if(k==='coins')S.coins-=c[k];else if(GOODS[k])S.goods[k]-=c[k];else S.inv[k]-=c[k]}};
 const costText=c=>Object.keys(c).map(k=>fmtC(c[k])+' '+(k==='coins'?'coins':(GOODS[k]?GOODS[k].n:RNAME[k]).toLowerCase())).join(' · ');
 const goodsOnly=c=>{const o={};for(const k in c)if(GOODS[k])o[k]=c[k];return o};
-const ECON={items:[],dead:[],events:[],feedAcc:0,transit:{wood:0,stone:0,ore:0,crystal:0,plank:0,slab:0},busy:false,waiting:'',sellT:0,craftT:0};
-function ensureEcon(){S.goods=Object.assign({brick:0,plate:0,circuit:0,cell:0,module:0,core:0,plank:0,slab:0},S.goods);const f=S.fac=S.fac||{};f.off=f.off||{};f.q=f.q||{};for(const k of ['brick','plate','circuit','cell','module','core'])if(f.q[k]===undefined)f.q[k]=0;f.in=Object.assign({wood:0,stone:0,ore:0,crystal:0},f.in);f.made=Object.assign({brick:0,plate:0,circuit:0,cell:0,module:0,core:0,plank:0,slab:0},f.made);f.prog=f.prog||0;f.rr=f.rr||0;f.adv=f.adv||0;f.jobs=f.jobs||[];S.links=S.links||{};S.feeder=S.feeder||0;S.stats.crafted=S.stats.crafted||0}
+const ECON={items:[],dead:[],events:[],feedAcc:0,transit:{wood:0,stone:0,ore:0,crystal:0,plank:0,slab:0,stick:0},busy:false,waiting:'',sellT:0,craftT:0};
+function ensureEcon(){S.goods=Object.assign({brick:0,plate:0,circuit:0,cell:0,module:0,core:0,plank:0,slab:0,stick:0},S.goods);const f=S.fac=S.fac||{};f.off=f.off||{};f.q=f.q||{};for(const k of ['brick','plate','circuit','cell','module','core'])if(f.q[k]===undefined)f.q[k]=0;f.in=Object.assign({wood:0,stone:0,ore:0,crystal:0},f.in);f.made=Object.assign({brick:0,plate:0,circuit:0,cell:0,module:0,core:0,plank:0,slab:0,stick:0},f.made);f.prog=f.prog||0;f.rr=f.rr||0;f.adv=f.adv||0;f.jobs=f.jobs||[];S.links=S.links||{};S.feeder=S.feeder||0;S.stats.crafted=S.stats.crafted||0}
 // ---- power ----
 const powSupply=()=>12+14*bl('solar')+60*bl('reactor');
 function powDemand(){let d=8+(S.fac.adv?6:0);for(const p of PADS){const l=machLv(p);if(l)d+=2+l}return d+1.5*S.drones}
@@ -30,15 +31,16 @@ const powSat=()=>Math.max(.2,Math.min(1,powSupply()/powDemand()));
 const SEG={};
 const FAC2={id:'FAC2',fixed:1,k:'wood',mill:0,zone:1,x:FACT2.x,z:FACT2.z,y:gy(FACT2.x,FACT2.z),in:0,acc:0,buf:0,work:0,near:false};const FAC2CAP=200;const f2cap=()=>FAC2CAP+100*((S.f2cl)||0),F2MAXL=6,f2upCost=()=>Math.round(300*Math.pow(1.7,(S.f2cl)||0));
 const MCAP0=20,MCAPMAXL=6,mcl=p=>(S.mcl&&S.mcl[p.id])||0,mcap=p=>p.mill?MCAP0+10*mcl(p):MBUF,mcapCost=p=>Math.round(MILLS[p.k].base*.35*Math.pow(1.6,mcl(p)));
-function padById(id){return id==='FAC2'?FAC2:PADS.find(p=>p.id===id)}
+const FAC2B={id:'FAC2b',fixed:1,k:'stick',x:FACT2.x,z:FACT2.z,y:FAC2.y,near:false};const isF2=p=>p===FAC2||p===FAC2B;
+function padById(id){return id==='FAC2'?FAC2:id==='FAC2b'?FAC2B:PADS.find(p=>p.id===id)}
 function intakePoint(from,t){const F0=termPos(t||'F'),dx=from.x-F0.x,dz=from.z-F0.z,l=Math.hypot(dx,dz)||1;return{x:F0.x+dx/l*7.8,z:F0.z+dz/l*5.7}}
 const isT=t=>t==='F'||t==='F2';const termPos=t=>t==='F2'?FACT2:FACT;
 function segPath(id){const out=[];let cur=id,guard=0;while(cur&&!isT(cur)&&guard++<30){const s=SEG[cur];if(!s)return null;out.push(s);cur=s.tgt}return isT(cur)?out:null}
 function segEnd(id){let cur=id,g=0;while(g++<30){const t=S.links[cur];if(!t)return null;if(isT(t))return t;const q=padById(t);if(q&&q.mill)return t;cur=t}return null}
 function segPathTo(id){const out=[];let cur=id,g=0;while(cur&&!isT(cur)&&g++<30){const s=SEG[cur];if(!s)return null;out.push(s);if(!isT(s.tgt)){const q=padById(s.tgt);if(q&&q.mill)return{path:out,dest:s.tgt}}cur=s.tgt}return isT(cur)?{path:out,dest:cur}:null}
 function linkTarget(p,tx,tz){ // resolve a tapped point to 'F' or a connected pad id (not creating a cycle)
- if(p!==FAC2&&S.unl[1]&&S.storeBuilt&&Math.hypot(tx-FACT2.x,tz-FACT2.z)<8.5)return 'F2';
- let best=null,bd=3.6;for(const q of PADS){if(q===p||!S.links[q.id]||!machLv(q)||(p===FAC2&&!q.mill)||(p.gath&&S.storeBuilt))continue;const d=Math.hypot(tx-q.x,tz-q.z);if(d>=bd)continue;
+ if(!isF2(p)&&S.unl[1]&&S.storeBuilt&&Math.hypot(tx-FACT2.x,tz-FACT2.z)<8.5)return 'F2';
+ let best=null,bd=3.6;for(const q of PADS){if(q===p||!S.links[q.id]||!machLv(q)||(isF2(p)&&!q.mill)||(p.gath&&S.storeBuilt))continue;const d=Math.hypot(tx-q.x,tz-q.z);if(d>=bd)continue;
   const pa=segPath(q.id);if(!pa||pa.some(s=>s.id===p.id))continue;
   if(q.mill){if(p.mill||p.k!==q.k)continue}else{const en=segEnd(q.id);if(en&&!isT(en)){const m=padById(en);if(p.mill||m.k!==p.k)continue}}
   bd=d;best=q.id}return best}
@@ -52,6 +54,7 @@ const BDIRS=[[0,1],[1,0],[0,-1],[-1,0]],BR=1.9,BDECK=.74;
 const F2Q=Math.round((LAY.store.r||0)/(Math.PI/2));function f2p(ox,oz,dx,dz){ox*=F2S;oz*=F2S;const k=((F2Q%4)+4)%4;let a=[ox,oz,dx,dz];for(let i=0;i<k;i++)a=[a[1],-a[0],a[3],-a[2]];return{x:FACT2.x+a[0],z:FACT2.z+a[1],dx:a[2],dz:a[3]}}
 function portsOut(p){const q=p.sc||1;if(p.gath)return[{x:p.x-2.18*q,z:p.z+1.73*q,dx:0,dz:1}];
  if(p===FAC2)return[f2p(8.93,-1.26,1,0)];
+ if(p===FAC2B)return[f2p(1.5,-6.25,0,-1)];
  if(p.mill)return p.k==='stone'?[{x:p.x+4.64*q,z:p.z,dx:1,dz:0}]:[{x:p.x,z:p.z+4.64*q,dx:0,dz:1}];
  return BDIRS.map(d=>({x:p.x+d[0]*2.7*q,z:p.z+d[1]*2.7*q,dx:d[0],dz:d[1]}))}
 function portsIn(t){if(t==='F2')return[f2p(-8.09,-1.05,1,0)];
@@ -184,8 +187,8 @@ function econStep(dt,silent){const F=S.fac,sat=powSat();ECON.sat=sat;
   while(p.acc>=1){if(p.buf<MBUF){p.buf++;p.acc-=1}else{p.acc=1;break}}}
   const rr=S.links[p.id]&&segPathTo(p.id);const sg=rr&&rr.path;const ok2=p.mill?MILLS[p.k].out:p.k;
   if(sg){while(p.buf>0&&sg.every(s=>s.tok>=1)&&roomAt(sg[0])){sg.forEach(s=>s.tok-=1);p.buf--;let L=0;for(const s of sg)L+=s.len;ECON.items.push({k:ok2,path:sg,L,d:0,m:null,dest:rr.dest});ECON.transit[ok2]++}}}
- if(S.unl[1]){const f=FAC2;f.acc=Math.min(2,f.acc+(f2rate()/60)*sat*dt);const lk=S.storeBuilt&&S.links.FAC2;if(lk)while(f.acc>=1&&f.in>=1&&f.buf<MBUF){f.in--;f.buf++;f.acc-=1}f.work=lk&&f.in>0?1:0;
-  const rr=S.links.FAC2&&segPathTo('FAC2');const sg=rr&&rr.path;if(sg){while(f.buf>0&&sg.every(s=>s.tok>=1)&&roomAt(sg[0])){sg.forEach(s=>s.tok-=1);f.buf--;let L=0;for(const s of sg)L+=s.len;ECON.items.push({k:'wood',path:sg,L,d:0,m:null,dest:rr.dest});ECON.transit.wood++}}}
+ if(S.unl[1]){const f=FAC2;f.acc=Math.min(2,f.acc+(f2rate()/60)*sat*dt);const lk=S.storeBuilt&&(S.links.FAC2||S.links.FAC2b);if(lk)while(f.acc>=1&&f.in>=1&&f.buf<MBUF){f.in--;f.buf++;f.acc-=1}f.work=lk&&f.in>0?1:0;
+  {const outs=[];if(S.links.FAC2)outs.push('FAC2');if(S.links.FAC2b)outs.push('FAC2b');let gn=0;while(f.buf>0&&outs.length&&gn++<4){let done=false;for(let t=0;t<outs.length&&!done;t++){const oi=((f.alt||0)+t)%outs.length,rr=segPathTo(outs[oi]),sg=rr&&rr.path;if(sg&&sg.every(s=>s.tok>=1)&&roomAt(sg[0])){sg.forEach(s=>s.tok-=1);f.buf--;let L=0;for(const s of sg)L+=s.len;ECON.items.push({k:'wood',path:sg,L,d:0,m:null,dest:rr.dest});ECON.transit.wood++;f.alt=(oi+1)%outs.length;done=true}}if(!done)break}}}
  for(const k in SEG)SEG[k].tok=Math.min(3,SEG[k].tok+beltRate()*dt);
  { // items queue up on the belt when their destination is full (backpressure)
   const Q=new Map();for(const it of ECON.items){const k=it.path[it.path.length-1].id+'>'+it.dest;let q=Q.get(k);if(!q)Q.set(k,q=[]);q.push(it)}
@@ -211,7 +214,7 @@ VAL.trunk=VAL.wood;ECON.transit.trunk=0;lootMat.trunk=std('#ecd9a4',{roughness:.
 const ITEM_BOX=new THREE.BoxGeometry(.62,.5,.62);
 const ITEM_GEO={trunk:(()=>{const g=new THREE.CylinderGeometry(.2,.2,1.25,10);g.rotateZ(Math.PI/2);g.translate(0,.02,0);return g})(),wood:(()=>{const g=barkGeo(.27,.27,1.15,10);g.rotateZ(Math.PI/2);g.translate(0,.05,0);return g})(),
  stone:new THREE.DodecahedronGeometry(.45,0),ore:new THREE.OctahedronGeometry(.48,0),crystal:(()=>{const g=new THREE.OctahedronGeometry(.4,0);g.scale(1,1.5,1);return g})(),
- plank:new THREE.BoxGeometry(1.2,.16,.5),slab:new THREE.BoxGeometry(.95,.24,.95)};
+ plank:new THREE.BoxGeometry(1.2,.16,.5),slab:new THREE.BoxGeometry(.95,.24,.95),stick:new THREE.BoxGeometry(1.3,.15,.15)};
 function econVis(dt){const t=performance.now()*.001;
  for(const k in SEG){const s=SEG[k],v=s.vis;if(!v)continue;const off=(t*1.4)%.95;for(let i=0;i<v.count;i++){const d=(i*.95+off)%(v.count*.95);segAt(s,Math.min(s.len,d),_po);_sp.set(_po.x,_po.y+.04,_po.z);_se.set(_po.pitch,_po.yaw,0,'YXZ');_sq.setFromEuler(_se);_sm.compose(_sp,_sq,_ss);v.im.setMatrixAt(i,_sm)}v.im.instanceMatrix.needsUpdate=true}
  for(const it of ECON.items){if(!it.m){it.m=new THREE.Mesh(ITEM_GEO[it.k]||ITEM_BOX,lootMat[it.k]);it.m.castShadow=false;scene.add(it.m)}
@@ -223,12 +226,12 @@ function econVis(dt){const t=performance.now()*.001;
 const LINK={from:null};
 function linkNear(p,px,pz){ // walk-up targeting: the machine/terminal the player stands next to (for the CONNECT button)
  let best=null,bd=1e9;const cand=(tgt,x,z,y,r)=>{const d=Math.hypot(px-x,pz-z);if(d<r&&d<bd){bd=d;best={tgt,x,z,y}}};
- if(p!==FAC2){if(S.unl[1]&&S.storeBuilt)cand('F2',FACT2.x,FACT2.z,gy(FACT2.x,FACT2.z)+9,11)}
+ if(!isF2(p)){if(S.unl[1]&&S.storeBuilt)cand('F2',FACT2.x,FACT2.z,gy(FACT2.x,FACT2.z)+9,11)}
  for(const q of PADS){if(q===p||!machLv(q))continue;
-  if(q.mill){if(p===FAC2){if(q.k!=='wood')continue}else{if(p.mill||p.k!==q.k||(p.gath&&S.storeBuilt))continue}cand(q.id,q.x,q.z,q.y+8,7)}
-  else if(p!==FAC2&&!(p.gath&&S.storeBuilt)&&S.links[q.id]){const pa=segPath(q.id);if(!pa||pa.some(s=>s.id===p.id))continue;const en=segEnd(q.id);if(en&&!isT(en)){const m=padById(en);if(p.mill||m.k!==p.k)continue}cand(q.id,q.x,q.z,q.y+6,6)}}
+  if(q.mill){if(p===FAC2){if(q.k!=='wood')continue}else if(p===FAC2B){if(q.k!=='stick')continue}else{if(p.mill||p.k!==q.k||(p.gath&&S.storeBuilt))continue}cand(q.id,q.x,q.z,q.y+8,7)}
+  else if(!isF2(p)&&!(p.gath&&S.storeBuilt)&&S.links[q.id]){const pa=segPath(q.id);if(!pa||pa.some(s=>s.id===p.id))continue;const en=segEnd(q.id);if(en&&!isT(en)){const m=padById(en);if(p.mill||m.k!==p.k)continue}cand(q.id,q.x,q.z,q.y+6,6)}}
  return best}
-function startLink(p){LINK.from=p;UI.toast(p.gath&&S.storeBuilt?'Walk to the Log Storage':p.fixed?'Walk to the Plank Mill':p.mill?'Walk to a connected machine':'Walk to a Mill or a connected machine');}
+function startLink(p){LINK.from=p;UI.toast(p.gath&&S.storeBuilt?'Walk to the Log Storage':p===FAC2B?'Walk to the Stick Lathe':p.fixed?'Walk to the Plank Mill':p.mill?'Walk to a connected machine':'Walk to a Mill or a connected machine');}
 function cancelLink(){if(LINK.from){LINK.from=null;UI.toast('Belt cancelled')}}
 function tryLink(x,z){if(!LINK.from)return false;const p=LINK.from;const tgt=linkTarget(p,x,z);if(!tgt){cancelLink();return true}
  if(makeLink(p,tgt)){LINK.from=null}return true}

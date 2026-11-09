@@ -581,7 +581,7 @@ function makeLogStorage(){const g=new THREE.Group();
  add(g,rbox(1.6,1.1,1.2,.2,slate),6.6,1.1,1.3);add(g,rbox(.9,.2,.08,.04,cyn),6.6,1.3,1.93);
  add(g,rbox(.9,.8,.9,.1,brown),-3.2,1.0,3.5);add(g,rbox(.7,.55,.7,.08,brown),-2.2,.9,4.1);
  for(const x of [-5.5,-4.9,.0,.6]){add(g,cyl(.05,.05,1.5,grey,6),x,6.8,-.6)}
- beltStub(g,-6.65,-1.0,2.1,'x',.7);beltStub(g,7.45,-1.2,2.1,'x',.7);
+ beltStub(g,-6.65,-1.0,2.1,'x',.7);beltStub(g,7.45,-1.2,2.1,'x',.7);beltStub(g,1.5,-4.9,2.1,'z',.7);
  g.userData.logs=rackLogs.concat(pileLogs);g.userData.arm=arm;g.userData.up=up;g.userData.fo=fo;
  g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});return g}
 function makeLogDepot(){const g=new THREE.Group();

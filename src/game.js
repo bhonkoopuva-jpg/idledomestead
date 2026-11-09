@@ -1,14 +1,14 @@
 // ================= GAME STATE =================
 const RES=['wood','stone','ore','crystal'];
-const RNAME={wood:'Wood',stone:'Stone',ore:'Ore',crystal:'Crystal',coins:'Coins'};
+const RNAME={stick:'Wood',wood:'Wood',stone:'Stone',ore:'Ore',crystal:'Crystal',coins:'Coins'};
 const RCOL={wood:'#5ff0d8',stone:'#d9b8a4',ore:'#41e0e8',crystal:'#6cb8ff',coins:'#ffd24a'};
 const VAL={wood:3,stone:5,ore:9,crystal:20};
 const TOOLS=[
  {n:'Rusty Pick',pow:1,yld:1,cost:0,d:'Basic mining kit.'},
  {n:'Iron Pick',pow:1.7,yld:1.25,cost:150,g:{wood:15,stone:10},d:'Cracks ore veins. Faster, more yield.'},
  {n:'Titan Pick',pow:2.8,yld:1.6,cost:650,g:{plank:8,slab:4,ore:6},d:'Breaks crystal clusters.'},
- {n:'Plasma Pick',pow:4.5,yld:2,cost:2400,g:{plank:14,slab:8,ore:16,crystal:10},d:'Superheated edge. Very fast.'},
- {n:'Quantum Pick',pow:7,yld:2.6,cost:8500,g:{plank:30,slab:16,ore:30,crystal:30},d:'Tears matter apart.'}];
+ {n:'Plasma Pick',pow:4.5,yld:2,cost:2400,g:{plank:14,slab:8,stick:6,ore:16,crystal:10},d:'Superheated edge. Very fast.'},
+ {n:'Quantum Pick',pow:7,yld:2.6,cost:8500,g:{plank:30,slab:16,stick:14,ore:30,crystal:30},d:'Tears matter apart.'}];
 const NT={
  tree:{res:'wood',hard:3.0,yld:3,tier:0,name:'Alien Tree',respawn:[50,80]},
  stone:{res:'stone',hard:3.4,yld:3,tier:0,name:'Stone Rock',respawn:[60,90]},
@@ -159,8 +159,8 @@ const padRing=(c,x,z,s=1)=>{const g=new THREE.Group();const y0=gy(x,z);
 const PCOL={wood:'#58f0d0',stone:'#ffc08a',ore:'#4fdcff',crystal:'#7aa8ff'};
 function setupPad(p){p.ring=padRing(p.mill?'#ffd24a':PCOL[p.k],p.x,p.z);p.y=gy(p.x,p.z)+p.h;p.ring.position.set(p.x,p.y+.2,p.z);p.ring.visible=false;scene.add(p.ring);p.obj=null;p.acc=0;p.work=0;p.dust=0;if(p.gath)mkGhost(p)}
 function mkGhost(p){const gr=padRing('#ffd24a',p.x,p.z,1.3);gr.position.set(p.x,gy(p.x,p.z)+.2+p.h,p.z);gr.visible=false;scene.add(gr);p.ghost=gr}
-function padOpen(p){return S.unl[p.zone]===1}
-function machLv(p){return p.id==='FAC2'?1:S.mach[p.id]||0}
+function padOpen(p){return S.unl[p.zone]===1&&(p.k!=='stick'||PADS.some(q=>q.mill&&q.k==='stone'&&machLv(q)))}
+function machLv(p){return p.id==='FAC2'||p.id==='FAC2b'?1:S.mach[p.id]||0}
 const gcarry=p=>GCARRY+4*Math.max(0,machLv(p)-1);
 function machRate(p){const l=machLv(p);return l?mkOf(p).rate*(p.gath?1:Math.pow(1.5,l-1))*machMul():0}
 function buildCost(p){return mkOf(p).base}
@@ -452,6 +452,8 @@ const QUESTS=[
  {t:'Earn 1,000 coins',goal:1000,c:s=>s.earned,r:250},
  {t:'Clear Sandstorm: Turquoise Mineral Fields',goal:1,c:()=>S.unl[2],r:300,at:()=>ZONES[2].gate},
  {t:'Build a Slab Press',goal:1,c:()=>PADS.filter(p=>p.mill&&p.k==='stone'&&machLv(p)).length,r:350,at:()=>PADS.find(p=>p.mill&&p.k==='stone'&&padOpen(p)&&!machLv(p))},
+ {t:'Build a Stick Lathe',goal:1,c:()=>PADS.filter(p=>p.mill&&p.k==='stick'&&machLv(p)).length,r:400,at:()=>PADS.find(p=>p.k==='stick')},
+ {t:'Belt the Log Storage to the Stick Lathe',goal:1,c:()=>S.links.FAC2b?1:0,r:450,at:()=>FACT2},
  {t:'Rescue Lost Rover',goal:1,c:()=>S.rescued,r:400,at:()=>S.rescued?null:LOST},
  {t:'Build a Greenhouse Dome',goal:1,c:()=>bl('dome'),r:450,at:()=>BASE[1]},
  {t:'Buy the Titan Pick',goal:1,c:()=>S.tool>=2?1:0,r:400,shop:1},
