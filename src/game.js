@@ -61,7 +61,7 @@ function buildBase(b){const l=bl(b.id);if(l>=b.max)return false;if(!baseCanAffor
  payCost(b.cost(l));
  S.base[b.id]=l+1;S.stats.built++;showBase(b,true);
  for(let i=0;i<48;i++){const a=i/48*6.283;chips(b.x+Math.cos(a)*b.clr,gy(b.x,b.z)+.5,b.z+Math.sin(a)*b.clr,b.col,1,7,.26,1.3,2,10)}
- chips(b.x,b.y+2,b.z,'#ffe9a0',50,11,.3,1.3,1.5);AU.unlock();shake=.5;UI.banner(l?b.name.toUpperCase()+' LV '+(l+1):'BASE BUILT',b.name);
+ chips(b.x,b.y+2,b.z,'#ffe9a0',50,11,.3,1.3,1.5);AU.unlock();shake=.5;{const ST={solar:['THE COLONY HAS POWER','The first step toward a home'],dome:['FIRST GREEN ON MARS','Something is growing here'],dish:['CONTACT WITH EARTH','They can hear you now'],pad:['A PLACE TO LAND','Mars is ready for visitors'],reactor:['A HEART FOR THE CITY','Power for thousands']};const s=ST[b.id];UI.banner(l?b.name.toUpperCase()+' LV '+(l+1):(s?s[0]:'BASE BUILT'),l?b.name:(s?s[1]:b.name))}
  if(b.id==='pad')syncRovers();UI.pulse('coins');save();return true}
 const BASE_ON=true;
 function setupBase(){if(!BASE_ON)return;BASE.forEach(b=>{const g=padRing(b.col,b.x,b.z,2.1);g.position.set(b.x,b.y+.2,b.z);scene.add(g);b.ghost=g;const lab=new THREE.Sprite(new THREE.SpriteMaterial({map:labelTex(b.name.toUpperCase(),'BUILD SITE'),transparent:true,depthWrite:false,fog:false}));lab.scale.set(8.5,3.3,1);lab.position.set(0,5.2,0);g.add(lab);showBase(b,false)})}

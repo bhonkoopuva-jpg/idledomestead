@@ -1004,7 +1004,7 @@ function ownerOf(x,zz){for(const q of ZONES)if(terrS(q,x,zz)>0)return q.i;return
 const mulb=s=>()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
 function zonePoint(z,margin,rnd){const ar=z.lobes.map(l=>l.a*l.b),tot=ar.reduce((a,b)=>a+b,0);for(let g=0;g<60;g++){let r=rnd()*tot,k=0;while(k<ar.length-1&&r>ar[k]){r-=ar[k];k++}const l=z.lobes[k],a=rnd()*6.2832,rr=Math.sqrt(rnd());const x=l.x+Math.cos(a)*l.a*rr,zz=l.z+Math.sin(a)*l.b*rr;if(ownerOf(x,zz)===z.i&&terrS(z,x,zz)>=margin)return[x,zz]}return null}
 // gates: the unlock ring of region N sits at the edge of the region it connects to
-const BASE_POS={dome:{a:120,r:18},pad:{a:140,r:24},dish:{a:232,r:27},reactor:{a:258,r:24},solar:{a:288,r:18}};
+const BASE_POS={dome:{a:120,r:20},pad:{a:142,r:27},dish:{a:232,r:28},reactor:{a:300,r:31},solar:{a:0,r:24}};
 const KEEP=[[0,-2,12],[-14,5.6,8],[0,7,6],[15,-2,9],[-6,12,6],[18,10,6],[-13,-9,6],
  [-20,-14,5.5],[-9,-18,5.5],[-21,3,5.5],[12,-12,5.5],[16,-15,5.5],[14,-19,5.5],[-3,18,5.5],[4,16,5.5],[0,22,5.5],[8,21,5.5],[11,17,5.5],[22,2,5.5],[25,5,5.5],[23,8,5.5]];
 for(const b of Object.values(BASE_POS)){const a=b.a*Math.PI/180;KEEP.push([Math.cos(a)*b.r,Math.sin(a)*b.r,9])}
@@ -1329,7 +1329,7 @@ function buildBase(b){const l=bl(b.id);if(l>=b.max)return false;if(!baseCanAffor
  payCost(b.cost(l));
  S.base[b.id]=l+1;S.stats.built++;showBase(b,true);
  for(let i=0;i<48;i++){const a=i/48*6.283;chips(b.x+Math.cos(a)*b.clr,gy(b.x,b.z)+.5,b.z+Math.sin(a)*b.clr,b.col,1,7,.26,1.3,2,10)}
- chips(b.x,b.y+2,b.z,'#ffe9a0',50,11,.3,1.3,1.5);AU.unlock();shake=.5;UI.banner(l?b.name.toUpperCase()+' LV '+(l+1):'BASE BUILT',b.name);
+ chips(b.x,b.y+2,b.z,'#ffe9a0',50,11,.3,1.3,1.5);AU.unlock();shake=.5;{const ST={solar:['THE COLONY HAS POWER','The first step toward a home'],dome:['FIRST GREEN ON MARS','Something is growing here'],dish:['CONTACT WITH EARTH','They can hear you now'],pad:['A PLACE TO LAND','Mars is ready for visitors'],reactor:['A HEART FOR THE CITY','Power for thousands']};const s=ST[b.id];UI.banner(l?b.name.toUpperCase()+' LV '+(l+1):(s?s[0]:'BASE BUILT'),l?b.name:(s?s[1]:b.name))}
  if(b.id==='pad')syncRovers();UI.pulse('coins');save();return true}
 const BASE_ON=true;
 function setupBase(){if(!BASE_ON)return;BASE.forEach(b=>{const g=padRing(b.col,b.x,b.z,2.1);g.position.set(b.x,b.y+.2,b.z);scene.add(g);b.ghost=g;const lab=new THREE.Sprite(new THREE.SpriteMaterial({map:labelTex(b.name.toUpperCase(),'BUILD SITE'),transparent:true,depthWrite:false,fog:false}));lab.scale.set(8.5,3.3,1);lab.position.set(0,5.2,0);g.add(lab);showBase(b,false)})}
