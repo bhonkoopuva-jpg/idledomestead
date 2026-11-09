@@ -387,6 +387,24 @@ function makeBio(){const g=new THREE.Group();const dk=std('#454b66',{roughness:.
  for(const[x,z,r] of [[-2.6,-.8,2],[2.4,-1,2.2],[0,2,1.6]]){const rim=new THREE.Mesh(new THREE.CylinderGeometry(r+.2,r+.3,.5,24),cream);rim.position.set(x,.85,z);g.add(rim);const d=new THREE.Mesh(new THREE.SphereGeometry(r,22,14,0,6.283,0,1.571),glass);d.position.set(x,1.1,z);g.add(d);
   for(let i=0;i<4;i++){const a=i*1.57+x,l=new THREE.Mesh(new THREE.SphereGeometry(.38+i%2*.12,10,8),i%2?leaf:leaf2);l.position.set(x+Math.cos(a)*r*.4,1.5+i%2*.45,z+Math.sin(a)*r*.4);g.add(l)}}
  g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});return g}
+function makeHomes(){const g=new THREE.Group();const dk=std('#454b66',{roughness:.6}),cream=std('#e4dcc8',{roughness:.5}),teal=std('#38d6c8',{roughness:.45}),roof=std('#e08a58',{roughness:.55}),win=new THREE.MeshStandardMaterial({color:'#ffe9a0',emissive:'#ffc060',emissiveIntensity:.9});
+ add(g,rbox(12,.5,8,.25,dk),0,.25,0);g.userData.levels=[];
+ const house=(x,z,rot,c)=>{const h=new THREE.Group();const b=new THREE.Mesh(new THREE.BoxGeometry(2.2,1.6,2),cream);b.position.y=1.3;h.add(b);const r=new THREE.Mesh(new THREE.ConeGeometry(1.7,1.1,4),c);r.rotation.y=Math.PI/4;r.position.y=2.65;h.add(r);const w=new THREE.Mesh(new THREE.BoxGeometry(.5,.5,.1),win);w.position.set(-.5,1.4,1.02);h.add(w);const d=new THREE.Mesh(new THREE.BoxGeometry(.5,.9,.1),teal);d.position.set(.5,1,1.02);h.add(d);h.position.set(x,0,z);h.rotation.y=rot;return h};
+ const L=[[[-3.6,-1.6,0,roof],[-3.6,1.8,0,teal]],[[0,-1.6,0,teal],[0,1.8,0,roof]],[[3.6,-1.6,0,roof],[3.6,1.8,0,teal]]];
+ L.forEach(row=>{const gr=new THREE.Group();row.forEach(([x,z,r,c])=>gr.add(house(x,z,r,c)));g.add(gr);g.userData.levels.push(gr)});
+ g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});return g}
+function makeBeacon(){const g=new THREE.Group();const dk=std('#454b66',{roughness:.6}),cream=std('#e4dcc8',{roughness:.5}),yel=std('#e8b02c',{roughness:.45}),lamp=new THREE.MeshStandardMaterial({color:'#fff2b0',emissive:'#ffd24a',emissiveIntensity:2});
+ const b=new THREE.Mesh(new THREE.CylinderGeometry(2.2,2.6,.6,24),dk);b.position.y=.3;g.add(b);const m=new THREE.Mesh(new THREE.CylinderGeometry(.5,.9,8,16),cream);m.position.y=4.5;g.add(m);
+ for(let i=0;i<3;i++){const r=new THREE.Mesh(new THREE.TorusGeometry(.95-i*.1,.14,8,20),yel);r.rotation.x=Math.PI/2;r.position.y=2+i*2;g.add(r)}
+ const s=new THREE.Mesh(new THREE.SphereGeometry(1,18,14),lamp);s.position.y=9;g.add(s);g.add(glow('#ffd24a',9,new THREE.Vector3(0,9,0)));
+ g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});return g}
+function makeShip(){const g=new THREE.Group();const cream=std('#eef2f9',{roughness:.35}),teal=std('#38d6c8',{roughness:.4}),dk=std('#454b66',{roughness:.6}),yel=std('#e8b02c',{roughness:.45});
+ const body=new THREE.Mesh(new THREE.CylinderGeometry(1.7,2.1,7,24),cream);body.position.y=5.3;g.add(body);
+ const nose=new THREE.Mesh(new THREE.ConeGeometry(1.7,3.2,24),teal);nose.position.y=10.4;g.add(nose);
+ for(let i=0;i<3;i++){const a=i*2.094;const f=new THREE.Mesh(new THREE.BoxGeometry(.3,2.8,2.2),yel);f.position.set(Math.cos(a)*2.3,2.6,Math.sin(a)*2.3);f.rotation.y=-a;g.add(f);const l=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,2.2,8),dk);l.position.set(Math.cos(a)*2.5,1,Math.sin(a)*2.5);g.add(l)}
+ const w=new THREE.Mesh(new THREE.SphereGeometry(.5,12,10),new THREE.MeshStandardMaterial({color:'#bff0ff',emissive:'#5ad0ff',emissiveIntensity:.6}));w.position.set(0,7.2,1.6);g.add(w);
+ const fl=new THREE.Mesh(new THREE.ConeGeometry(1.3,4,16),new THREE.MeshBasicMaterial({color:'#ffd9a0',transparent:true,opacity:.85}));fl.rotation.x=Math.PI;fl.position.y=-.4;g.add(fl);g.userData.flame=fl;
+ g.traverse(o=>{if(o.isMesh){o.castShadow=true}});return g}
 function makeRover(){const g=new THREE.Group();const cream=std('#e8e0c6',{roughness:.45}),dark=std('#34373f',{roughness:.85});
  for(const sx of [-1,1])add(g,rbox(.45,.5,1.9,.2,dark),sx*.8,.3,0);
  add(g,rbox(1.6,.6,1.7,.25,cream),0,.8,0);const top=rbox(1.1,.35,1.1,.18,std('#2fb0ac'));top.position.set(0,1.25,-.1);g.add(top);

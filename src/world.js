@@ -63,7 +63,7 @@ function ownerOf(x,zz){for(const q of ZONES)if(terrS(q,x,zz)>0)return q.i;return
 const mulb=s=>()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
 function zonePoint(z,margin,rnd){const ar=z.lobes.map(l=>l.a*l.b),tot=ar.reduce((a,b)=>a+b,0);for(let g=0;g<60;g++){let r=rnd()*tot,k=0;while(k<ar.length-1&&r>ar[k]){r-=ar[k];k++}const l=z.lobes[k],a=rnd()*6.2832,rr=Math.sqrt(rnd());const x=l.x+Math.cos(a)*l.a*rr,zz=l.z+Math.sin(a)*l.b*rr;if(ownerOf(x,zz)===z.i&&terrS(z,x,zz)>=margin)return[x,zz]}return null}
 // gates: the unlock ring of region N sits at the edge of the region it connects to
-const BASE_POS={dome:{a:120,r:20},pad:{a:142,r:27},dish:{a:232,r:28},reactor:{a:300,r:31},solar:{a:0,r:24},air:{a:60,r:26},water:{a:195,r:30},bio:{a:335,r:33}};
+const BASE_POS={dome:{a:120,r:20},pad:{a:142,r:27},dish:{a:232,r:28},reactor:{a:300,r:31},solar:{a:0,r:24},air:{a:60,r:26},water:{a:195,r:30},bio:{a:335,r:33},homes:{a:265,r:30},beacon:{a:95,r:34}};
 const KEEP=[[0,-2,12],[-14,5.6,8],[0,7,6],[15,-2,9],[-6,12,6],[18,10,6],[-13,-9,6],
  [-20,-14,5.5],[-9,-18,5.5],[-21,3,5.5],[12,-12,5.5],[16,-15,5.5],[14,-19,5.5],[-3,18,5.5],[4,16,5.5],[0,22,5.5],[8,21,5.5],[11,17,5.5],[22,2,5.5],[25,5,5.5],[23,8,5.5]];
 for(const b of Object.values(BASE_POS)){const a=b.a*Math.PI/180;KEEP.push([Math.cos(a)*b.r,Math.sin(a)*b.r,9])}

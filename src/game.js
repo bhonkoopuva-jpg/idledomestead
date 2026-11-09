@@ -50,25 +50,36 @@ const BASE=[
  {id:'dome',name:'Greenhouse Dome',a:62,max:3,clr:5,col:'#7ff0c8',d:'Trees regrow 35% faster, per level.',cost:l=>({coins:[500,1600,4500][l],brick:[12,30,60][l],plank:[8,20,40][l],cell:[3,8,16][l]})},
  {id:'dish',name:'Comms Dish',a:200,max:3,clr:4,col:'#9ad0ff',d:'Drones fly and work 15% faster, per level.',cost:l=>({coins:[700,2200,5500][l],plate:[10,24,48][l],circuit:[6,14,28][l]})},
  {id:'pad',name:'Landing Pad',a:105,max:3,clr:7,col:'#ffe28a',d:'Sends a Rover along the ring road and adds +10% sale value, per level.',cost:l=>({coins:[900,3000,7500][l],brick:[25,55,100][l],plate:[12,28,50][l],circuit:[4,12,24][l]})},
+ {id:'homes',name:'Colonist Homes',a:265,max:3,clr:6,col:'#ffd7a0',d:'Homes for the first settlers. Each level adds a row of houses.',cost:l=>({coins:[6000,15000,35000][l],plank:[20,40,80][l],plate:[15,30,60][l],module:[2,6,12][l]})},
+ {id:'beacon',name:'Welcome Beacon',a:95,max:1,clr:4,col:'#fff0a0',d:'Calls the settlers. When it lights up, a ship leaves Earth for Mars.',cost:l=>({coins:60000,module:40,core:20,plank:60,stick:40})},
  {id:'air',name:'Atmosphere Processor',a:60,max:1,clr:5,col:'#bfe6ff',d:'Thickens the thin air. The sky softens and the dust settles.',cost:l=>({coins:4000,module:4,plate:20,cell:10})},
  {id:'water',name:'Water Extractor',a:195,max:1,clr:5,col:'#7ad4ff',d:'Draws water from the ground. Small pools appear on the plains.',cost:l=>({coins:9000,module:10,core:4,circuit:20})},
  {id:'bio',name:'Bio Seeder',a:335,max:1,clr:6,col:'#a8e07a',d:'Seeds the first plants. Green spreads across the flats.',cost:l=>({coins:20000,module:20,core:10,plank:40,stick:20})},
  {id:'reactor',name:'Quantum Reactor',a:287,max:2,clr:5,col:'#58ecff',d:'Fusion core: +60 power per level.',cost:l=>({coins:[6000,20000][l],module:[6,16][l],core:[3,8][l],cell:[10,25][l]})}];
 BASE.forEach(b=>{const bp=BASE_POS[b.id],a=bp.a*Math.PI/180;b.a=bp.a;b.x=Math.cos(a)*bp.r;b.z=Math.sin(a)*bp.r;b.y=gy(b.x,b.z);b.obj=null;b.ghost=null;b.lbl=null});
-const BMAK={air:()=>makeAir(),water:()=>makeWater(),bio:()=>makeBio(),solar:()=>makeSolar(),dome:()=>makeDome(),dish:()=>makeDish(),pad:()=>makePad(),reactor:()=>makeReactor()};
-const BCOLR={air:3.2,water:3.6,bio:4,solar:4.6,dome:3.3,dish:2.4,pad:0,reactor:3.3};
+const BMAK={homes:()=>makeHomes(),beacon:()=>makeBeacon(),air:()=>makeAir(),water:()=>makeWater(),bio:()=>makeBio(),solar:()=>makeSolar(),dome:()=>makeDome(),dish:()=>makeDish(),pad:()=>makePad(),reactor:()=>makeReactor()};
+const BCOLR={homes:4.5,beacon:2.4,air:3.2,water:3.6,bio:4,solar:4.6,dome:3.3,dish:2.4,pad:0,reactor:3.3};
 function baseCanAfford(b){const l=bl(b.id);if(l>=b.max)return false;return canPay(b.cost(l))}
 function showBase(b,pop){if(!BASE_ON)return;if(b.obj){scene.remove(b.obj);b.obj=null}const l=bl(b.id);if(b.ghost)b.ghost.visible=!l;if(!l)return;
- const o=BMAK[b.id]();o.position.set(b.x,b.y,b.z);o.rotation.y=Math.atan2(-b.x,-b.z);scene.add(o);b.obj=o;b.pop=pop?1:0;if(pop)o.scale.setScalar(.01);}
+ const o=BMAK[b.id]();if(o.userData.levels)o.userData.levels.forEach((gr,i)=>{gr.visible=i<l});o.position.set(b.x,b.y,b.z);o.rotation.y=Math.atan2(-b.x,-b.z);scene.add(o);b.obj=o;b.pop=pop?1:0;if(pop)o.scale.setScalar(.01);}
 function buildBase(b){const l=bl(b.id);if(l>=b.max)return false;if(!baseCanAfford(b)){AU.deny();UI.toast('Not enough resources',1);return false}
  payCost(b.cost(l));
  S.base[b.id]=l+1;S.stats.built++;showBase(b,true);
  for(let i=0;i<48;i++){const a=i/48*6.283;chips(b.x+Math.cos(a)*b.clr,gy(b.x,b.z)+.5,b.z+Math.sin(a)*b.clr,b.col,1,7,.26,1.3,2,10)}
- chips(b.x,b.y+2,b.z,'#ffe9a0',50,11,.3,1.3,1.5);AU.unlock();shake=.5;{const ST={solar:['THE COLONY HAS POWER','The first step toward a home'],dome:['FIRST GREEN ON MARS','Something is growing here'],dish:['CONTACT WITH EARTH','They can hear you now'],pad:['A PLACE TO LAND','Mars is ready for visitors'],reactor:['A HEART FOR THE CITY','Power for thousands'],air:['THE SKY IS CHANGING','Mars starts to breathe'],water:['WATER ON MARS','The first pools appear'],bio:['LIFE TAKES ROOT','Green spreads across the plains']};const s=ST[b.id];UI.banner(l?b.name.toUpperCase()+' LV '+(l+1):(s?s[0]:'BASE BUILT'),l?b.name:(s?s[1]:b.name))}
- if(b.id==='pad')syncRovers();UI.pulse('coins');save();return true}
+ chips(b.x,b.y+2,b.z,'#ffe9a0',50,11,.3,1.3,1.5);AU.unlock();shake=.5;{const ST={solar:['THE COLONY HAS POWER','The first step toward a home'],dome:['FIRST GREEN ON MARS','Something is growing here'],dish:['CONTACT WITH EARTH','They can hear you now'],pad:['A PLACE TO LAND','Mars is ready for visitors'],reactor:['A HEART FOR THE CITY','Power for thousands'],homes:['THE FIRST HOMES','Someone is going to live here'],beacon:['THE BEACON IS LIT','A ship leaves Earth for Mars'],air:['THE SKY IS CHANGING','Mars starts to breathe'],water:['WATER ON MARS','The first pools appear'],bio:['LIFE TAKES ROOT','Green spreads across the plains']};const s=ST[b.id];UI.banner(l?b.name.toUpperCase()+' LV '+(l+1):(s?s[0]:'BASE BUILT'),l?b.name:(s?s[1]:b.name))}
+ if(b.id==='pad')syncRovers();if(b.id==='beacon')startFinale();UI.pulse('coins');save();return true}
 const BASE_ON=true;const _skyC=new THREE.Color('#9fbfdc');
-function setupBase(){if(!BASE_ON)return;BASE.forEach(b=>{const g=padRing(b.col,b.x,b.z,2.1);g.position.set(b.x,b.y+.2,b.z);scene.add(g);b.ghost=g;const lab=new THREE.Sprite(new THREE.SpriteMaterial({map:labelTex(b.name.toUpperCase(),'BUILD SITE'),transparent:true,depthWrite:false,fog:false}));lab.scale.set(8.5,3.3,1);lab.position.set(0,5.2,0);g.add(lab);showBase(b,false)})}
-function baseStep(dt){if(!BASE_ON)return;const t=performance.now()*.001;
+function setupBase(){if(!BASE_ON)return;if(S.won>=1){spawnShip(S.won>=2)}BASE.forEach(b=>{const g=padRing(b.col,b.x,b.z,2.1);g.position.set(b.x,b.y+.2,b.z);scene.add(g);b.ghost=g;const lab=new THREE.Sprite(new THREE.SpriteMaterial({map:labelTex(b.name.toUpperCase(),'BUILD SITE'),transparent:true,depthWrite:false,fog:false}));lab.scale.set(8.5,3.3,1);lab.position.set(0,5.2,0);g.add(lab);showBase(b,false)})}
+
+// ---- finale: the settlers arrive ----
+const SHIP={obj:null,t:0,land:null};
+function shipTarget(){const b=BASE.find(q=>q.id==='pad');return b?{x:b.x,z:b.z,y:gy(b.x,b.z)+.6}:{x:0,z:20,y:0}}
+function spawnShip(parked){const t=shipTarget();const o=makeShip();o.position.set(t.x,parked?t.y:t.y+90,t.z);scene.add(o);SHIP.obj=o;SHIP.land=t;SHIP.t=parked?99:0}
+function startFinale(){if(SHIP.obj)return;S.won=S.won||1;spawnShip(false);UI.banner('THE SETTLERS ARE COMING','A ship is on its way to the Landing Pad');save()}
+function shipStep(dt){const o=SHIP.obj;if(!o)return;const t=SHIP.land;if(SHIP.t<99){SHIP.t+=dt;const k=Math.min(1,SHIP.t/9),e=1-Math.pow(1-k,3);o.position.y=t.y+90*(1-e);o.rotation.y+=dt*.25*(1-k);if(o.userData.flame){o.userData.flame.visible=k<1;o.userData.flame.scale.setScalar(.8+Math.random()*.4)}
+  if(Math.random()<dt*20&&k<1)chips(t.x,o.position.y-2,t.z,'#ffd9a0',2,5,.3,1.2,-1);
+  if(k>=1){SHIP.t=99;shake=.6;chips(t.x,t.y+.5,t.z,'#ffe9a0',60,12,.35,1.5,1.5);AU.unlock();S.won=2;UI.banner('WELCOME HOME','The settlers have arrived. Mars is home now.');save()}}}
+function baseStep(dt){if(!BASE_ON)return;shipStep(dt);const t=performance.now()*.001;
  {const k=Math.min(1,dt*.6),ta=bl('air')?1:0,tw=bl('water')?1:0,tg=bl('bio')?1:0;TERRA.a.value+=(ta-TERRA.a.value)*k;TERRA.w.value+=(tw-TERRA.w.value)*k;TERRA.g.value+=(tg-TERRA.g.value)*k;const m=TERRA.a.value*.4;scene.fog.color.set('#e6987a').lerp(_skyC,m);scene.background.set('#dc7d52').lerp(_skyC,m)}
  for(const b of BASE){const lv=bl(b.id);
   if(!lv){const aq=QUESTS[S.qa[0]],tg=aq&&aq.at?aq.at():null;const near=tg===b&&Math.hypot(P.x-b.x,P.z-b.z)<40;b.ghost.visible=near;if(!near)continue;const pu=.5+.5*Math.sin(t*3+b.a);b.ghost.userData.m1.material.opacity=.35+.4*pu;b.ghost.userData.m2.material.opacity=.08+.1*pu;continue}
@@ -474,9 +485,12 @@ const QUESTS=[
  {t:'Build 8 machines',goal:8,c:()=>Object.keys(S.mach).length,r:3000,at:()=>nearestPad()},
  {t:'Deliver 30 slabs to the Upgrade Center',goal:30,c:()=>S.fac.made.slab,r:3500,at:()=>FACT},
  {t:'Build the Quantum Reactor',goal:1,c:()=>bl('reactor'),r:4000,at:()=>BASE.find(b=>b.id==='reactor')},
+ {t:'Build Colonist Homes',goal:1,c:()=>bl('homes'),r:6000,at:()=>BASE.find(b=>b.id==='homes')},
  {t:'Terraform: build the Atmosphere Processor',goal:1,c:()=>bl('air'),r:5000,at:()=>BASE.find(b=>b.id==='air')},
  {t:'Terraform: build the Water Extractor',goal:1,c:()=>bl('water'),r:9000,at:()=>BASE.find(b=>b.id==='water')},
  {t:'Terraform: build the Bio Seeder',goal:1,c:()=>bl('bio'),r:15000,at:()=>BASE.find(b=>b.id==='bio')},
+ {t:'Expand Colonist Homes to Lv 3',goal:3,c:()=>bl('homes'),r:12000,at:()=>BASE.find(b=>b.id==='homes')},
+ {t:'Light the Welcome Beacon',goal:1,c:()=>bl('beacon'),r:50000,at:()=>BASE.find(b=>b.id==='beacon')},
  {t:'Clear Sandstorm: Far Rim',goal:1,c:()=>S.unl[5],r:5000,at:()=>ZONES[5].gate},
  {t:'Clear Sandstorm: Rust Badlands',goal:1,c:()=>S.unl[6],r:8000,at:()=>ZONES[6].gate},
  {t:'Clear Sandstorm: Glass Canyon',goal:1,c:()=>S.unl[7],r:12000,at:()=>ZONES[7].gate},
