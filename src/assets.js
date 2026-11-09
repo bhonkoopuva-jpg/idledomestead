@@ -1,5 +1,5 @@
 // ---------------- tree ----------------
-const TREE_COLORS={teal:['#b8d86d','#5f8f34'],deep:['#34c8c8','#157aa0'],blue:['#7a92ff','#2430b4'],sky:['#5cc2f0','#1c5aa8']};
+const TREE_COLORS={teal:['#b8d86d','#5f8f34'],deep:['#8cc455','#4d8a2c'],blue:['#7a92ff','#2430b4'],sky:['#5cc2f0','#1c5aa8']};
 // tapered, twisting, ridged tube (trunks, branches, roots)
 function sweepTube(pts,r0,r1,{seg=40,rad=14,ridge=.07,twist=1.2,sd=0,c0='#6f6d6a',c1='#a09d98',flare=0}={}){
  const cv=new THREE.CatmullRomCurve3(pts.map(p=>new THREE.Vector3(...p)));const pos=[],col=[],idx=[];const ca=col2(c0),cb=col2(c1),tmp=new THREE.Color();

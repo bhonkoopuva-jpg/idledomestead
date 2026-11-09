@@ -193,7 +193,7 @@ function updateFloaters(dt){for(let i=FL.length-1;i>=0;i--){const f=FL[i];f.t+=d
 // ================= PLAYER =================
 const P={x:START.x,z:START.z,vx:0,vz:0,face:Math.PI,robot:null,swing:0,bat:100,tgt:null,hitCd:0,moveTo:null,speedNow:0,bob:0,harvPct:0,harvName:'',blocked:''};
 function makeNodesAndWorld(){
- if(LAY.nodes&&LAY.nodes.length){seed=4242;for(const [t,k,x,z,s,v,zi] of LAY.nodes){const n=spawnNode(t,k,x,z,s,zi,v);if(t==='stone'&&s>=1.6)n.big=2.2;if(zi>0&&!S.unl[zi])n.obj.visible=false}}
+ if(LAY.nodes&&LAY.nodes.length){seed=4242;for(const [t,k,x,z,s,v,zi,rt] of LAY.nodes){const n=spawnNode(t,k,x,z,s,zi,v);if(rt!=null){n.rot=rt;n.obj.rotation.y=rt}if(t==='stone'&&s>=1.6)n.big=2.2;if(zi>0&&!S.unl[zi])n.obj.visible=false}}
  else for(let i=0;i<ZONES.length;i++)placeZoneNodes(i);
  PADS.forEach(setupPad);
  const rb=makeRobot(1.5);rb.traverse(o=>{if(o.isMesh)o.layers.enable(1)});P.robot=rb;scene.add(rb);}
