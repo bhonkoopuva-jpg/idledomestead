@@ -170,7 +170,7 @@ function showMachine(p){if(p.obj){scene.remove(p.obj);p.obj=null}if(p.gobj){scen
   const ch=makeLogDepot();ch.scale.setScalar(.91*(p.sc||1));ch.position.set(p.x,p.y,p.z);ch.rotation.y=0;scene.add(ch);p.obj=ch;
   const go=makeGatherer();go.scale.setScalar(1.6875);go.position.set(p.wx,gy(p.wx,p.wz),p.wz);go.rotation.y=-1.57;scene.add(go);p.gobj=go;
   p.gst='seek';p.carry=0;p.gt=0;p.tn=null;p.pop=0;return}
- const o=p.mill?(p.k==='stone'?makeSlabPress():makeSawmill(true)):p.k==='wood'?makeHarvester():makeDrill();o.scale.setScalar((p.mill?1:p.k==='wood'?1.25:1.35)*(p.sc||1));o.position.set(p.x,p.y,p.z);o.rotation.y=p.mill?0:-.5+(p.x*.37%1);scene.add(o);p.obj=o;p.pop=0}
+ const o=p.mill?(p.k==='stone'?makeSlabPress():p.k==='stick'?makeStickLathe():makeSawmill(true)):p.k==='wood'?makeHarvester():makeDrill();o.scale.setScalar((p.mill?1:p.k==='wood'?1.25:1.35)*(p.sc||1));o.position.set(p.x,p.y,p.z);o.rotation.y=p.mill?0:-.5+(p.x*.37%1);scene.add(o);p.obj=o;p.pop=0}
 function gathStep(p,dt){const o=p.gobj,sat=ECON.sat||1,a=performance.now()*.001,lg=o.userData.logs;
  if((p.buf||0)>=(S.links[p.id]?MBUF:GBUF)&&p.gst!=='to'&&p.gst!=='unl'){p.blocked=1;return}p.blocked=0;
  const go=(tx,tz)=>{const dx=tx-o.position.x,dz=tz-o.position.z,d=Math.hypot(dx,dz);if(d<.6)return true;const st=Math.min(d,13*(1+.1*(machLv(p)-1))*sat*dt);o.position.x+=dx/d*st;o.position.z+=dz/d*st;o.position.y=gy(o.position.x,o.position.z);

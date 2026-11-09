@@ -545,6 +545,16 @@ function storeMat(){if(_stMat)return _stMat;const ld=u=>{const t=new THREE.Textu
 function storePart(){if(_stG)return _stG;const S0=STOREP[0],dec=b=>{const s=atob(b),u=new Uint8Array(s.length);for(let j=0;j<s.length;j++)u[j]=s.charCodeAt(j);return u.buffer};
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(dec(S0.p)),3));g.setAttribute('uv',new THREE.BufferAttribute(new Uint16Array(dec(S0.t)),2,true));
  g.setAttribute('normal',new THREE.BufferAttribute(new Int8Array(dec(S0.n)),3,true));g.setIndex(new THREE.BufferAttribute(new Uint32Array(dec(S0.i)),1));return _stG=g}
+
+let _ltMat=null,_ltG=null;
+function latheMat(){if(_ltMat)return _ltMat;const ld=u=>{const t=new THREE.Texture();const im=new Image();im.onload=()=>{t.image=im;t.needsUpdate=true};im.src=u;t.flipY=false;t.anisotropy=4;return t};
+ const mp=ld(LATHE_TEX.b);mp.colorSpace=THREE.SRGBColorSpace;_ltMat=new THREE.MeshStandardMaterial({map:mp,normalMap:ld(LATHE_TEX.n),normalScale:new THREE.Vector2(.6,.6),roughness:.72,metalness:0,emissiveMap:mp,emissive:new THREE.Color(1,1,1),emissiveIntensity:.14});_ltMat.color.setScalar(1.15);
+ _ltMat.onBeforeCompile=sh=>{sh.fragmentShader=sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n {float ul=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));vec3 uc=mix(vec3(ul),diffuseColor.rgb,1.3);uc=mix(uc,uc*vec3(1.08,1.0,.94),.5)*1.15;diffuseColor.rgb=clamp(uc,0.,1.);}')};_ltMat.customProgramCacheKey=()=>'ltgrade';return _ltMat}
+function lathePart(){if(_ltG)return _ltG;const S0=LATHEP[0],dec=b=>{const s=atob(b),u=new Uint8Array(s.length);for(let j=0;j<s.length;j++)u[j]=s.charCodeAt(j);return u.buffer};
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(dec(S0.p)),3));g.setAttribute('uv',new THREE.BufferAttribute(new Uint16Array(dec(S0.t)),2,true));
+ g.setAttribute('normal',new THREE.BufferAttribute(new Int8Array(dec(S0.n)),3,true));g.setIndex(new THREE.BufferAttribute(new Uint32Array(dec(S0.i)),1));return _ltG=g}
+function makeStickLathe(){const g=new THREE.Group();const m=new THREE.Mesh(lathePart(),latheMat());m.scale.setScalar(26);m.castShadow=true;g.add(m);
+ beltStub(g,0,-4.0,1.3,'z',.7);beltStub(g,0,4.0,1.3,'z',.7);g.userData.saw=new THREE.Object3D();g.userData.boom=new THREE.Object3D();g.userData.logs=[];return g}
 function makeLogStorage(){const g=new THREE.Group();
  if(typeof STOREP!=='undefined'&&/[?&]newstore=1/.test(location.search)){const m=new THREE.Mesh(storePart(),storeMat());m.scale.setScalar(48.3);m.castShadow=true;m.receiveShadow=false;g.add(m);
   beltStub(g,-6.65,-1.0,2.1,'x',.7);beltStub(g,7.45,-1.2,2.1,'x',.7);g.userData.arm=new THREE.Object3D();g.userData.up=new THREE.Object3D();g.userData.logs=[];return g}
