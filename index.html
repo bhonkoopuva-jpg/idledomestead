@@ -932,7 +932,7 @@ const renderer=new THREE.WebGLRenderer({canvas:glc,antialias:true,powerPreferenc
 let RPR=Math.min(devicePixelRatio,2);renderer.setPixelRatio(RPR);renderer.setSize(innerWidth,innerHeight,false);
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.95;renderer.outputColorSpace=THREE.SRGBColorSpace;
-const scene=new THREE.Scene();scene.background=new THREE.Color('#dc7d52');scene.fog=new THREE.Fog('#e3916a',48,118);
+const scene=new THREE.Scene();scene.background=new THREE.Color('#dc7d52');scene.fog=new THREE.Fog('#e6987a',48,118);
 const cam=new THREE.PerspectiveCamera(32,innerWidth/innerHeight,1,260);
 scene.add(new THREE.HemisphereLight('#ffd8c0','#8c3a28',.3));
 const sun=new THREE.DirectionalLight('#ffe8cc',2.4);sun.castShadow=true;sun.shadow.mapSize.set(MOBILE?1536:3072,MOBILE?1536:3072);
@@ -1036,6 +1036,7 @@ function heightRaw(x,z){const r0=Math.hypot(x,z);let h=(fbm(x*.07+3,0,z*.07)-.5)
  h*=lerp(.35,1,smoothstep(8,30,r0));h+=(LOOK.on?.62:.42)*duneAt(x,z)*smoothstep(26,60,r0);
  for(const c of craters){const dx=x-c.x,dz=(z-c.z)*1.1;let r=Math.hypot(dx,dz)/c.R;if(r>1.7)continue;const an=Math.atan2(dz,dx);r*=1+c.ro*smoothstep(.45,1.05,r)*(Math.sin(an*3+c.ph)*.35+Math.sin(an*7+c.ph2)*.3+Math.sin(an*13+c.ph*2)*.2+Math.sin(an*23+c.ph2*3)*.15);
   const bowl=r<1?-c.d*(1-smoothstep(c.fl,1,r)):0;const rim=c.rim*c.d*Math.exp(-Math.pow((r-1.04)/c.w,2));const pk=c.pk?c.pk*Math.exp(-Math.pow(r/.2,2))*(.9+.1*Math.sin(an*5+c.ph)):0;h+=bowl+rim+pk}
+ if(LOOK.on){const out0=-allVal(x,z);if(out0>5){const mk=smoothstep(.5,.66,fbm(x*.028+11,2,z*.028-4))*smoothstep(5,22,out0)*smoothstep(30,50,r0);if(mk>0){const T=(fbm(x*.045+5,8,z*.045)*5.2)/1.15;const fl=Math.floor(T),fr=T-fl;h+=mk*(fl+smoothstep(.0,.3,fr))*1.15*.85}}}
  const pd=pathDist(x,z);h-=(LOOK.on?.3:.22)*Math.exp(-Math.pow(pd/(LOOK.on?2.6:2.1),2));
  const out=-allVal(x,z);if(out>12)h+=20*smoothstep(12,72,out)*(.8+.4*fbm(x*.03,9,z*.03));
  return h}
@@ -1052,6 +1053,7 @@ let TERR_BASE=null;const tgeo=new THREE.PlaneGeometry(TW,TW,TS,TS);tgeo.rotateX(
 const ZTINT=[null,{c:'#dd8a62'},{c:'#e5995e',p:'crack'},{c:'#cf6c48',p:'band'},{c:'#ebA36a'.toLowerCase(),p:'rip'},{c:'#bb5238'},{c:'#b8503a',p:'band'},{c:'#9a4658',p:'crack'},{c:'#e29a64',p:'rip'},{c:'#8a3a30',p:'band'}];
 ZTINT.forEach(t=>{if(t)t.col=col(t.c)});
 {const p=tgeo.attributes.position,cc=new Float32Array(p.count*3);const base=col('#de8450'),lite=col('#f4b688'),dark=col('#b4552f'),pth=col('#f2b080'),warm=col('#d1703f'),rimC=col('#8f3a26'),t=new THREE.Color();
+ const cS0=col('#e7a070'),cS1=col('#c8675a'),cS2=col('#f0bd8c'),cS3=col('#b9566a');
  const cB=col('#8a3a30'),cC=col('#a5472c'),cR=col('#f0a874'),cP=col('#c4604a');
  for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i);const h=heightAt(x,z);p.setY(i,h);
   let k=fbm(x*.2,1,z*.2);t.copy(base).lerp(warm,Math.max(0,(k-.45)*2.2)).lerp(lite,Math.max(0,(fbm(x*.11+9,2,z*.11)-.5)*1.6));
@@ -1061,6 +1063,8 @@ ZTINT.forEach(t=>{if(t)t.col=col(t.c)});
    else if(tn.p==='crack'){const cr=Math.abs(fbm(x*.35,6,z*.35)-.5);t.lerp(cC,(cr<.03?.45:0)*w)}}
   for(const c of craters){const r=Math.hypot(x-c.x,(z-c.z)*1.1)/c.R;if(r<1)t.lerp(dark,Math.pow(1-r,.7)*.8);else if(r<1.25)t.lerp(lite,Math.exp(-Math.pow((r-1.04)/.12,2))*.7)}
   {const dn=duneAt(x,z)*smoothstep(26,60,Math.hypot(x,z));t.lerp(col('#f6bc88'),Math.max(0,dn-.15)*.55);t.lerp(cB,Math.max(0,-dn)*.0+Math.max(0,.2-dn)*.07)}
+  if(LOOK.on){const out1=-allVal(x,z);if(out1>5){const mk=smoothstep(.5,.66,fbm(x*.028+11,2,z*.028-4))*smoothstep(5,22,out1)*smoothstep(30,50,Math.hypot(x,z));if(mk>.02){const T=(fbm(x*.045+5,8,z*.045)*5.2)/1.15,fr=T-Math.floor(T),ix=Math.floor(T)%4;const SC=[cS0,cS1,cS2,cS3];t.lerp(SC[(ix+4)%4],mk*.55);t.lerp(cS1,Math.pow(1-smoothstep(0,.3,fr),2)*.35*mk)}}
+   const e=2.6,ha=(heightAt(x+e,z)+heightAt(x-e,z)+heightAt(x,z+e)+heightAt(x,z-e))*.25;const ao=Math.max(-.5,Math.min(.9,(ha-h)*.5));if(ao>0)t.multiplyScalar(1-ao*.38);else t.multiplyScalar(1-ao*.12)}
   const pd=pathDist(x,z);t.lerp(pth,Math.max(0,1-pd/(LOOK.on?3.8:2.8))*(LOOK.on?.9:.85));
   const out=-allVal(x,z);if(out>4)t.lerp(rimC,smoothstep(4,26,out)*.8);
   t.offsetHSL(0,0,(noise3(x*3,0,z*3)-.5)*.05);{const hs={};t.getHSL(hs);t.setHSL(hs.h,Math.min(1,hs.s*1.2),hs.l*.95)}cc[i*3]=t.r;cc[i*3+1]=t.g;cc[i*3+2]=t.b}
