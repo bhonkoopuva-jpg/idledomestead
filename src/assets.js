@@ -546,7 +546,7 @@ function storePart(){if(_stG)return _stG;const S0=STOREP[0],dec=b=>{const s=atob
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(dec(S0.p)),3));g.setAttribute('uv',new THREE.BufferAttribute(new Uint16Array(dec(S0.t)),2,true));
  g.setAttribute('normal',new THREE.BufferAttribute(new Int8Array(dec(S0.n)),3,true));g.setIndex(new THREE.BufferAttribute(new Uint32Array(dec(S0.i)),1));return _stG=g}
 function makeLogStorage(){const g=new THREE.Group();
- if(typeof STOREP!=='undefined'&&!window.__oldStore){const m=new THREE.Mesh(storePart(),storeMat());m.scale.setScalar(48.3);m.castShadow=true;m.receiveShadow=false;g.add(m);
+ if(typeof STOREP!=='undefined'&&/[?&]newstore=1/.test(location.search)){const m=new THREE.Mesh(storePart(),storeMat());m.scale.setScalar(48.3);m.castShadow=true;m.receiveShadow=false;g.add(m);
   beltStub(g,-6.65,-1.0,2.1,'x',.7);beltStub(g,7.45,-1.2,2.1,'x',.7);g.userData.arm=new THREE.Object3D();g.userData.up=new THREE.Object3D();g.userData.logs=[];return g}
  const cream=std('#e4dcc8',{roughness:.5}),slate=std('#5a6080',{roughness:.55}),dk=std('#454b66',{roughness:.6}),yel=std('#e8b02c',{roughness:.45}),teal=std('#2fb0ac',{roughness:.55}),
   cap=std('#8fe8d0',{roughness:.6}),grey=std('#8d94a3',{roughness:.45,metalness:.25}),brown=std('#9a6a42',{roughness:.7}),
