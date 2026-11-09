@@ -46,16 +46,16 @@ PADS.forEach(p=>{if(p.gath){const c=ZONES[p.zone].clusters[0];p.wx=c.x+c.r*.72;p
 
 // ================= COLONY BASE =================
 const BASE=[
- {id:'solar',name:'Solar Array',a:245,max:3,clr:6,col:'#ffd35a',d:'+14 power per level. Machines, the Upgrade Center and drones all draw power.',cost:l=>({coins:[400,1400,4200][l],brick:[10,25,50][l],plate:[6,15,30][l]})},
- {id:'dome',name:'Greenhouse Dome',a:62,max:3,clr:5,col:'#7ff0c8',d:'Trees regrow 35% faster, per level.',cost:l=>({coins:[500,1600,4500][l],brick:[12,30,60][l],plank:[8,20,40][l],cell:[3,8,16][l]})},
- {id:'dish',name:'Comms Dish',a:200,max:3,clr:4,col:'#9ad0ff',d:'Drones fly and work 15% faster, per level.',cost:l=>({coins:[700,2200,5500][l],plate:[10,24,48][l],circuit:[6,14,28][l]})},
- {id:'pad',name:'Landing Pad',a:105,max:3,clr:7,col:'#ffe28a',d:'Sends a Rover along the ring road and adds +10% sale value, per level.',cost:l=>({coins:[900,3000,7500][l],brick:[25,55,100][l],plate:[12,28,50][l],circuit:[4,12,24][l]})},
- {id:'homes',name:'Colonist Homes',a:265,max:3,clr:6,col:'#ffd7a0',d:'Homes for the first settlers. Each level adds a row of houses.',cost:l=>({coins:[6000,15000,35000][l],plank:[20,40,80][l],plate:[15,30,60][l],module:[2,6,12][l]})},
- {id:'beacon',name:'Welcome Beacon',a:95,max:1,clr:4,col:'#fff0a0',d:'Calls the settlers. When it lights up, a ship leaves Earth for Mars.',cost:l=>({coins:60000,module:40,core:20,plank:60,stick:40})},
- {id:'air',name:'Atmosphere Processor',a:60,max:1,clr:5,col:'#bfe6ff',d:'Thickens the thin air. The sky softens and the dust settles.',cost:l=>({coins:4000,module:4,plate:20,cell:10})},
- {id:'water',name:'Water Extractor',a:195,max:1,clr:5,col:'#7ad4ff',d:'Draws water from the ground. Small pools appear on the plains.',cost:l=>({coins:9000,module:10,core:4,circuit:20})},
- {id:'bio',name:'Bio Seeder',a:335,max:1,clr:6,col:'#a8e07a',d:'Seeds the first plants. Green spreads across the flats.',cost:l=>({coins:20000,module:20,core:10,plank:40,stick:20})},
- {id:'reactor',name:'Quantum Reactor',a:287,max:2,clr:5,col:'#58ecff',d:'Fusion core: +60 power per level.',cost:l=>({coins:[6000,20000][l],module:[6,16][l],core:[3,8][l],cell:[10,25][l]})}];
+ {id:'solar',name:'Solar Array',a:245,max:3,clr:6,col:'#ffd35a',d:'+14 power per level. Machines, the Upgrade Center and drones all draw power.',cost:l=>({coins:[400,1400,4200][l],plank:[15,35,70][l],ore:[10,25,50][l]})},
+ {id:'dome',name:'Greenhouse Dome',a:62,max:3,clr:5,col:'#7ff0c8',d:'Trees regrow 35% faster, per level.',cost:l=>({coins:[500,1600,4500][l],slab:[12,30,60][l],plank:[8,20,40][l],ore:[3,8,16][l]})},
+ {id:'dish',name:'Comms Dish',a:200,max:3,clr:4,col:'#9ad0ff',d:'Drones fly and work 15% faster, per level.',cost:l=>({coins:[700,2200,5500][l],stick:[10,24,48][l],ore:[6,14,28][l]})},
+ {id:'pad',name:'Landing Pad',a:105,max:3,clr:7,col:'#ffe28a',d:'Sends a Rover along the ring road and adds +10% sale value, per level.',cost:l=>({coins:[900,3000,7500][l],slab:[25,55,100][l],plank:[12,28,50][l],ore:[4,12,24][l]})},
+ {id:'homes',name:'Colonist Homes',a:265,max:3,clr:6,col:'#ffd7a0',d:'Homes for the first settlers. Each level adds a row of houses.',cost:l=>({coins:[6000,15000,35000][l],plank:[20,40,80][l],slab:[15,30,60][l],stick:[10,25,50][l]})},
+ {id:'beacon',name:'Welcome Beacon',a:95,max:1,clr:4,col:'#fff0a0',d:'Calls the settlers. When it lights up, a ship leaves Earth for Mars.',cost:l=>({coins:60000,plank:60,stick:40,slab:40,crystal:20})},
+ {id:'air',name:'Atmosphere Processor',a:60,max:1,clr:5,col:'#bfe6ff',d:'Thickens the thin air. The sky softens and the dust settles.',cost:l=>({coins:4000,slab:20,stick:10,crystal:10})},
+ {id:'water',name:'Water Extractor',a:195,max:1,clr:5,col:'#7ad4ff',d:'Draws water from the ground. Small pools appear on the plains.',cost:l=>({coins:9000,slab:30,stick:20,ore:20,crystal:10})},
+ {id:'bio',name:'Bio Seeder',a:335,max:1,clr:6,col:'#a8e07a',d:'Seeds the first plants. Green spreads across the flats.',cost:l=>({coins:20000,plank:40,stick:20,slab:30,crystal:15})},
+ {id:'reactor',name:'Quantum Reactor',a:287,max:2,clr:5,col:'#58ecff',d:'Fusion core: +60 power per level.',cost:l=>({coins:[6000,20000][l],slab:[10,25][l],stick:[10,25][l],crystal:[5,12][l]})}];
 BASE.forEach(b=>{const bp=BASE_POS[b.id],a=bp.a*Math.PI/180;b.a=bp.a;b.x=Math.cos(a)*bp.r;b.z=Math.sin(a)*bp.r;b.y=gy(b.x,b.z);b.obj=null;b.ghost=null;b.lbl=null});
 const BMAK={homes:()=>makeHomes(),beacon:()=>makeBeacon(),air:()=>makeAir(),water:()=>makeWater(),bio:()=>makeBio(),solar:()=>makeSolar(),dome:()=>makeDome(),dish:()=>makeDish(),pad:()=>makePad(),reactor:()=>makeReactor()};
 const BCOLR={homes:4.5,beacon:2.4,air:3.2,water:3.6,bio:4,solar:4.6,dome:3.3,dish:2.4,pad:0,reactor:3.3};
@@ -463,7 +463,6 @@ const QUESTS=[
  {t:'Mine teal ore',goal:10,c:s=>s.ore,r:120,at:()=>nearestNode('ore')},
  {t:'Buy a Collector Drone',goal:1,c:()=>S.drones,r:200,shop:1},
  {t:'Make 15 planks at the Plank Mill',goal:15,c:()=>S.fac.made.plank,r:220,at:()=>PADS.find(p=>p.mill&&p.k==='wood'&&machLv(p))},
- {t:'Craft 10 bricks and 6 steel plates at the Upgrade Center',goal:16,c:()=>Math.min(10,S.goods.brick+(bl('solar')?10:0))+Math.min(6,S.goods.plate+(bl('solar')?6:0)),r:200,at:()=>FACT},
  {t:'Build a Solar Array',goal:1,c:()=>bl('solar'),r:250,at:()=>BASE[0]},
  {t:'Earn 1,000 coins',goal:1000,c:s=>s.earned,r:250},
  {t:'Clear Sandstorm: Turquoise Mineral Fields',goal:1,c:()=>S.unl[2],r:300,at:()=>ZONES[2].gate},
