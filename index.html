@@ -1021,10 +1021,10 @@ pathPts.forEach(pts=>{let a=1e9,b=-1e9,c=1e9,d=-1e9;for(const p of pts){a=Math.m
 function pathDist(x,z){let best=1e9;for(const pts of pathPts){const bb=pts.bb;if(x<bb[0]||x>bb[1]||z<bb[2]||z>bb[3])continue;for(let i=0;i<pts.length-1;i++){const[a,b]=pts[i],[c,d]=pts[i+1];const vx=c-a,vz=d-b;let t=((x-a)*vx+(z-b)*vz)/(vx*vx+vz*vz+1e-9);t=Math.max(0,Math.min(1,t));const q=Math.hypot(x-(a+vx*t),z-(b+vz*t));if(q<best)best=q}}return best}
 function duneAt(x,z){const u=(x*.17+z*.1)+(fbm(x*.035,7,z*.035)-.5)*10,s=Math.sin(u);const m=smoothstep(.38,.62,fbm(x*.02+4,3,z*.02));return (s>0?s:s*.55)*m}
 function heightRaw(x,z){const r0=Math.hypot(x,z);let h=(fbm(x*.07+3,0,z*.07)-.5)*4+(fbm(x*.27,5,z*.27)-.5)*.4;
- h*=lerp(.35,1,smoothstep(8,30,r0));h+=.42*duneAt(x,z)*smoothstep(26,60,r0);
+ h*=lerp(.35,1,smoothstep(8,30,r0));h+=(LOOK.on?.62:.42)*duneAt(x,z)*smoothstep(26,60,r0);
  for(const c of craters){const dx=x-c.x,dz=(z-c.z)*1.1;let r=Math.hypot(dx,dz)/c.R;if(r>1.7)continue;const an=Math.atan2(dz,dx);r*=1+c.ro*smoothstep(.45,1.05,r)*(Math.sin(an*3+c.ph)*.35+Math.sin(an*7+c.ph2)*.3+Math.sin(an*13+c.ph*2)*.2+Math.sin(an*23+c.ph2*3)*.15);
   const bowl=r<1?-c.d*(1-smoothstep(c.fl,1,r)):0;const rim=c.rim*c.d*Math.exp(-Math.pow((r-1.04)/c.w,2));const pk=c.pk?c.pk*Math.exp(-Math.pow(r/.2,2))*(.9+.1*Math.sin(an*5+c.ph)):0;h+=bowl+rim+pk}
- const pd=pathDist(x,z);h-=.22*Math.exp(-Math.pow(pd/2.1,2));
+ const pd=pathDist(x,z);h-=(LOOK.on?.3:.22)*Math.exp(-Math.pow(pd/(LOOK.on?2.6:2.1),2));
  const out=-allVal(x,z);if(out>12)h+=20*smoothstep(12,72,out)*(.8+.4*fbm(x*.03,9,z*.03));
  return h}
 // flat building plateaus: terrain eases toward the centre height so machines sit level
@@ -1049,7 +1049,7 @@ ZTINT.forEach(t=>{if(t)t.col=col(t.c)});
    else if(tn.p==='crack'){const cr=Math.abs(fbm(x*.35,6,z*.35)-.5);t.lerp(cC,(cr<.03?.45:0)*w)}}
   for(const c of craters){const r=Math.hypot(x-c.x,(z-c.z)*1.1)/c.R;if(r<1)t.lerp(dark,Math.pow(1-r,.7)*.8);else if(r<1.25)t.lerp(lite,Math.exp(-Math.pow((r-1.04)/.12,2))*.7)}
   {const dn=duneAt(x,z)*smoothstep(26,60,Math.hypot(x,z));t.lerp(col('#f6bc88'),Math.max(0,dn-.15)*.55);t.lerp(cB,Math.max(0,-dn)*.0+Math.max(0,.2-dn)*.07)}
-  const pd=pathDist(x,z);t.lerp(pth,Math.max(0,1-pd/2.8)*.85);
+  const pd=pathDist(x,z);t.lerp(pth,Math.max(0,1-pd/(LOOK.on?3.8:2.8))*(LOOK.on?.9:.85));
   const out=-allVal(x,z);if(out>4)t.lerp(rimC,smoothstep(4,26,out)*.8);
   t.offsetHSL(0,0,(noise3(x*3,0,z*3)-.5)*.05);{const hs={};t.getHSL(hs);t.setHSL(hs.h,Math.min(1,hs.s*1.2),hs.l*.95)}cc[i*3]=t.r;cc[i*3+1]=t.g;cc[i*3+2]=t.b}
  tgeo.setAttribute('color',new THREE.BufferAttribute(cc,3));tgeo.computeVertexNormals();}
@@ -1183,6 +1183,9 @@ function craterStep(dt){const t=performance.now()*.001;for(const c of craterGlow
  const scrap=mk(g=>{g.add(new THREE.Mesh(blobGeo(1,{sy:.25,top:'#d9774a',bot:'#a8452a',amp:.12,detail:2,sd:2,off:[0,.1,0]}),cm()));const m=std('#4a4650',{roughness:.7});for(const [x,z,ry,w] of [[.2,.1,.6,.9],[-.4,-.2,-.4,.7],[.5,-.4,1.2,.6]]){const b=rbox(w,.08,.4,.03,m,2);b.position.set(x,.35,z);b.rotation.set(R()*.4,ry,R()*.4);g.add(b)}});
  const peb=mk(g=>{for(let i=0;i<12;i++){const a=R()*6.28,d=R()*1.4,s=RR(.06,.17);g.add(new THREE.Mesh(blobGeo(s,{sy:.75,top:['#f3b684','#c97c4a','#3cc8c0','#a35a36'][i%4],bot:'#7a3a2a',amp:.15,detail:1,sd:i,off:[Math.cos(a)*d,s*.35,Math.sin(a)*d]}),cm()))}});
  const shard=mk(g=>{g.add(makeCrystal(.22,5,2));for(let i=0;i<4;i++){const a=R()*6.28,s=RR(.1,.22);g.add(new THREE.Mesh(blobGeo(s,{sy:.7,top:'#c8704c',bot:'#6a3428',amp:.25,detail:1,sd:i,off:[Math.cos(a)*.6,s*.3,Math.sin(a)*.6]}),cm()))}});
+ DK.scrap=scrap;DK.peb=peb;DK.shard=shard;window.__clus=[];if(LOOK.on){seed=7070;const sp=decorPos(26,16,0,nearFactory),kd=['pile','mound','chunks','peb'];sp.forEach(([x,z],i)=>{window.__clus.push([x,z]);const g=new THREE.Group();const cr=cry[i%2].clone();cr.scale.setScalar(RR(1.3,1.9));g.add(cr);
+  for(let k=0;k<4;k++){const b=DK[kd[(i+k)%4]].clone();const a=k*1.6+R(),d=RR(1.6,2.6);b.position.set(Math.cos(a)*d,0,Math.sin(a)*d);b.scale.setScalar(RR(.6,1));b.rotation.y=R()*6;g.add(b)}
+  g.position.set(x,gy(x,z)-.03,z);g.rotation.y=R()*6;g.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true}});scene.add(g)})}
  DK.scrap=scrap;DK.peb=peb;DK.shard=shard;place(scrap,decorPos(60,8,0,nearFactory),.8,1.3);place(peb,decorPos(250,3,0,nearFactory),.8,1.5);
 }
 
