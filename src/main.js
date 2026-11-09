@@ -61,7 +61,7 @@ function logic(dt){frameN++;
  placeCam(P.x,P.z,frameN<2);if(shake>0){cam.position.x+=(Math.random()-.5)*shake*.8;cam.position.y+=(Math.random()-.5)*shake*.8}
  UI.update(dt)}
 function occluded(){for(const n of nodes){if(!n.alive||n.type==='ore')continue;const dz=n.z-P.z;if(dz<0||dz>16)continue;const rr=(n.type==='tree'?3.2:n.type==='stone'?1.6:1.4)*n.sc;if(Math.abs(n.x-P.x)<rr+1.4&&(n.type==='tree'||dz<8))return true}return false}
-function draw(){cam.layers.set(0);renderer.autoClear=true;renderer.render(scene,cam);
+function draw(){cam.layers.set(0);renderer.autoClear=true;if(LOOK.on&&postRender())return;renderer.render(scene,cam);
  return;cam.layers.set(1);scene.overrideMaterial=xray;renderer.autoClear=false;const bg=scene.background,fg=scene.fog;scene.background=null;scene.fog=null;renderer.render(scene,cam);scene.background=bg;scene.fog=fg;scene.overrideMaterial=null;renderer.autoClear=true;cam.layers.set(0)}
 let _fa=0,_fn=0;
 function frame(){requestAnimationFrame(frame);const dt=Math.min(.05,clock.getDelta());

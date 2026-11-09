@@ -140,18 +140,18 @@ ZTINT.forEach(t=>{if(t)t.col=col(t.c)});
  tgeo.setAttribute('color',new THREE.BufferAttribute(cc,3));tgeo.computeVertexNormals();}
 TERR_BASE=new Float32Array(tgeo.attributes.color.array);
 const terrMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.95});
-terrMat.onBeforeCompile=sh=>{sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vTP;').replace('#include <begin_vertex>','#include <begin_vertex>\nvTP=position;');
+terrMat.onBeforeCompile=sh=>{sh.uniforms.uSoft=TERR_SOFT;sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vTP;').replace('#include <begin_vertex>','#include <begin_vertex>\nvTP=position;');
  sh.fragmentShader=sh.fragmentShader.replace('#include <common>',`#include <common>
-varying vec3 vTP;
+varying vec3 vTP;uniform float uSoft;
 float h21(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 vec2 h22(vec2 p){return fract(sin(vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3))))*43758.5453);}
 float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h21(i),h21(i+vec2(1.,0.)),f.x),mix(h21(i+vec2(0.,1.)),h21(i+vec2(1.,1.)),f.x),f.y);}
 float crk(vec2 p){vec2 i=floor(p),f=fract(p);float d1=8.,d2=8.;for(int y=-1;y<=1;y++)for(int x=-1;x<=1;x++){vec2 g=vec2(float(x),float(y));float d=length(g+h22(i+g)-f);if(d<d1){d2=d1;d1=d;}else if(d<d2)d2=d;}return d2-d1;}`).replace('#include <color_fragment>',`#include <color_fragment>
 {vec2 q=vTP.xz;
- float pat=smoothstep(.64,.76,vn(q*.03+7.));float cr=crk(q*.42+vn(q*.35)*.7);float ln=1.-smoothstep(.02,.07,cr);diffuseColor.rgb*=1.-ln*pat*.28;
+ float pat=smoothstep(.64,.76,vn(q*.03+7.));float cr=crk(q*.42+vn(q*.35)*.7);float ln=1.-smoothstep(.02,.07,cr);diffuseColor.rgb*=1.-ln*pat*.28*(1.-.65*uSoft);
  float rp=sin(dot(q,vec2(.82,.57))*1.1+vn(q*.1)*9.)*.5+.5;float rm=smoothstep(.35,.75,vn(q*.018+3.));diffuseColor.rgb*=1.+(rp-.5)*.09*rm;
  float sb=sin(dot(q,vec2(.6,.8))*.17+vn(q*.011+9.)*7.)*.5+.5;float sl=smoothstep(.42,.5,sb)*(1.-smoothstep(.5,.58,sb));float sm=smoothstep(.3,.7,vn(q*.009+5.));diffuseColor.rgb*=1.-sl*.14*sm;diffuseColor.rgb*=.975+.05*smoothstep(.2,.8,sb)*sm;
- diffuseColor.rgb*=.93+.14*vn(q*4.2)+.05*vn(q*13.);}`)};
+ diffuseColor.rgb*=.93+(.14*vn(q*4.2)+.05*vn(q*13.))*(1.-.5*uSoft)+.035*uSoft;}`)};
 const terrain=new THREE.Mesh(tgeo,terrMat);terrain.receiveShadow=true;scene.add(terrain);
 
 // ---- dust storm walls ----
@@ -212,7 +212,7 @@ const camT=new THREE.Vector3(0,0,6);
 function layoutCam(){const asp=innerWidth/innerHeight;cam.aspect=asp;cam.fov=asp<1?36:32;cam.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight,false)}
 addEventListener('resize',layoutCam);layoutCam();
 let zoomT=1,zoomC=1;const setZoom=z=>{zoomT=Math.max(.5,Math.min(1.9,z));if(typeof S!=='undefined')S.zoom=zoomT};
-function placeCam(tx,tz,snap){const asp=innerWidth/innerHeight;zoomC+=(zoomT-zoomC)*(snap?1:.2);const k=Math.min(1.5,Math.max(1,1.2/asp))*1.45*zoomC;scene.fog.near=48*k*1.05;scene.fog.far=118*k*1.05;camT.x+=(tx-camT.x)*(snap?1:.12);camT.z+=(tz-camT.z)*(snap?1:.12);const ty=gy(camT.x,camT.z)*.6;cam.position.set(camT.x,ty+35*k,camT.z+35*k);cam.lookAt(camT.x,ty,camT.z+1.5);
+function placeCam(tx,tz,snap){const asp=innerWidth/innerHeight;zoomC+=(zoomT-zoomC)*(snap?1:.2);const k=Math.min(1.5,Math.max(1,1.2/asp))*1.45*zoomC;scene.fog.near=48*k*1.05;scene.fog.far=118*k*1.05;camT.x+=(tx-camT.x)*(snap?1:.12);camT.z+=(tz-camT.z)*(snap?1:.12);const ty=gy(camT.x,camT.z)*.6;if(LOOK.on)cam.position.set(camT.x,ty+28*k*.9,camT.z+37*k*.9);else cam.position.set(camT.x,ty+35*k,camT.z+35*k);cam.lookAt(camT.x,ty,camT.z+1.5);
  sun.position.set(camT.x+SUNOFF.x,SUNOFF.y,camT.z+SUNOFF.z);sun.target.position.set(camT.x,0,camT.z)}
 
 // drifting dust motes

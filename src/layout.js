@@ -1,5 +1,6 @@
 // ================= LAYOUT (placed by the in-game edit mode; saved in localStorage, bake a copy into DEFAULT_LAYOUT) =================
 const EDIT={on:0};
+const LOOK={on:(()=>{let v='1';try{v=localStorage.getItem('idle-domestead-look')||'1'}catch(e){}const m=/[?&]look=(\d)/.exec(location.search);if(m)v=m[1];return v!=='0'})()};const TERR_SOFT={value:LOOK.on?1:0};
 const LAYOUT_KEY='idle-domestead-layout-v1';
 const DEFAULT_LAYOUT=null;
 const LAY=(()=>{const d={uc:{x:0,z:-10,r:.698},store:{x:14,z:80},sell:{x:0,z:5.4},pads:{},nodes:null,props:[],decorDel:[]};let s=null;try{s=JSON.parse(localStorage.getItem(LAYOUT_KEY)||'null')}catch(e){}s=s||DEFAULT_LAYOUT;
