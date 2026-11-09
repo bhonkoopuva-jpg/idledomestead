@@ -3,7 +3,7 @@ const props={belts:[],smoke:[],crates:[]};
 function placeBelt(len,sx,sz,ex,ez,y0){const b=makeBelt(len);const dx=ex-sx,dz=ez-sz;b.rotation.y=Math.atan2(-dz,dx);b.position.set(sx,gy(sx,sz)+(y0||0),sz);scene.add(b);props.belts.push(b);return b}
 function buildProps(){
  const fy=gy(FACT.x,FACT.z)+FACH;
- const fac=makeUpgradeCenter();fac.position.set(FACT.x,fy,FACT.z);fac.rotation.y=FACROT;fac.scale.setScalar(1.45);scene.add(fac);props.fac=fac;{const f2=makeLogStorage();f2.position.set(FACT2.x,gy(FACT2.x,FACT2.z)+F2H,FACT2.z);f2.rotation.y=0;f2.scale.setScalar(1.05);f2.visible=false;scene.add(f2);props.fac2=f2;
+ const fac=makeUpgradeCenter();fac.position.set(FACT.x,fy,FACT.z);fac.rotation.y=FACROT;fac.scale.setScalar(1.45*FACS);scene.add(fac);props.fac=fac;{const f2=makeLogStorage();f2.position.set(FACT2.x,gy(FACT2.x,FACT2.z)+F2H,FACT2.z);f2.rotation.y=0;f2.scale.setScalar(1.05*F2S);f2.visible=false;scene.add(f2);props.fac2=f2;
   const gh=padRing('#ffd24a',FACT2.x,FACT2.z,1.6);gh.position.set(FACT2.x,gy(FACT2.x,FACT2.z)+.2+F2H,FACT2.z);gh.visible=false;scene.add(gh);props.fac2g=gh;
   const lb=new THREE.Sprite(new THREE.SpriteMaterial({transparent:true,depthWrite:false,fog:false}));lb.scale.set(9,3.2,1);lb.position.set(FACT2.x,gy(FACT2.x,FACT2.z)+10.5,FACT2.z);lb.visible=false;scene.add(lb);props.fac2l=lb}
  // sell pad

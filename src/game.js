@@ -36,12 +36,12 @@ const refineMul=()=>(1+.1*S.up.refine)*(1+.1*bl('pad'));
 // ================= LAYOUT (home) =================
 const START={x:0,z:7};
 const SELL={x:LAY.sell.x,z:LAY.sell.z};           // factory intake pad
-const FAC_R=[10.9,10.9,8.6,8.5,8.3,8.1,7.7,7.4,7.0,6.6,6.3,6.0,5.7,5.4,5.6,6.5,7.3,7.9,8.3,10.7,10.9,11.0,11.3,11.3,11.3,10.7,8.0,8.0,8.0,7.6,7.5,7.5,8.1,8.1,9.0,9.3,9.4,9.4,9.7,9.7,9.7,9.3,8.9,10.4,10.9,10.9,10.9,10.9];const FACT={x:LAY.uc.x,z:LAY.uc.z};const FACT2={x:LAY.store.x,z:LAY.store.z};const FACROT=LAY.uc.r;const FACH=LAY.uc.h||0,F2H=LAY.store.h||0,SELH=LAY.sell.h||0;
+const FAC_R=[10.7,11.1,11.1,10.2,9.0,9.2,9.2,9.1,9.0,8.9,8.6,8.5,8.3,8.1,7.9,7.5,8.1,9.3,10.2,10.8,11.1,11.1,11.0,10.7,10.2,9.2,9.2,9.5,8.6,7.5,7.8,7.1,7.7,7.6,7.2,8.3,8.4,8.6,8.6,8.2,8.7,8.7,7.6,7.8,8.0,8.9,10.4,10.6];const FACT={x:LAY.uc.x,z:LAY.uc.z};const FACT2={x:LAY.store.x,z:LAY.store.z};const FACROT=LAY.uc.r;const FACH=LAY.uc.h||0,F2H=LAY.store.h||0,SELH=LAY.sell.h||0,FACS=LAY.uc.s||1,F2S=LAY.store.s||1;
 const HOPPER={x:15,z:-2};
 const PADS=[];
 const HOME_PADS=[{x:-6,z:12,k:'wood'},{x:18,z:10,k:'stone'},{x:-13,z:-9,k:'ore'}];
 // home pads removed: only the area-1 gatherer and later-zone machines remain
-ZONES.forEach((z,zi)=>{(z.pads||[]).forEach((p,i)=>PADS.push({id:z.id+i,x:z.x+p.x,z:z.z+p.z,k:p.k,zone:zi,mill:p.mill?1:0,gath:p.gath?1:0,h:(LAY.pads[z.id+i]||{}).h||0}))});
+ZONES.forEach((z,zi)=>{(z.pads||[]).forEach((p,i)=>PADS.push({id:z.id+i,x:z.x+p.x,z:z.z+p.z,k:p.k,zone:zi,mill:p.mill?1:0,gath:p.gath?1:0,h:(LAY.pads[z.id+i]||{}).h||0,sc:(LAY.pads[z.id+i]||{}).s||1}))});
 PADS.forEach(p=>{if(p.gath){const c=ZONES[p.zone].clusters[0];p.wx=c.x+c.r*.72;p.wz=c.z+2}});
 
 // ================= COLONY BASE =================
@@ -143,10 +143,10 @@ function buildCost(p){return mkOf(p).base}
 function upCost(p){const l=machLv(p);return Math.round(mkOf(p).base*.7*Math.pow(1.75,l-1))}
 function showMachine(p){if(p.obj){scene.remove(p.obj);p.obj=null}if(p.gobj){scene.remove(p.gobj);p.gobj=null}const l=machLv(p);if(!l)return;
  if(p.gath){const c=ZONES[p.zone].clusters[0];p.ux=p.x-4.5;p.uz=p.z-2.5;
-  const ch=makeLogDepot();ch.scale.setScalar(.91);ch.position.set(p.x,p.y,p.z);ch.rotation.y=0;scene.add(ch);p.obj=ch;
+  const ch=makeLogDepot();ch.scale.setScalar(.91*(p.sc||1));ch.position.set(p.x,p.y,p.z);ch.rotation.y=0;scene.add(ch);p.obj=ch;
   const go=makeGatherer();go.scale.setScalar(1.6875);go.position.set(p.wx,gy(p.wx,p.wz),p.wz);go.rotation.y=-1.57;scene.add(go);p.gobj=go;
   p.gst='seek';p.carry=0;p.gt=0;p.tn=null;p.pop=0;return}
- const o=p.mill?(p.k==='stone'?makeSlabPress():makeSawmill(true)):p.k==='wood'?makeHarvester():makeDrill();o.scale.setScalar(p.mill?1:p.k==='wood'?1.25:1.35);o.position.set(p.x,p.y,p.z);o.rotation.y=p.mill?0:-.5+(p.x*.37%1);scene.add(o);p.obj=o;p.pop=0}
+ const o=p.mill?(p.k==='stone'?makeSlabPress():makeSawmill(true)):p.k==='wood'?makeHarvester():makeDrill();o.scale.setScalar((p.mill?1:p.k==='wood'?1.25:1.35)*(p.sc||1));o.position.set(p.x,p.y,p.z);o.rotation.y=p.mill?0:-.5+(p.x*.37%1);scene.add(o);p.obj=o;p.pop=0}
 function gathStep(p,dt){const o=p.gobj,sat=ECON.sat||1,a=performance.now()*.001,lg=o.userData.logs;
  if((p.buf||0)>=(S.links[p.id]?MBUF:GBUF)&&p.gst!=='to'&&p.gst!=='unl'){p.blocked=1;return}p.blocked=0;
  const go=(tx,tz)=>{const dx=tx-o.position.x,dz=tz-o.position.z,d=Math.hypot(dx,dz);if(d<.6)return true;const st=Math.min(d,13*(1+.1*(machLv(p)-1))*sat*dt);o.position.x+=dx/d*st;o.position.z+=dz/d*st;o.position.y=gy(o.position.x,o.position.z);
@@ -221,9 +221,9 @@ function collide(){
  for(const b of BASE){if(!BASE_ON||!bl(b.id)||!BCOLR[b.id])continue;const dx=P.x-b.x,dz=P.z-b.z,d=Math.hypot(dx,dz),m=BCOLR[b.id]+PR;if(d<m&&d>1e-4){P.x=b.x+dx/d*m;P.z=b.z+dz/d*m}}
  if(S.unl[1]&&S.storeBuilt){const dx=P.x-FACT2.x,dz=P.z-FACT2.z,d=Math.hypot(dx*.75,dz*1.0),m=6.4;if(d<m&&d>1e-4){const k=m/d;P.x=FACT2.x+dx*k;P.z=FACT2.z+dz*k}}
  {const dx=P.x-FACT.x,dz=P.z-FACT.z,d=Math.hypot(dx,dz);if(d>1e-4){const f=((Math.atan2(dz,dx)+(FACROT-.698)+Math.PI*5)%(Math.PI*2))/(2*Math.PI)*48,i0=Math.floor(f)%48,i1=(i0+1)%48,t=f-Math.floor(f),m=FAC_R[i0]*(1-t)+FAC_R[i1]*t+1.2;if(d<m){const k=m/d;P.x=FACT.x+dx*k;P.z=FACT.z+dz*k}}}
- {const lim=-6,band=4,v0=terrVal(P.x,P.z);if(P.lx!==undefined&&v0<lim+band){const e=.5,gx=(terrVal(P.x+e,P.z)-terrVal(P.x-e,P.z))/(2*e),gz=(terrVal(P.x,P.z+e)-terrVal(P.x,P.z-e))/(2*e),gm=Math.hypot(gx,gz);
+ if(!EDIT.on){const lim=-6,band=4,v0=terrVal(P.x,P.z);if(P.lx!==undefined&&v0<lim+band){const e=.5,gx=(terrVal(P.x+e,P.z)-terrVal(P.x-e,P.z))/(2*e),gz=(terrVal(P.x,P.z+e)-terrVal(P.x,P.z-e))/(2*e),gm=Math.hypot(gx,gz);
   if(gm>.05){const ux=gx/gm,uz=gz/gm,dn=-((P.x-P.lx)*ux+(P.z-P.lz)*uz);if(dn>0){const t=Math.max(0,Math.min(1,(lim+band-v0)/band)),f=t*t*(3-2*t);P.x+=ux*dn*f;P.z+=uz*dn*f}}}}
- {const lim=-6;if(terrVal(P.x,P.z)<lim){for(let it=0;it<6;it++){const v=terrVal(P.x,P.z);if(v>=lim)break;const e=.4,gx=(terrVal(P.x+e,P.z)-terrVal(P.x-e,P.z))/(2*e),gz=(terrVal(P.x,P.z+e)-terrVal(P.x,P.z-e))/(2*e),gm=Math.hypot(gx,gz);if(gm<.05)break;const st=Math.min(3,(lim-v)/Math.max(gm,.3));P.x+=gx/gm*st;P.z+=gz/gm*st}}}P.lx=P.x;P.lz=P.z}
+ if(!EDIT.on){const lim=-6;if(terrVal(P.x,P.z)<lim){for(let it=0;it<6;it++){const v=terrVal(P.x,P.z);if(v>=lim)break;const e=.4,gx=(terrVal(P.x+e,P.z)-terrVal(P.x-e,P.z))/(2*e),gz=(terrVal(P.x,P.z+e)-terrVal(P.x,P.z-e))/(2*e),gm=Math.hypot(gx,gz);if(gm<.05)break;const st=Math.min(3,(lim-v)/Math.max(gm,.3));P.x+=gx/gm*st;P.z+=gz/gm*st}}}P.lx=P.x;P.lz=P.z}
 // ================= HARVEST =================
 function nodeReachDist(n){return n.r+PR+reach()}
 function bestTarget(){let best=null,bd=1e9;for(const n of nodes){if(!n.alive||n.grow<.9)continue;const dx=n.x-P.x,dz=n.z-P.z;if(Math.abs(dx)>12||Math.abs(dz)>12)continue;const d=Math.hypot(dx,dz);if(d<nodeReachDist(n)&&d<bd){bd=d;best=n}}return best}

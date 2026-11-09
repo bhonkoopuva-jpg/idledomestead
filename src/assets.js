@@ -406,12 +406,12 @@ function makeCrate(){const g=new THREE.Group();const br=std('#a9805a',{roughness
 const _ucG={};let _ucMat=null;
 function ucMat(){if(_ucMat)return _ucMat;const ld=u=>{const t=new THREE.Texture();const im=new Image();im.onload=()=>{t.image=im;t.needsUpdate=true};im.src=u;t.flipY=false;t.anisotropy=4;return t};
  const mp=ld(UC_TEX.b);mp.colorSpace=THREE.SRGBColorSpace;_ucMat=new THREE.MeshStandardMaterial({map:mp,normalMap:ld(UC_TEX.n),normalScale:new THREE.Vector2(.55,.55),roughness:.6,metalness:.05,emissiveMap:mp,emissive:new THREE.Color(1,1,1),emissiveIntensity:.14});_ucMat.color.setScalar(1.2);
- _ucMat.onBeforeCompile=sh=>{sh.fragmentShader=sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n {float ul=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));vec3 uc=mix(vec3(ul),diffuseColor.rgb,1.8);uc=mix(uc,uc*vec3(1.08,1.0,.94),.5);uc=uc*1.3;float ul2=dot(uc,vec3(.2126,.7152,.0722));uc=mix(uc,vec3(.2,.17,.2),(1.-smoothstep(.05,.3,ul2))*.55);diffuseColor.rgb=clamp(uc,0.,1.);}')};_ucMat.customProgramCacheKey=()=>'ucgrade';return _ucMat}
+ _ucMat.onBeforeCompile=sh=>{sh.fragmentShader=sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n {float ul=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));vec3 uc=mix(vec3(ul),diffuseColor.rgb,1.3);uc=mix(uc,uc*vec3(1.08,1.0,.94),.5);uc=uc*1.15;float ul2=dot(uc,vec3(.2126,.7152,.0722));uc=mix(uc,vec3(.2,.17,.2),(1.-smoothstep(.05,.3,ul2))*.55);diffuseColor.rgb=clamp(uc,0.,1.);}')};_ucMat.customProgramCacheKey=()=>'ucgrade';return _ucMat}
 function ucPart(i){if(_ucG[i])return _ucG[i];const S0=UCP[0],dec=b=>{const s=atob(b),u=new Uint8Array(s.length);for(let j=0;j<s.length;j++)u[j]=s.charCodeAt(j);return u.buffer};
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(dec(S0.p)),3));g.setAttribute('uv',new THREE.BufferAttribute(new Uint16Array(dec(S0.t)),2,true));
  g.setAttribute('normal',new THREE.BufferAttribute(new Int8Array(dec(S0.n)),3,true));g.setIndex(new THREE.BufferAttribute(new Uint32Array(dec(S0.i)),1));return _ucG[i]=g}
 function makeScanUC(i=4,scale=1){const g=new THREE.Group();const m=new THREE.Mesh(ucPart(i),ucMat());m.scale.setScalar(scale);g.add(m);g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=false}});return g}
-function makeUpgradeCenter(){if(typeof UCP!=='undefined'&&!window.__oldUC){const g=makeScanUC(0,42.4);g.userData.gears=[new THREE.Object3D(),new THREE.Object3D()];return g}
+function makeUpgradeCenter(){if(typeof UCP!=='undefined'&&!window.__oldUC){const g=makeScanUC(0,50);g.userData.gears=[new THREE.Object3D(),new THREE.Object3D()];return g}
 const g=new THREE.Group();
  const tan=std('#c8b4a2',{roughness:.7}),tanL=std('#d2c0af',{roughness:.7}),slate=std('#5a5a80',{roughness:.55}),slate2=std('#6c6c90',{roughness:.55}),rib=std('#a99886',{roughness:.7}),teal=std('#3a9e92',{roughness:.5}),
   grey=std('#b7bdc9',{roughness:.4,metalness:.25}),greyD=std('#8a90a0',{roughness:.45,metalness:.2}),wood=std('#d8b98c',{roughness:.7}),brown=std('#9b6a42',{roughness:.75}),dkb=std('#6a4a34',{roughness:.85}),
@@ -538,7 +538,16 @@ function makeSlabPress(){const g=new THREE.Group();const inner=makeSawmill(false
  [1.7,3.0].forEach((x,i)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(1.0,.2,.75),std('#9aa0aa',{roughness:.8}));m.position.set(x,.88,0);m.visible=false;g.add(m);outs.push(m)});
  g.userData=Object.assign({},inner.userData,{laser:null,head,raw,outs});
  g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});return g}
+let _stMat=null,_stG=null;
+function storeMat(){if(_stMat)return _stMat;const ld=u=>{const t=new THREE.Texture();const im=new Image();im.onload=()=>{t.image=im;t.needsUpdate=true};im.src=u;t.flipY=false;t.anisotropy=4;return t};
+ const mp=ld(STORE_TEX.b);mp.colorSpace=THREE.SRGBColorSpace;_stMat=new THREE.MeshStandardMaterial({map:mp,normalMap:ld(STORE_TEX.n),normalScale:new THREE.Vector2(.6,.6),roughness:.72,metalness:0,emissiveMap:mp,emissive:new THREE.Color(1,1,1),emissiveIntensity:.14});_stMat.color.setScalar(1.15);
+ _stMat.onBeforeCompile=sh=>{sh.fragmentShader=sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n {float ul=dot(diffuseColor.rgb,vec3(.2126,.7152,.0722));vec3 uc=mix(vec3(ul),diffuseColor.rgb,1.3);uc=mix(uc,uc*vec3(1.08,1.0,.94),.5)*1.15;diffuseColor.rgb=clamp(uc,0.,1.);}')};_stMat.customProgramCacheKey=()=>'stgrade';return _stMat}
+function storePart(){if(_stG)return _stG;const S0=STOREP[0],dec=b=>{const s=atob(b),u=new Uint8Array(s.length);for(let j=0;j<s.length;j++)u[j]=s.charCodeAt(j);return u.buffer};
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(dec(S0.p)),3));g.setAttribute('uv',new THREE.BufferAttribute(new Uint16Array(dec(S0.t)),2,true));
+ g.setAttribute('normal',new THREE.BufferAttribute(new Int8Array(dec(S0.n)),3,true));g.setIndex(new THREE.BufferAttribute(new Uint32Array(dec(S0.i)),1));return _stG=g}
 function makeLogStorage(){const g=new THREE.Group();
+ if(typeof STOREP!=='undefined'&&!window.__oldStore){const m=new THREE.Mesh(storePart(),storeMat());m.scale.setScalar(48.3);m.castShadow=true;m.receiveShadow=false;g.add(m);
+  beltStub(g,-6.65,-1.0,2.1,'x',.7);beltStub(g,7.45,-1.2,2.1,'x',.7);g.userData.arm=new THREE.Object3D();g.userData.up=new THREE.Object3D();g.userData.logs=[];return g}
  const cream=std('#e4dcc8',{roughness:.5}),slate=std('#5a6080',{roughness:.55}),dk=std('#454b66',{roughness:.6}),yel=std('#e8b02c',{roughness:.45}),teal=std('#2fb0ac',{roughness:.55}),
   cap=std('#8fe8d0',{roughness:.6}),grey=std('#8d94a3',{roughness:.45,metalness:.25}),brown=std('#9a6a42',{roughness:.7}),
   scr=new THREE.MeshStandardMaterial({color:'#ffd35a',emissive:'#ffb020',emissiveIntensity:1.2}),cyn=new THREE.MeshBasicMaterial({color:new THREE.Color('#7ff6ff').multiplyScalar(1.4)});
