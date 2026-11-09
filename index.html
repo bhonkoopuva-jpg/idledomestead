@@ -829,7 +829,7 @@ function latheMat(){if(_ltMat)return _ltMat;const ld=u=>{const t=new THREE.Textu
 function lathePart(){if(_ltG)return _ltG;const S0=LATHEP[0],dec=b=>{const s=atob(b),u=new Uint8Array(s.length);for(let j=0;j<s.length;j++)u[j]=s.charCodeAt(j);return u.buffer};
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(dec(S0.p)),3));g.setAttribute('uv',new THREE.BufferAttribute(new Uint16Array(dec(S0.t)),2,true));
  g.setAttribute('normal',new THREE.BufferAttribute(new Int8Array(dec(S0.n)),3,true));g.setIndex(new THREE.BufferAttribute(new Uint32Array(dec(S0.i)),1));return _ltG=g}
-function makeStickLathe(){const g=new THREE.Group();const m=new THREE.Mesh(lathePart(),latheMat());m.scale.setScalar(26);m.rotation.y=-0.733;m.castShadow=true;g.add(m);
+function makeStickLathe(){const g=new THREE.Group();const m=new THREE.Mesh(lathePart(),latheMat());m.scale.setScalar(26);m.rotation.y=2.409;m.castShadow=true;g.add(m);
  beltStub(g,0,-4.0,1.3,'z',.7);beltStub(g,0,4.0,1.3,'z',.7);g.userData.saw=new THREE.Object3D();g.userData.boom=new THREE.Object3D();g.userData.logs=[];return g}
 function makeLogStorage(){const g=new THREE.Group();
  if(typeof STOREP!=='undefined'&&/[?&]newstore=1/.test(location.search)){const m=new THREE.Mesh(storePart(),storeMat());m.scale.setScalar(48.3);m.castShadow=true;m.receiveShadow=false;g.add(m);
@@ -1809,11 +1809,12 @@ const f2split=()=>S.f2split===undefined?.5:S.f2split;const F2Q=Math.round((LAY.s
 function portsOut(p){const q=p.sc||1;if(p.gath)return[{x:p.x-2.18*q,z:p.z+1.73*q,dx:0,dz:1}];
  if(p===FAC2)return[f2p(8.93,-1.26,1,0)];
  if(p===FAC2B)return[f2p(1.5,-6.25,0,-1)];
+ if(p.mill&&p.k==='stick')return[{x:p.x,z:p.z-4.64*q,dx:0,dz:-1}];
  if(p.mill)return p.k==='stone'?[{x:p.x+4.64*q,z:p.z,dx:1,dz:0}]:[{x:p.x,z:p.z+4.64*q,dx:0,dz:1}];
  return BDIRS.map(d=>({x:p.x+d[0]*2.7*q,z:p.z+d[1]*2.7*q,dx:d[0],dz:d[1]}))}
 function portsIn(t){if(t==='F2')return[f2p(-8.09,-1.05,1,0)];
  if(t==='F'){const c=FACT;return BDIRS.map(d=>({x:c.x-d[0]*10.2*FACS,z:c.z-d[1]*8.4*FACS,dx:d[0],dz:d[1]}))}
- const c=padById(t),q=(c&&c.sc)||1;if(c&&c.mill)return c.k==='stone'?[{x:c.x-4.64*q,z:c.z,dx:1,dz:0}]:[{x:c.x,z:c.z-4.64*q,dx:0,dz:1}];
+ const c=padById(t),q=(c&&c.sc)||1;if(c&&c.mill&&c.k==='stick')return[{x:c.x,z:c.z+4.64*q,dx:0,dz:-1}];if(c&&c.mill)return c.k==='stone'?[{x:c.x-4.64*q,z:c.z,dx:1,dz:0}]:[{x:c.x,z:c.z-4.64*q,dx:0,dz:1}];
  return BDIRS.map(d=>({x:c.x-d[0]*2.7*q,z:c.z-d[1]*2.7*q,dx:d[0],dz:d[1]}))}
 function routeTry(a,b,R){const A={x:a.x,z:a.z},B={x:b.x,z:b.z},dot=a.dx*b.dx+a.dz*b.dz,fw=(B.x-A.x)*a.dx+(B.z-A.z)*a.dz;
  if(dot===0){ // L shape
