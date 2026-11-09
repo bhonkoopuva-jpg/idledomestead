@@ -2,12 +2,12 @@
 const props={belts:[],smoke:[],crates:[]};
 function placeBelt(len,sx,sz,ex,ez,y0){const b=makeBelt(len);const dx=ex-sx,dz=ez-sz;b.rotation.y=Math.atan2(-dz,dx);b.position.set(sx,gy(sx,sz)+(y0||0),sz);scene.add(b);props.belts.push(b);return b}
 function buildProps(){
- const fy=gy(FACT.x,FACT.z);
- const fac=makeUpgradeCenter();fac.position.set(FACT.x,fy,FACT.z);fac.rotation.y=FACROT;fac.scale.setScalar(1.45);scene.add(fac);props.fac=fac;{const f2=makeLogStorage();f2.position.set(FACT2.x,gy(FACT2.x,FACT2.z),FACT2.z);f2.rotation.y=0;f2.scale.setScalar(1.05);f2.visible=false;scene.add(f2);props.fac2=f2;
-  const gh=padRing('#ffd24a',FACT2.x,FACT2.z,1.6);gh.position.set(FACT2.x,gy(FACT2.x,FACT2.z)+.2,FACT2.z);gh.visible=false;scene.add(gh);props.fac2g=gh;
+ const fy=gy(FACT.x,FACT.z)+FACH;
+ const fac=makeUpgradeCenter();fac.position.set(FACT.x,fy,FACT.z);fac.rotation.y=FACROT;fac.scale.setScalar(1.45);scene.add(fac);props.fac=fac;{const f2=makeLogStorage();f2.position.set(FACT2.x,gy(FACT2.x,FACT2.z)+F2H,FACT2.z);f2.rotation.y=0;f2.scale.setScalar(1.05);f2.visible=false;scene.add(f2);props.fac2=f2;
+  const gh=padRing('#ffd24a',FACT2.x,FACT2.z,1.6);gh.position.set(FACT2.x,gy(FACT2.x,FACT2.z)+.2+F2H,FACT2.z);gh.visible=false;scene.add(gh);props.fac2g=gh;
   const lb=new THREE.Sprite(new THREE.SpriteMaterial({transparent:true,depthWrite:false,fog:false}));lb.scale.set(9,3.2,1);lb.position.set(FACT2.x,gy(FACT2.x,FACT2.z)+10.5,FACT2.z);lb.visible=false;scene.add(lb);props.fac2l=lb}
  // sell pad
- const sp=padRing('#ffd24a',SELL.x,SELL.z,1.19);sp.position.set(SELL.x,gy(SELL.x,SELL.z)+.2,SELL.z);scene.add(sp);props.sell=sp;
+ const sp=padRing('#ffd24a',SELL.x,SELL.z,1.19);sp.position.set(SELL.x,gy(SELL.x,SELL.z)+.2+SELH,SELL.z);scene.add(sp);props.sell=sp;
  // objective arrow
  const sh=new THREE.Shape();sh.moveTo(0,1.1);sh.lineTo(.8,-.5);sh.lineTo(0,-.1);sh.lineTo(-.8,-.5);sh.closePath();
  const ar=new THREE.Mesh(new THREE.ShapeGeometry(sh),new THREE.MeshBasicMaterial({color:'#ffe27a',transparent:true,opacity:.95,depthTest:false,depthWrite:false}));ar.rotation.x=-Math.PI/2;ar.renderOrder=20;const arg=new THREE.Group();arg.add(ar);scene.add(arg);props.arrow=arg;

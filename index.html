@@ -893,8 +893,8 @@ const AU={ctx:null,on:true,master:null,last:{},
 const EDIT={on:0};
 const LAYOUT_KEY='idle-domestead-layout-v1';
 const DEFAULT_LAYOUT=null;
-const LAY=(()=>{const d={uc:{x:0,z:-10,r:.698},store:{x:14,z:80},sell:{x:0,z:5.4},pads:{}};let s=null;try{s=JSON.parse(localStorage.getItem(LAYOUT_KEY)||'null')}catch(e){}s=s||DEFAULT_LAYOUT;
- if(s){for(const k of ['uc','store','sell'])if(s[k]&&isFinite(s[k].x)&&isFinite(s[k].z))d[k]=Object.assign(d[k],s[k]);if(s.pads)d.pads=s.pads}return d})();
+const LAY=(()=>{const d={uc:{x:0,z:-10,r:.698},store:{x:14,z:80},sell:{x:0,z:5.4},pads:{},nodes:null};let s=null;try{s=JSON.parse(localStorage.getItem(LAYOUT_KEY)||'null')}catch(e){}s=s||DEFAULT_LAYOUT;
+ if(s){for(const k of ['uc','store','sell'])if(s[k]&&isFinite(s[k].x)&&isFinite(s[k].z))d[k]=Object.assign(d[k],s[k]);if(s.pads)d.pads=s.pads;if(Array.isArray(s.nodes))d.nodes=s.nodes}return d})();
 function applyLayoutZones(zs){zs.forEach(z=>(z.pads||[]).forEach((p,i)=>{if(p.ox===undefined){p.ox=p.x;p.oz=p.z}const o=LAY.pads[z.id+i];if(o&&isFinite(o.x)&&isFinite(o.z)){p.x=o.x-z.x;p.z=o.z-z.z}}))}
 
 // ================= WORLD: renderer, terrain, zones =================
@@ -1243,12 +1243,12 @@ const refineMul=()=>(1+.1*S.up.refine)*(1+.1*bl('pad'));
 // ================= LAYOUT (home) =================
 const START={x:0,z:7};
 const SELL={x:LAY.sell.x,z:LAY.sell.z};           // factory intake pad
-const FAC_R=[10.9,10.9,8.6,8.5,8.3,8.1,7.7,7.4,7.0,6.6,6.3,6.0,5.7,5.4,5.6,6.5,7.3,7.9,8.3,10.7,10.9,11.0,11.3,11.3,11.3,10.7,8.0,8.0,8.0,7.6,7.5,7.5,8.1,8.1,9.0,9.3,9.4,9.4,9.7,9.7,9.7,9.3,8.9,10.4,10.9,10.9,10.9,10.9];const FACT={x:LAY.uc.x,z:LAY.uc.z};const FACT2={x:LAY.store.x,z:LAY.store.z};const FACROT=LAY.uc.r;
+const FAC_R=[10.9,10.9,8.6,8.5,8.3,8.1,7.7,7.4,7.0,6.6,6.3,6.0,5.7,5.4,5.6,6.5,7.3,7.9,8.3,10.7,10.9,11.0,11.3,11.3,11.3,10.7,8.0,8.0,8.0,7.6,7.5,7.5,8.1,8.1,9.0,9.3,9.4,9.4,9.7,9.7,9.7,9.3,8.9,10.4,10.9,10.9,10.9,10.9];const FACT={x:LAY.uc.x,z:LAY.uc.z};const FACT2={x:LAY.store.x,z:LAY.store.z};const FACROT=LAY.uc.r;const FACH=LAY.uc.h||0,F2H=LAY.store.h||0,SELH=LAY.sell.h||0;
 const HOPPER={x:15,z:-2};
 const PADS=[];
 const HOME_PADS=[{x:-6,z:12,k:'wood'},{x:18,z:10,k:'stone'},{x:-13,z:-9,k:'ore'}];
 // home pads removed: only the area-1 gatherer and later-zone machines remain
-ZONES.forEach((z,zi)=>{(z.pads||[]).forEach((p,i)=>PADS.push({id:z.id+i,x:z.x+p.x,z:z.z+p.z,k:p.k,zone:zi,mill:p.mill?1:0,gath:p.gath?1:0}))});
+ZONES.forEach((z,zi)=>{(z.pads||[]).forEach((p,i)=>PADS.push({id:z.id+i,x:z.x+p.x,z:z.z+p.z,k:p.k,zone:zi,mill:p.mill?1:0,gath:p.gath?1:0,h:(LAY.pads[z.id+i]||{}).h||0}))});
 PADS.forEach(p=>{if(p.gath){const c=ZONES[p.zone].clusters[0];p.wx=c.x+c.r*.72;p.wz=c.z+2}});
 
 // ================= COLONY BASE =================
@@ -1313,7 +1313,7 @@ function spawnNode(type,kind,x,z,sc,zi,v){sc*=1.35;if(type==='stone')sc*=.96;
  const y=gy(x,z);obj.position.set(x,y,z);obj.rotation.y=rot;obj.scale.setScalar(sc*base);scene.add(obj);
  const stump=new THREE.Mesh(stumpGeo,stumpMat);stump.position.set(x,y+.2,z);stump.scale.setScalar(sc*.9);stump.visible=false;stump.castShadow=true;if(type==='tree')scene.add(stump);
  const r=type==='tree'?1.15*sc:type==='stone'?1.25*sc:type==='ore'?1.05*sc:.95*sc;
- const n={id:nid++,type,kind,x,z,y,sc,base,rot,obj,stump,r,prog:0,alive:true,t:0,grow:1,shake:0,rsv:null,zone:zi,hitT:0,cd:0};
+ const n={id:nid++,v,type,kind,x,z,y,sc,base,rot,obj,stump,r,prog:0,alive:true,t:0,grow:1,shake:0,rsv:null,zone:zi,hitT:0,cd:0};
  nodes.push(n);return n}
 function placeZoneNodes(zi){const z=ZONES[zi];seed=zi*131+17;const placed=[];
  const free=(x,zz,rad,gap=2.2)=>{rad*=1.35;if(PADS.some(q=>q.gath&&Math.hypot(x-q.wx,zz-q.wz)<rad+5.5))return false;if(zi===1&&Math.hypot(x-FACT2.x,zz-FACT2.z)<12)return false;if(zi===0&&(Math.hypot(x,zz)<26||(x>-14&&x<18&&zz>10&&zz<28)))return false;if(zi>0){if(ownerOf(x,zz)!==zi||terrS(z,x,zz)<rad+3)return false}else if(terrS(z,x,zz)<rad+3)return false;
@@ -1340,8 +1340,8 @@ const padRing=(c,x,z,s=1)=>{const g=new THREE.Group();const y0=gy(x,z);
  const m1=new THREE.Mesh(ringG,new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.85,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));g.add(m1);
  const m2=new THREE.Mesh(discG,new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.16,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));m2.position.y=.03;g.add(m2);g.userData.m1=m1;g.userData.m2=m2;return g};
 const PCOL={wood:'#58f0d0',stone:'#ffc08a',ore:'#4fdcff',crystal:'#7aa8ff'};
-function setupPad(p){p.ring=padRing(p.mill?'#ffd24a':PCOL[p.k],p.x,p.z);p.y=gy(p.x,p.z);p.ring.position.set(p.x,p.y+.2,p.z);p.ring.visible=false;scene.add(p.ring);p.obj=null;p.acc=0;p.work=0;p.dust=0;if(p.gath)mkGhost(p)}
-function mkGhost(p){const gr=padRing('#ffd24a',p.x,p.z,1.3);gr.position.set(p.x,gy(p.x,p.z)+.2,p.z);gr.visible=false;scene.add(gr);p.ghost=gr}
+function setupPad(p){p.ring=padRing(p.mill?'#ffd24a':PCOL[p.k],p.x,p.z);p.y=gy(p.x,p.z)+p.h;p.ring.position.set(p.x,p.y+.2,p.z);p.ring.visible=false;scene.add(p.ring);p.obj=null;p.acc=0;p.work=0;p.dust=0;if(p.gath)mkGhost(p)}
+function mkGhost(p){const gr=padRing('#ffd24a',p.x,p.z,1.3);gr.position.set(p.x,gy(p.x,p.z)+.2+p.h,p.z);gr.visible=false;scene.add(gr);p.ghost=gr}
 function padOpen(p){return S.unl[p.zone]===1}
 function machLv(p){return p.id==='FAC2'?1:S.mach[p.id]||0}
 const gcarry=p=>GCARRY+4*Math.max(0,machLv(p)-1);
@@ -1400,7 +1400,8 @@ function updateFloaters(dt){for(let i=FL.length-1;i>=0;i--){const f=FL[i];f.t+=d
 // ================= PLAYER =================
 const P={x:START.x,z:START.z,vx:0,vz:0,face:Math.PI,robot:null,swing:0,bat:100,tgt:null,hitCd:0,moveTo:null,speedNow:0,bob:0,harvPct:0,harvName:'',blocked:''};
 function makeNodesAndWorld(){
- for(let i=0;i<ZONES.length;i++)placeZoneNodes(i);
+ if(LAY.nodes&&LAY.nodes.length){seed=4242;for(const [t,k,x,z,s,v,zi] of LAY.nodes){const n=spawnNode(t,k,x,z,s,zi,v);if(t==='stone'&&s>=1.6)n.big=2.2;if(zi>0&&!S.unl[zi])n.obj.visible=false}}
+ else for(let i=0;i<ZONES.length;i++)placeZoneNodes(i);
  PADS.forEach(setupPad);
  const rb=makeRobot(1.5);rb.traverse(o=>{if(o.isMesh)o.layers.enable(1)});P.robot=rb;scene.add(rb);}
 // ---- tap/joystick input ----
@@ -2266,12 +2267,12 @@ function objective(){if(S.track&&S.track.t>0)return S.track;return null}
 const props={belts:[],smoke:[],crates:[]};
 function placeBelt(len,sx,sz,ex,ez,y0){const b=makeBelt(len);const dx=ex-sx,dz=ez-sz;b.rotation.y=Math.atan2(-dz,dx);b.position.set(sx,gy(sx,sz)+(y0||0),sz);scene.add(b);props.belts.push(b);return b}
 function buildProps(){
- const fy=gy(FACT.x,FACT.z);
- const fac=makeUpgradeCenter();fac.position.set(FACT.x,fy,FACT.z);fac.rotation.y=FACROT;fac.scale.setScalar(1.45);scene.add(fac);props.fac=fac;{const f2=makeLogStorage();f2.position.set(FACT2.x,gy(FACT2.x,FACT2.z),FACT2.z);f2.rotation.y=0;f2.scale.setScalar(1.05);f2.visible=false;scene.add(f2);props.fac2=f2;
-  const gh=padRing('#ffd24a',FACT2.x,FACT2.z,1.6);gh.position.set(FACT2.x,gy(FACT2.x,FACT2.z)+.2,FACT2.z);gh.visible=false;scene.add(gh);props.fac2g=gh;
+ const fy=gy(FACT.x,FACT.z)+FACH;
+ const fac=makeUpgradeCenter();fac.position.set(FACT.x,fy,FACT.z);fac.rotation.y=FACROT;fac.scale.setScalar(1.45);scene.add(fac);props.fac=fac;{const f2=makeLogStorage();f2.position.set(FACT2.x,gy(FACT2.x,FACT2.z)+F2H,FACT2.z);f2.rotation.y=0;f2.scale.setScalar(1.05);f2.visible=false;scene.add(f2);props.fac2=f2;
+  const gh=padRing('#ffd24a',FACT2.x,FACT2.z,1.6);gh.position.set(FACT2.x,gy(FACT2.x,FACT2.z)+.2+F2H,FACT2.z);gh.visible=false;scene.add(gh);props.fac2g=gh;
   const lb=new THREE.Sprite(new THREE.SpriteMaterial({transparent:true,depthWrite:false,fog:false}));lb.scale.set(9,3.2,1);lb.position.set(FACT2.x,gy(FACT2.x,FACT2.z)+10.5,FACT2.z);lb.visible=false;scene.add(lb);props.fac2l=lb}
  // sell pad
- const sp=padRing('#ffd24a',SELL.x,SELL.z,1.19);sp.position.set(SELL.x,gy(SELL.x,SELL.z)+.2,SELL.z);scene.add(sp);props.sell=sp;
+ const sp=padRing('#ffd24a',SELL.x,SELL.z,1.19);sp.position.set(SELL.x,gy(SELL.x,SELL.z)+.2+SELH,SELL.z);scene.add(sp);props.sell=sp;
  // objective arrow
  const sh=new THREE.Shape();sh.moveTo(0,1.1);sh.lineTo(.8,-.5);sh.lineTo(0,-.1);sh.lineTo(-.8,-.5);sh.closePath();
  const ar=new THREE.Mesh(new THREE.ShapeGeometry(sh),new THREE.MeshBasicMaterial({color:'#ffe27a',transparent:true,opacity:.95,depthTest:false,depthWrite:false}));ar.rotation.x=-Math.PI/2;ar.renderOrder=20;const arg=new THREE.Group();arg.add(ar);scene.add(arg);props.arrow=arg;
@@ -2356,25 +2357,29 @@ setTimeout(()=>{try{init()}catch(e){document.body.insertAdjacentHTML('beforeend'
 
 // ================= EDIT MODE: drag buildings to where you want them =================
 (function(){
-const ED=JSON.parse(JSON.stringify({uc:LAY.uc,store:LAY.store,sell:LAY.sell,pads:LAY.pads}));
+const ED=JSON.parse(JSON.stringify({uc:LAY.uc,store:LAY.store,sell:LAY.sell,pads:LAY.pads}));let nodesDirty=!!LAY.nodes;
 let H=[],sel=null,drag=null,marks=[],panel=null;
 const rd=v=>Math.round(v*2)/2;
 const gpt=(cx,cy)=>{_p2.set(cx/innerWidth*2-1,-(cy/innerHeight)*2+1);ray.setFromCamera(_p2,cam);const o=ray.ray.origin,d=ray.ray.direction;let t=(gy(P.x,P.z)-o.y)/d.y;let x=0,z=0;for(let i=0;i<5;i++){x=o.x+d.x*t;z=o.z+d.z*t;t=(gy(x,z)-o.y)/d.y}return{x:o.x+d.x*t,z:o.z+d.z*t}};
 const shift=(o,dx,dz,ox,oz)=>{if(!o)return;const ny=o.position.y+gy(ox+dx,oz+dz)-gy(ox,oz);o.position.set(o.position.x+dx,ny,o.position.z+dz)};
 function build(){H=[];
- H.push({key:'uc',name:'Upgrade Center',rad:11,col:'#7ff0ff',rot:1,get:()=>ED.uc,set(x,z){ED.uc.x=x;ED.uc.z=z;const f=props.fac;f.position.set(x,gy(x,z),z);f.rotation.y=ED.uc.r}});
- H.push({key:'store',name:'Log Storage',rad:6,col:'#ffd24a',get:()=>ED.store,set(x,z){ED.store.x=x;ED.store.z=z;for(const o of [props.fac2,props.fac2g])o&&o.position.set(x,gy(x,z)+(o===props.fac2g?.2:0),z);if(props.fac2l)props.fac2l.position.set(x,gy(x,z)+10.5,z)}});
- H.push({key:'sell',name:'Sell pad',rad:2.6,col:'#8fff8f',get:()=>ED.sell,set(x,z){ED.sell.x=x;ED.sell.z=z;props.sell.position.set(x,gy(x,z)+.2,z)}});
+ H.push({key:'uc',name:'Upgrade Center',rad:11,col:'#7ff0ff',rot:1,get:()=>ED.uc,set(x,z){ED.uc.x=x;ED.uc.z=z;const f=props.fac;f.position.set(x,gy(x,z)+(ED.uc.h||0),z);f.rotation.y=ED.uc.r}});
+ H.push({key:'store',name:'Log Storage',rad:6,col:'#ffd24a',get:()=>ED.store,set(x,z){ED.store.x=x;ED.store.z=z;for(const o of [props.fac2,props.fac2g])o&&o.position.set(x,gy(x,z)+(ED.store.h||0)+(o===props.fac2g?.2:0),z);if(props.fac2l)props.fac2l.position.set(x,gy(x,z)+10.5,z)}});
+ H.push({key:'sell',name:'Sell pad',rad:2.6,col:'#8fff8f',get:()=>ED.sell,set(x,z){ED.sell.x=x;ED.sell.z=z;props.sell.position.set(x,gy(x,z)+.2+(ED.sell.h||0),z)}});
  PADS.forEach(p=>{const kind=p.gath?'wood gatherer':p.mill?(p.k==='stone'?'slab press':'sawmill'):p.k==='wood'?'harvester':'drill ('+p.k+')';
   H.push({key:'pad:'+p.id,name:'Zone '+p.zone+' '+kind,rad:p.gath?6:5,col:p.mill?'#ffd24a':({wood:'#9affc8',stone:'#ffb08a',ore:'#b49aff'}[p.k]||'#fff'),
-   get:()=>ED.pads[p.id]||{x:p.x,z:p.z},set(x,z){const c=ED.pads[p.id]||{x:p.x,z:p.z},dx=x-c.x,dz=z-c.z;ED.pads[p.id]={x,z};for(const o of [p.ring,p.ghost,p.obj])shift(o,dx,dz,c.x,c.z)}})});
+   get:()=>ED.pads[p.id]||(ED.pads[p.id]={x:p.x,z:p.z,h:p.h||0}),set(x,z){const c=ED.pads[p.id]||(ED.pads[p.id]={x:p.x,z:p.z,h:p.h||0}),dx=x-c.x,dz=z-c.z,h=c.h||0;c.x=x;c.z=z;p.y=gy(x,z)+h;for(const o of [p.ring,p.ghost])o&&o.position.set(o.position.x+dx,p.y+.2,o.position.z+dz);if(p.obj)p.obj.position.set(p.obj.position.x+dx,p.y,p.obj.position.z+dz)}})});
+ ED.nodes=nodes.map(n=>[n.type,n.kind,+n.x.toFixed(2),+n.z.toFixed(2),+(n.sc/1.35/(n.type==='stone'?.96:1)).toFixed(3),n.v||0,n.zone]);
+ nodes.forEach((n,i)=>{const d={x:n.x,z:n.z,h:0},nm={tree:'Boom',stone:'Steen',ore:'Erts',crystal:'Kristal'}[n.type]||n.type;
+  H.push({key:'n:'+i,node:1,name:nm+(n.kind?' ('+n.kind+')':'')+' #'+i,rad:Math.max(1.8,n.r*1.1),col:{tree:'#9affc8',stone:'#ffb08a',ore:'#b49aff',crystal:'#8fe8ff'}[n.type]||'#fff',get:()=>d,
+   set(x,z){const ox=d.x,oz=d.z,dx=x-ox,dz=z-oz;d.x=x;d.z=z;const a=ED.nodes[i];a[2]=x;a[3]=z;nodesDirty=true;n.x=x;n.z=z;n.y=gy(x,z);for(const o of [n.obj,n.stump,n.cur,n.rub])if(o)o.position.set(o.position.x+dx,o.position.y+gy(x,z)-gy(ox,oz),o.position.z+dz)}})});
  const mat=c=>new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.85,depthTest:false,depthWrite:false,side:THREE.DoubleSide});
  H.forEach(h=>{const g=new THREE.Group();const r=new THREE.Mesh(new THREE.RingGeometry(h.rad*.9,h.rad,48),mat(h.col));const f=new THREE.Mesh(new THREE.CircleGeometry(h.rad*.9,48),mat(h.col));f.material.opacity=.12;[r,f].forEach(m=>{m.rotation.x=-Math.PI/2;m.renderOrder=30;g.add(m)});g.userData={r,f};scene.add(g);h.mk=g;marks.push(g)});}
-function place(h){const c=h.get();h.mk.position.set(c.x,gy(c.x,c.z)+.5,c.z)}
+function place(h){const c=h.get();h.mk.position.set(c.x,gy(c.x,c.z)+.5+(c.h||0),c.z)}
 function refresh(){H.forEach(h=>{place(h);const on=h===sel;h.mk.userData.r.material.opacity=on?1:.55;h.mk.userData.f.material.opacity=on?.3:.08;h.mk.scale.setScalar(on?1.04:1)});
- if(panel){panel.querySelector('#edn').textContent=sel?sel.name+'  ('+sel.get().x+', '+sel.get().z+')':'Tik op een ring en sleep';panel.querySelector('#edrot').style.display=sel&&sel.rot?'inline-flex':'none';const s=panel.querySelector('select');if(sel)s.value=sel.key}}
-const json=()=>JSON.stringify({uc:ED.uc,store:ED.store,sell:ED.sell,pads:ED.pads});
-function pick(x,z){let b=null,bd=1e9;for(const h of H){const c=h.get(),d=Math.hypot(x-c.x,z-c.z);if(d<Math.max(h.rad,3)&&d<bd){bd=d;b=h}}return b}
+ if(panel){panel.querySelector('#edn').textContent=sel?sel.name+'  ('+sel.get().x+', '+sel.get().z+', hoogte '+(sel.get().h||0)+')':'Tik op een ring en sleep';panel.querySelector('#edrot').style.display=sel&&sel.rot?'inline-flex':'none';const s=panel.querySelector('select');if(sel)s.value=sel.key}}
+const json=()=>JSON.stringify(Object.assign({uc:ED.uc,store:ED.store,sell:ED.sell,pads:ED.pads},nodesDirty?{nodes:ED.nodes}:{}));
+function pick(x,z){let b=null,br=1e9,bd=1e9;for(const h of H){const c=h.get(),d=Math.hypot(x-c.x,z-c.z),r=h.node?Math.max(h.rad,2.2):Math.max(h.rad,3);if(d<r&&(h.rad<br||(h.rad===br&&d<bd))){br=h.rad;bd=d;b=h}}return b}
 function onDown(e){if(!EDIT.on)return;const g=gpt(e.clientX,e.clientY);const h=pick(g.x,g.z);if(!h)return;e.stopImmediatePropagation();e.preventDefault();sel=h;const c=h.get();drag={id:e.pointerId,ox:c.x-g.x,oz:c.z-g.z};glc.setPointerCapture&&glc.setPointerCapture(e.pointerId);refresh()}
 function onMove(e){if(!EDIT.on||!drag||e.pointerId!==drag.id)return;e.stopImmediatePropagation();const g=gpt(e.clientX,e.clientY);sel.set(rd(g.x+drag.ox),rd(g.z+drag.oz));refresh()}
 function onUp(e){if(!drag||e.pointerId!==drag.id)return;e.stopImmediatePropagation();drag=null}
@@ -2385,24 +2390,25 @@ function enter(){if(EDIT.on)return;EDIT.on=1;build();sel=H[0];
  panel.style.cssText='position:fixed;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;width:min(94vw,520px);background:rgba(40,16,24,.92);color:#fff;border:2px solid #ffd24a;border-radius:14px;padding:10px 12px;font:600 13px Fredoka,system-ui,sans-serif;display:flex;flex-direction:column;gap:8px;pointer-events:auto';
  const bs='background:#ffd24a;color:#40143a;border:0;border-radius:9px;padding:7px 11px;font:700 13px Fredoka,system-ui,sans-serif;cursor:pointer';
  panel.innerHTML='<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>VRIJ PLAATSEN</b><span id="edn" style="opacity:.9;text-align:right;min-width:0"></span></div>'
- +'<div style="opacity:.8">Sleep een gekleurde ring over de grond. Lopen en zoomen werkt gewoon (buiten de ringen).</div>'
+ +'<div style="opacity:.8">Sleep een gekleurde ring over de grond (ook elke boom, steen, erts en kristal). Lopen en zoomen werkt gewoon (buiten de ringen).</div>'
  +'<div style="display:flex;gap:6px;flex-wrap:wrap"><select style="flex:1;min-width:140px;border-radius:9px;padding:6px;font:600 13px Fredoka,system-ui,sans-serif"></select><button id="edgo" style="'+bs+'">Ga erheen</button><button id="edme" style="'+bs+'">Zet op mijn plek</button></div>'
- +'<div style="display:flex;gap:6px;flex-wrap:wrap"><span id="edrot" style="display:none;gap:6px"><button id="edl" style="'+bs+'">⟲ 15°</button><button id="edr" style="'+bs+'">⟳ 15°</button></span><button id="edsv" style="'+bs+'">Opslaan</button><button id="edex" style="'+bs+'">Exporteer</button><button id="edrs" style="'+bs+';background:#ff9a6a">Reset alles</button><button id="edx" style="'+bs+';background:#ddd">Sluiten</button></div>'
+ +'<div style="display:flex;gap:6px;flex-wrap:wrap"><button id="edup" style="'+bs+'">▲ hoger</button><button id="eddn" style="'+bs+'">▼ lager</button><span id="edrot" style="display:none;gap:6px"><button id="edl" style="'+bs+'">⟲ 15°</button><button id="edr" style="'+bs+'">⟳ 15°</button></span><button id="edsv" style="'+bs+'">Opslaan</button><button id="edex" style="'+bs+'">Exporteer</button><button id="edrs" style="'+bs+';background:#ff9a6a">Reset alles</button><button id="edx" style="'+bs+';background:#ddd">Sluiten</button></div>'
  +'<textarea id="edta" readonly style="display:none;height:70px;border-radius:8px;font:11px monospace"></textarea>';
  document.body.appendChild(panel);
- const s=panel.querySelector('select');H.forEach(h=>{const o=document.createElement('option');o.value=h.key;o.textContent=h.name;s.appendChild(o)});
+ const s=panel.querySelector('select');H.filter(h=>!h.node).forEach(h=>{const o=document.createElement('option');o.value=h.key;o.textContent=h.name;s.appendChild(o)});
  const q=id=>panel.querySelector('#'+id);
  s.onchange=()=>{sel=H.find(h=>h.key===s.value);refresh()};
  q('edgo').onclick=()=>{const c=sel.get();P.x=c.x;P.z=c.z+Math.max(9,sel.rad+3);P.moveTo=null;P.vx=P.vz=0;refresh()};
  q('edme').onclick=()=>{sel.set(rd(P.x),rd(P.z));refresh()};
  const rot=d=>{if(sel&&sel.rot){ED.uc.r=+(ED.uc.r+d).toFixed(3);sel.set(ED.uc.x,ED.uc.z);refresh()}};
+ const hgt=d=>{const c=sel.get();c.h=+((c.h||0)+d).toFixed(2);sel.set(c.x,c.z);refresh()};q('edup').onclick=()=>hgt(.5);q('eddn').onclick=()=>hgt(-.5);
  q('edl').onclick=()=>rot(-Math.PI/12);q('edr').onclick=()=>rot(Math.PI/12);
  q('edsv').onclick=()=>{try{localStorage.setItem(LAYOUT_KEY,json())}catch(e){}leave()};
  q('edex').onclick=()=>{const t=q('edta');t.style.display='block';t.value=json();t.select();try{navigator.clipboard.writeText(t.value)}catch(e){}};
  q('edrs').onclick=()=>{try{localStorage.removeItem(LAYOUT_KEY)}catch(e){}leave()};
  q('edx').onclick=leave;
  refresh()}
-window.__edit={enter,ED};
+window.__edit={enter,ED,H:()=>H};
 const b=document.createElement('button');b.id='editb';b.textContent='✥';b.title='Plaatsen (edit mode)';b.style.cssText='position:fixed;left:max(10px,env(safe-area-inset-left));bottom:max(10px,env(safe-area-inset-bottom));z-index:40;width:38px;height:38px;border-radius:50%;border:2px solid #fff8;background:rgba(40,16,24,.7);color:#fff;font-size:18px;cursor:pointer';
 b.onpointerdown=e=>{e.stopPropagation();e.preventDefault();enter()};document.body.appendChild(b);
 if(/[?&]edit\b/.test(location.search))setTimeout(enter,800);

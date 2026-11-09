@@ -36,12 +36,12 @@ const refineMul=()=>(1+.1*S.up.refine)*(1+.1*bl('pad'));
 // ================= LAYOUT (home) =================
 const START={x:0,z:7};
 const SELL={x:LAY.sell.x,z:LAY.sell.z};           // factory intake pad
-const FAC_R=[10.9,10.9,8.6,8.5,8.3,8.1,7.7,7.4,7.0,6.6,6.3,6.0,5.7,5.4,5.6,6.5,7.3,7.9,8.3,10.7,10.9,11.0,11.3,11.3,11.3,10.7,8.0,8.0,8.0,7.6,7.5,7.5,8.1,8.1,9.0,9.3,9.4,9.4,9.7,9.7,9.7,9.3,8.9,10.4,10.9,10.9,10.9,10.9];const FACT={x:LAY.uc.x,z:LAY.uc.z};const FACT2={x:LAY.store.x,z:LAY.store.z};const FACROT=LAY.uc.r;
+const FAC_R=[10.9,10.9,8.6,8.5,8.3,8.1,7.7,7.4,7.0,6.6,6.3,6.0,5.7,5.4,5.6,6.5,7.3,7.9,8.3,10.7,10.9,11.0,11.3,11.3,11.3,10.7,8.0,8.0,8.0,7.6,7.5,7.5,8.1,8.1,9.0,9.3,9.4,9.4,9.7,9.7,9.7,9.3,8.9,10.4,10.9,10.9,10.9,10.9];const FACT={x:LAY.uc.x,z:LAY.uc.z};const FACT2={x:LAY.store.x,z:LAY.store.z};const FACROT=LAY.uc.r;const FACH=LAY.uc.h||0,F2H=LAY.store.h||0,SELH=LAY.sell.h||0;
 const HOPPER={x:15,z:-2};
 const PADS=[];
 const HOME_PADS=[{x:-6,z:12,k:'wood'},{x:18,z:10,k:'stone'},{x:-13,z:-9,k:'ore'}];
 // home pads removed: only the area-1 gatherer and later-zone machines remain
-ZONES.forEach((z,zi)=>{(z.pads||[]).forEach((p,i)=>PADS.push({id:z.id+i,x:z.x+p.x,z:z.z+p.z,k:p.k,zone:zi,mill:p.mill?1:0,gath:p.gath?1:0}))});
+ZONES.forEach((z,zi)=>{(z.pads||[]).forEach((p,i)=>PADS.push({id:z.id+i,x:z.x+p.x,z:z.z+p.z,k:p.k,zone:zi,mill:p.mill?1:0,gath:p.gath?1:0,h:(LAY.pads[z.id+i]||{}).h||0}))});
 PADS.forEach(p=>{if(p.gath){const c=ZONES[p.zone].clusters[0];p.wx=c.x+c.r*.72;p.wz=c.z+2}});
 
 // ================= COLONY BASE =================
@@ -106,7 +106,7 @@ function spawnNode(type,kind,x,z,sc,zi,v){sc*=1.35;if(type==='stone')sc*=.96;
  const y=gy(x,z);obj.position.set(x,y,z);obj.rotation.y=rot;obj.scale.setScalar(sc*base);scene.add(obj);
  const stump=new THREE.Mesh(stumpGeo,stumpMat);stump.position.set(x,y+.2,z);stump.scale.setScalar(sc*.9);stump.visible=false;stump.castShadow=true;if(type==='tree')scene.add(stump);
  const r=type==='tree'?1.15*sc:type==='stone'?1.25*sc:type==='ore'?1.05*sc:.95*sc;
- const n={id:nid++,type,kind,x,z,y,sc,base,rot,obj,stump,r,prog:0,alive:true,t:0,grow:1,shake:0,rsv:null,zone:zi,hitT:0,cd:0};
+ const n={id:nid++,v,type,kind,x,z,y,sc,base,rot,obj,stump,r,prog:0,alive:true,t:0,grow:1,shake:0,rsv:null,zone:zi,hitT:0,cd:0};
  nodes.push(n);return n}
 function placeZoneNodes(zi){const z=ZONES[zi];seed=zi*131+17;const placed=[];
  const free=(x,zz,rad,gap=2.2)=>{rad*=1.35;if(PADS.some(q=>q.gath&&Math.hypot(x-q.wx,zz-q.wz)<rad+5.5))return false;if(zi===1&&Math.hypot(x-FACT2.x,zz-FACT2.z)<12)return false;if(zi===0&&(Math.hypot(x,zz)<26||(x>-14&&x<18&&zz>10&&zz<28)))return false;if(zi>0){if(ownerOf(x,zz)!==zi||terrS(z,x,zz)<rad+3)return false}else if(terrS(z,x,zz)<rad+3)return false;
@@ -133,8 +133,8 @@ const padRing=(c,x,z,s=1)=>{const g=new THREE.Group();const y0=gy(x,z);
  const m1=new THREE.Mesh(ringG,new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.85,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));g.add(m1);
  const m2=new THREE.Mesh(discG,new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.16,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));m2.position.y=.03;g.add(m2);g.userData.m1=m1;g.userData.m2=m2;return g};
 const PCOL={wood:'#58f0d0',stone:'#ffc08a',ore:'#4fdcff',crystal:'#7aa8ff'};
-function setupPad(p){p.ring=padRing(p.mill?'#ffd24a':PCOL[p.k],p.x,p.z);p.y=gy(p.x,p.z);p.ring.position.set(p.x,p.y+.2,p.z);p.ring.visible=false;scene.add(p.ring);p.obj=null;p.acc=0;p.work=0;p.dust=0;if(p.gath)mkGhost(p)}
-function mkGhost(p){const gr=padRing('#ffd24a',p.x,p.z,1.3);gr.position.set(p.x,gy(p.x,p.z)+.2,p.z);gr.visible=false;scene.add(gr);p.ghost=gr}
+function setupPad(p){p.ring=padRing(p.mill?'#ffd24a':PCOL[p.k],p.x,p.z);p.y=gy(p.x,p.z)+p.h;p.ring.position.set(p.x,p.y+.2,p.z);p.ring.visible=false;scene.add(p.ring);p.obj=null;p.acc=0;p.work=0;p.dust=0;if(p.gath)mkGhost(p)}
+function mkGhost(p){const gr=padRing('#ffd24a',p.x,p.z,1.3);gr.position.set(p.x,gy(p.x,p.z)+.2+p.h,p.z);gr.visible=false;scene.add(gr);p.ghost=gr}
 function padOpen(p){return S.unl[p.zone]===1}
 function machLv(p){return p.id==='FAC2'?1:S.mach[p.id]||0}
 const gcarry=p=>GCARRY+4*Math.max(0,machLv(p)-1);
@@ -193,7 +193,8 @@ function updateFloaters(dt){for(let i=FL.length-1;i>=0;i--){const f=FL[i];f.t+=d
 // ================= PLAYER =================
 const P={x:START.x,z:START.z,vx:0,vz:0,face:Math.PI,robot:null,swing:0,bat:100,tgt:null,hitCd:0,moveTo:null,speedNow:0,bob:0,harvPct:0,harvName:'',blocked:''};
 function makeNodesAndWorld(){
- for(let i=0;i<ZONES.length;i++)placeZoneNodes(i);
+ if(LAY.nodes&&LAY.nodes.length){seed=4242;for(const [t,k,x,z,s,v,zi] of LAY.nodes){const n=spawnNode(t,k,x,z,s,zi,v);if(t==='stone'&&s>=1.6)n.big=2.2;if(zi>0&&!S.unl[zi])n.obj.visible=false}}
+ else for(let i=0;i<ZONES.length;i++)placeZoneNodes(i);
  PADS.forEach(setupPad);
  const rb=makeRobot(1.5);rb.traverse(o=>{if(o.isMesh)o.layers.enable(1)});P.robot=rb;scene.add(rb);}
 // ---- tap/joystick input ----
