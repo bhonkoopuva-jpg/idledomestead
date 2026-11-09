@@ -35,8 +35,8 @@ const refineMul=()=>(1+.1*S.up.refine)*(1+.1*bl('pad'));
 
 // ================= LAYOUT (home) =================
 const START={x:0,z:7};
-const SELL={x:0,z:5.4};           // factory intake pad
-const FAC_R=[10.9,10.9,8.6,8.5,8.3,8.1,7.7,7.4,7.0,6.6,6.3,6.0,5.7,5.4,5.6,6.5,7.3,7.9,8.3,10.7,10.9,11.0,11.3,11.3,11.3,10.7,8.0,8.0,8.0,7.6,7.5,7.5,8.1,8.1,9.0,9.3,9.4,9.4,9.7,9.7,9.7,9.3,8.9,10.4,10.9,10.9,10.9,10.9];const FACT={x:0,z:-10};const FACT2={x:14,z:80};
+const SELL={x:LAY.sell.x,z:LAY.sell.z};           // factory intake pad
+const FAC_R=[10.9,10.9,8.6,8.5,8.3,8.1,7.7,7.4,7.0,6.6,6.3,6.0,5.7,5.4,5.6,6.5,7.3,7.9,8.3,10.7,10.9,11.0,11.3,11.3,11.3,10.7,8.0,8.0,8.0,7.6,7.5,7.5,8.1,8.1,9.0,9.3,9.4,9.4,9.7,9.7,9.7,9.3,8.9,10.4,10.9,10.9,10.9,10.9];const FACT={x:LAY.uc.x,z:LAY.uc.z};const FACT2={x:LAY.store.x,z:LAY.store.z};const FACROT=LAY.uc.r;
 const HOPPER={x:15,z:-2};
 const PADS=[];
 const HOME_PADS=[{x:-6,z:12,k:'wood'},{x:18,z:10,k:'stone'},{x:-13,z:-9,k:'ore'}];
@@ -218,7 +218,7 @@ function collide(){
  for(const p of PADS){if(!p.obj)continue;const dx=P.x-p.x,dz=P.z-p.z,d=Math.hypot(dx,dz),m=1.9+PR;if(d<m&&d>1e-4){P.x=p.x+dx/d*m;P.z=p.z+dz/d*m}}
  for(const b of BASE){if(!BASE_ON||!bl(b.id)||!BCOLR[b.id])continue;const dx=P.x-b.x,dz=P.z-b.z,d=Math.hypot(dx,dz),m=BCOLR[b.id]+PR;if(d<m&&d>1e-4){P.x=b.x+dx/d*m;P.z=b.z+dz/d*m}}
  if(S.unl[1]&&S.storeBuilt){const dx=P.x-FACT2.x,dz=P.z-FACT2.z,d=Math.hypot(dx*.75,dz*1.0),m=6.4;if(d<m&&d>1e-4){const k=m/d;P.x=FACT2.x+dx*k;P.z=FACT2.z+dz*k}}
- {const dx=P.x-FACT.x,dz=P.z-FACT.z,d=Math.hypot(dx,dz);if(d>1e-4){const f=(Math.atan2(dz,dx)+Math.PI)/(2*Math.PI)*48,i0=Math.floor(f)%48,i1=(i0+1)%48,t=f-Math.floor(f),m=FAC_R[i0]*(1-t)+FAC_R[i1]*t+1.2;if(d<m){const k=m/d;P.x=FACT.x+dx*k;P.z=FACT.z+dz*k}}}
+ {const dx=P.x-FACT.x,dz=P.z-FACT.z,d=Math.hypot(dx,dz);if(d>1e-4){const f=((Math.atan2(dz,dx)+(FACROT-.698)+Math.PI*5)%(Math.PI*2))/(2*Math.PI)*48,i0=Math.floor(f)%48,i1=(i0+1)%48,t=f-Math.floor(f),m=FAC_R[i0]*(1-t)+FAC_R[i1]*t+1.2;if(d<m){const k=m/d;P.x=FACT.x+dx*k;P.z=FACT.z+dz*k}}}
  {const lim=-6,band=4,v0=terrVal(P.x,P.z);if(P.lx!==undefined&&v0<lim+band){const e=.5,gx=(terrVal(P.x+e,P.z)-terrVal(P.x-e,P.z))/(2*e),gz=(terrVal(P.x,P.z+e)-terrVal(P.x,P.z-e))/(2*e),gm=Math.hypot(gx,gz);
   if(gm>.05){const ux=gx/gm,uz=gz/gm,dn=-((P.x-P.lx)*ux+(P.z-P.lz)*uz);if(dn>0){const t=Math.max(0,Math.min(1,(lim+band-v0)/band)),f=t*t*(3-2*t);P.x+=ux*dn*f;P.z+=uz*dn*f}}}}
  {const lim=-6;if(terrVal(P.x,P.z)<lim){for(let it=0;it<6;it++){const v=terrVal(P.x,P.z);if(v>=lim)break;const e=.4,gx=(terrVal(P.x+e,P.z)-terrVal(P.x-e,P.z))/(2*e),gz=(terrVal(P.x,P.z+e)-terrVal(P.x,P.z-e))/(2*e),gm=Math.hypot(gx,gz);if(gm<.05)break;const st=Math.min(3,(lim-v)/Math.max(gm,.3));P.x+=gx/gm*st;P.z+=gz/gm*st}}}P.lx=P.x;P.lz=P.z}
@@ -299,7 +299,7 @@ function buildStorage(){if(S.storeBuilt)return;if(!canPay(STORECOST)){AU.deny();
 function sellStorage(k){const n=Math.min(k==null?FAC2.in:Math.floor(k),FAC2.in);if(n<=0)return;const v=Math.round(n*VAL.wood*refineMul());FAC2.in-=n;addCoins(v);S.stats.sold+=n;AU.coin(0);floater(FACT2.x,FAC2.y+7,FACT2.z,'+'+fmtC(v)+' coins','#ffd24a');UI.toast('Sold '+n+' logs for '+fmtC(v)+' coins')}
 const F2MAXRATE=84,f2rate=()=>S.f2rate==null?30:S.f2rate;
 function takeStorage(k){const room=Math.max(0,cap()-S.inv.wood);const n=Math.min(Math.floor(k),FAC2.in,room);if(n<=0){AU.deny();UI.toast(room<=0?'Inventory full':'Nothing to take',1);return}FAC2.in-=n;S.inv.wood+=n;S.stats.wood+=0;UI.pulse('wood');AU.pick(1);UI.toast('Took '+n+' logs')}
-function stepStorage(dt){if(!props.fac2)return;const built=!!S.storeBuilt,open1=!!S.unl[1],f=props.fac2;f.visible=built&&open1;props.fac2g.visible=open1&&!built;FAC2.near=open1&&Math.hypot(P.x-FACT2.x,P.z-FACT2.z)<10.5;
+function stepStorage(dt){if(!props.fac2)return;const built=!!S.storeBuilt,open1=!!S.unl[1],f=props.fac2;f.visible=(built&&open1)||!!EDIT.on;props.fac2g.visible=open1&&!built&&!EDIT.on;FAC2.near=open1&&Math.hypot(P.x-FACT2.x,P.z-FACT2.z)<10.5;
  const lb=props.fac2l;lb.visible=f.visible;
  if(f.visible){const t=performance.now()*.001;f.userData.arm.rotation.y=Math.sin(t*.6)*(FAC2.work?.9:.18);f.userData.up.rotation.z=.9+Math.sin(t*1.3)*(FAC2.work?.12:.03);
   if(FAC2._n!==FAC2.in){FAC2._n=FAC2.in;const L=f.userData.logs,k=FAC2.in>0?Math.max(1,Math.ceil(L.length*FAC2.in/f2cap())):0;L.forEach((l,i)=>l.visible=i<k);
