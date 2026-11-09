@@ -192,7 +192,9 @@ function refreshTerritory(snap){applyDecor();buildWall();if(snap)WALLS.forEach(W
 
 // ---- decor (instanced) ----
 function scatter(baked,list){baked.children.forEach(ch=>{if(!ch.isMesh)return;const im=new THREE.InstancedMesh(ch.geometry,ch.material,list.length);list.forEach((m,i)=>im.setMatrixAt(i,m));im.castShadow=im.receiveShadow=true;im.frustumCulled=false;scene.add(im)})}
-const _d=new THREE.Object3D();
+const _d=new THREE.Object3D();const DK={};const PROPOBJ=[];
+function spawnProp(kind,x,z,rot,sc){const b=DK[kind];if(!b)return null;const o=b.clone();o.position.set(x,gy(x,z)-.03,z);o.rotation.y=rot||0;o.scale.setScalar(sc||1);o.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true}});scene.add(o);return o}
+function eraseDecor(x,z,r){for(const d of DECOR){if(!d.im)continue;const A=d.im.instanceMatrix.array,O=d.orig,n=d.im.count;let ch=0;for(let i=0;i<n;i++){const j=i*16;if(Math.hypot(O[j+12]-x,O[j+14]-z)<r&&O[j+15]!==0){for(let k=0;k<16;k++){O[j+k]=0;A[j+k]=0}ch=1}}if(ch)d.im.instanceMatrix.needsUpdate=true}}
 function decorPos(n,minR,maxR,avoid){const out=[];let guard=0;while(out.length<n&&guard++<n*10){const x=-205+R()*390,z=-240+R()*510;if(Math.hypot(x,z)<minR||allVal(x,z)<2.5)continue;if(avoid&&avoid(x,z))continue;out.push([x,z])}return out}
 const nearFactory=(x,z)=>Math.hypot(x-LAY.uc.x,z-LAY.uc.z)<27||Math.hypot(x,z)<5;
 { // pebbles
@@ -236,7 +238,7 @@ function craterStep(dt){const t=performance.now()*.001;for(const c of craterGlow
  const chunks=mk(g=>{for(let i=0;i<8;i++){const a=R()*6.28,d=R()*.9,s=RR(.12,.34);g.add(new THREE.Mesh(blobGeo(s,{sy:.8,top:i%3?'#c8704c':'#8a5a48',bot:'#6a3428',amp:.28,detail:1,sd:i,off:[Math.cos(a)*d,s*.4,Math.sin(a)*d]}),clayMat()))}});
  const tealPile=mk(g=>{for(let i=0;i<5;i++){const a=R()*6.28,d=R()*.8,s=RR(.2,.5);g.add(new THREE.Mesh(blobGeo(s,{sy:.8,top:'#3cc8c0',bot:'#1f6a8a',amp:.12,detail:2,sd:i,off:[Math.cos(a)*d,s*.4,Math.sin(a)*d]}),clayMat()))}});
  const place=(b,n,sMin,sMax,minR,fn)=>{const pos=decorPos(n,minR||5,0,nearFactory);scatter(b,pos.map(([x,z])=>{_d.position.set(x,gy(x,z)-.05,z);const s=RR(sMin,sMax);_d.scale.set(s,s*RR(.8,1.2),s);_d.rotation.set(0,R()*6,0);_d.updateMatrix();return _d.matrix.clone()}))};
- place(mound,150,.7,1.5);place(chunks,210,.8,1.6);place(tealPile,130,.7,1.4);
+ DK.mound=mound;DK.chunks=chunks;DK.pile=tealPile;place(mound,150,.7,1.5);place(chunks,210,.8,1.6);place(tealPile,130,.7,1.4);
  { // dunes in the sandy regions
   const rd=mulb(88),dl=[];for(const zi of [4,8]){for(let k=0;k<(zi===4?50:80);k++){const p=zonePoint(ZONES[zi],4,rd);if(!p)continue;_d.position.set(p[0],gy(p[0],p[1])-.05,p[1]);const sc=RR(1.2,2.4);_d.scale.set(sc,sc,sc);_d.rotation.set(0,R()*6,0);_d.updateMatrix();dl.push(_d.matrix.clone())}}scatter(dune,dl)}
  { // crater rim rocks
@@ -248,10 +250,10 @@ function craterStep(dt){const t=performance.now()*.001;for(const c of craterGlow
  const place=(b,n,sMin,sMax,minR)=>{const pos=decorPos(n,minR||6,0,nearFactory);scatter(b,pos.map(([x,z])=>{_d.position.set(x,gy(x,z)-.03,z);const s=RR(sMin,sMax);_d.scale.setScalar(s);_d.rotation.set(0,R()*6,0);_d.updateMatrix();return _d.matrix.clone()}))};
  const agaveMats=[std('#2fb0a2',{roughness:.5}),std('#1f8f98',{roughness:.5}),std('#47c9a8',{roughness:.5})];
  for(let v=0;v<2;v++){seed=800+v;const ag=mk(g=>{const n=7+v*2;for(let i=0;i<n;i++){const a=i/n*6.283+R()*.4,lean=.35+R()*.55,len=RR(.9,1.5);const bl=new THREE.Mesh(new THREE.ConeGeometry(.17,len,5),agaveMats[i%3]);bl.geometry.translate(0,len/2,0);bl.scale.z=.35;bl.position.set(Math.cos(a)*.08,.05,Math.sin(a)*.08);bl.rotation.set(Math.sin(a)*lean,-a+Math.PI/2*0,-Math.cos(a)*lean);bl.rotation.order='YXZ';bl.rotation.y=-a;bl.rotation.x=0;bl.rotation.z=0;const piv=new THREE.Group();piv.rotation.y=a;bl.rotation.set(lean,0,0);bl.position.set(0,.05,0);piv.add(bl);g.add(piv)}
-  const core=new THREE.Mesh(new THREE.SphereGeometry(.11,8,6),std('#a8f0d8',{roughness:.3}));core.position.y=.12;g.add(core)});place(ag,v?45:55,1.3,2.2)}
- {seed=850;const gem=mk(g=>{g.add(new THREE.Mesh(blobGeo(.55,{sy:.25,top:'#d9774a',bot:'#a8452a',amp:.15,detail:2,sd:4,off:[0,.05,0]}),clay({roughness:.9})));const gm=[std('#2cc4b6',{roughness:.25,metalness:.1}),std('#3ad8c8',{roughness:.25}),std('#9a7ad2',{roughness:.3})];for(let i=0;i<12;i++){const a=R()*6.283,d=Math.sqrt(R())*.55,s=RR(.05,.15);const sp=new THREE.Mesh(new THREE.IcosahedronGeometry(s,1),gm[i%5===0?2:i%2]);sp.position.set(Math.cos(a)*d,s*.8+.04,Math.sin(a)*d);g.add(sp)}});place(gem,120,1.3,2.2,5)}
- {seed=860;const cairn=mk(g=>{const m=clay({roughness:.85});let y=0;[[.95,.55,.85,0],[.68,.45,.6,.1],[.42,.34,.4,-.08]].forEach(([w2,h2,d2,ox],i)=>{const r=new THREE.Mesh(rockGeo(w2,h2,d2,'#d9764a','#7e3622',i*3+2,{rad:.3,seg:8,amp:.14}),m);r.position.set(ox,y+h2/2-.04,0);r.rotation.y=i*.7;g.add(r);y+=h2*.82});for(let i=0;i<4;i++){const a=i*1.7,s=RR(.1,.2);const pb=new THREE.Mesh(rockGeo(s*2,s*1.4,s*1.6,'#6e7686','#363b49',i,{rad:.3,seg:6,amp:.15}),m);pb.position.set(Math.cos(a)*.75,s*.5,Math.sin(a)*.65);g.add(pb)}});place(cairn,38,.9,1.5,8)}
- {const bone=mk(g=>{const bm=std('#ece0c8',{roughness:.7});for(let i=0;i<2;i++){const c=new THREE.CatmullRomCurve3([new THREE.Vector3(i*.15,.02,0),new THREE.Vector3(.35,.25+i*.1,.1),new THREE.Vector3(.75,.2,.05+i*.1),new THREE.Vector3(1.1,.02,.2)]);g.add(new THREE.Mesh(new THREE.TubeGeometry(c,12,.05-i*.01,6,false),bm))}});place(bone,22,.8,1.4,8)}
+  const core=new THREE.Mesh(new THREE.SphereGeometry(.11,8,6),std('#a8f0d8',{roughness:.3}));core.position.y=.12;g.add(core)});DK['agave'+v]=ag;place(ag,v?45:55,1.3,2.2)}
+ {seed=850;const gem=mk(g=>{g.add(new THREE.Mesh(blobGeo(.55,{sy:.25,top:'#d9774a',bot:'#a8452a',amp:.15,detail:2,sd:4,off:[0,.05,0]}),clay({roughness:.9})));const gm=[std('#2cc4b6',{roughness:.25,metalness:.1}),std('#3ad8c8',{roughness:.25}),std('#9a7ad2',{roughness:.3})];for(let i=0;i<12;i++){const a=R()*6.283,d=Math.sqrt(R())*.55,s=RR(.05,.15);const sp=new THREE.Mesh(new THREE.IcosahedronGeometry(s,1),gm[i%5===0?2:i%2]);sp.position.set(Math.cos(a)*d,s*.8+.04,Math.sin(a)*d);g.add(sp)}});DK.gem=gem;place(gem,120,1.3,2.2,5)}
+ {seed=860;const cairn=mk(g=>{const m=clay({roughness:.85});let y=0;[[.95,.55,.85,0],[.68,.45,.6,.1],[.42,.34,.4,-.08]].forEach(([w2,h2,d2,ox],i)=>{const r=new THREE.Mesh(rockGeo(w2,h2,d2,'#d9764a','#7e3622',i*3+2,{rad:.3,seg:8,amp:.14}),m);r.position.set(ox,y+h2/2-.04,0);r.rotation.y=i*.7;g.add(r);y+=h2*.82});for(let i=0;i<4;i++){const a=i*1.7,s=RR(.1,.2);const pb=new THREE.Mesh(rockGeo(s*2,s*1.4,s*1.6,'#6e7686','#363b49',i,{rad:.3,seg:6,amp:.15}),m);pb.position.set(Math.cos(a)*.75,s*.5,Math.sin(a)*.65);g.add(pb)}});DK.cairn=cairn;place(cairn,38,.9,1.5,8)}
+ {const bone=mk(g=>{const bm=std('#ece0c8',{roughness:.7});for(let i=0;i<2;i++){const c=new THREE.CatmullRomCurve3([new THREE.Vector3(i*.15,.02,0),new THREE.Vector3(.35,.25+i*.1,.1),new THREE.Vector3(.75,.2,.05+i*.1),new THREE.Vector3(1.1,.02,.2)]);g.add(new THREE.Mesh(new THREE.TubeGeometry(c,12,.05-i*.01,6,false),bm))}});DK.bone=bone;place(bone,22,.8,1.4,8)}
 }
 // crystal patches, crater crystals, loose debris (sheet 01/02/03)
 {seed=555;const mk=fn=>{const g=new THREE.Group();fn(g);return bake(g)};const cm=()=>clay({roughness:.85});
@@ -266,7 +268,7 @@ function craterStep(dt){const t=performance.now()*.001;for(const c of craterGlow
  const scrap=mk(g=>{g.add(new THREE.Mesh(blobGeo(1,{sy:.25,top:'#d9774a',bot:'#a8452a',amp:.12,detail:2,sd:2,off:[0,.1,0]}),cm()));const m=std('#4a4650',{roughness:.7});for(const [x,z,ry,w] of [[.2,.1,.6,.9],[-.4,-.2,-.4,.7],[.5,-.4,1.2,.6]]){const b=rbox(w,.08,.4,.03,m,2);b.position.set(x,.35,z);b.rotation.set(R()*.4,ry,R()*.4);g.add(b)}});
  const peb=mk(g=>{for(let i=0;i<12;i++){const a=R()*6.28,d=R()*1.4,s=RR(.06,.17);g.add(new THREE.Mesh(blobGeo(s,{sy:.75,top:['#f3b684','#c97c4a','#3cc8c0','#a35a36'][i%4],bot:'#7a3a2a',amp:.15,detail:1,sd:i,off:[Math.cos(a)*d,s*.35,Math.sin(a)*d]}),cm()))}});
  const shard=mk(g=>{g.add(makeCrystal(.22,5,2));for(let i=0;i<4;i++){const a=R()*6.28,s=RR(.1,.22);g.add(new THREE.Mesh(blobGeo(s,{sy:.7,top:'#c8704c',bot:'#6a3428',amp:.25,detail:1,sd:i,off:[Math.cos(a)*.6,s*.3,Math.sin(a)*.6]}),cm()))}});
- place(scrap,decorPos(60,8,0,nearFactory),.8,1.3);place(peb,decorPos(250,3,0,nearFactory),.8,1.5);
+ DK.scrap=scrap;DK.peb=peb;DK.shard=shard;place(scrap,decorPos(60,8,0,nearFactory),.8,1.3);place(peb,decorPos(250,3,0,nearFactory),.8,1.5);
 }
 
 // ---- ground reference extras: glowing cables, layered sandstone cliffs ----
@@ -291,6 +293,7 @@ function craterStep(dt){const t=performance.now()*.001;for(const c of craterGlow
 
 // registry of scenery that is hidden until its area is explored
 const DECOR=[];scene.children.forEach(o=>{if(o===terrain||o.isLight||o.isSprite||o.isPoints||!(o.isMesh||o.isGroup))return;if(o.isInstancedMesh)DECOR.push({im:o,orig:o.instanceMatrix.array.slice()});else DECOR.push({o})});
+for(const a of (LAY.decorDel||[]))eraseDecor(a[0],a[1],a[2]);
 let BELTPTS=[];const beltNear=(x,z)=>{for(let i=0;i<BELTPTS.length;i++){const q=BELTPTS[i];if(Math.abs(q.x-x)<2.3&&Math.abs(q.z-z)<2.3&&Math.hypot(q.x-x,q.z-z)<2.3)return true}return false};
 function applyDecor(){for(const d of DECOR){if(d.im){const A=d.im.instanceMatrix.array,O=d.orig,n=d.im.count;for(let i=0;i<n;i++){const j=i*16;if(terrVal(O[j+12],O[j+14])>-1&&!beltNear(O[j+12],O[j+14])){for(let k=0;k<16;k++)A[j+k]=O[j+k]}else{for(let k=0;k<11;k++)A[j+k]=0;A[j+12]=O[j+12];A[j+13]=O[j+13];A[j+14]=O[j+14]}}d.im.instanceMatrix.needsUpdate=true}else d.o.visible=terrVal(d.o.position.x,d.o.position.z)>-1&&!beltNear(d.o.position.x,d.o.position.z)}}
 
