@@ -51,7 +51,7 @@ function makeLink(p,tgt,free){const c=linkCost(p,tgt);if(!free){if(S.coins<c){AU
 function dropLink(p,refund){const q=[p.id];while(q.length){const id=q.pop();if(S.links[id]){for(const k in S.links)if(S.links[k]===id)q.push(k);if(refund&&id===p.id)addCoins(Math.floor(linkCost(padById(id),S.links[id])*.5));delete S.links[id];killSeg(id)}}save()}
 // ---- belt routing: orthogonal paths with rounded 90-degree corners, joined to machine ports ----
 const BDIRS=[[0,1],[1,0],[0,-1],[-1,0]],BR=1.9,BDECK=.74;
-const F2Q=Math.round((LAY.store.r||0)/(Math.PI/2));function f2p(ox,oz,dx,dz){ox*=F2S;oz*=F2S;const k=((F2Q%4)+4)%4;let a=[ox,oz,dx,dz];for(let i=0;i<k;i++)a=[a[1],-a[0],a[3],-a[2]];return{x:FACT2.x+a[0],z:FACT2.z+a[1],dx:a[2],dz:a[3]}}
+const f2split=()=>S.f2split===undefined?.5:S.f2split;const F2Q=Math.round((LAY.store.r||0)/(Math.PI/2));function f2p(ox,oz,dx,dz){ox*=F2S;oz*=F2S;const k=((F2Q%4)+4)%4;let a=[ox,oz,dx,dz];for(let i=0;i<k;i++)a=[a[1],-a[0],a[3],-a[2]];return{x:FACT2.x+a[0],z:FACT2.z+a[1],dx:a[2],dz:a[3]}}
 function portsOut(p){const q=p.sc||1;if(p.gath)return[{x:p.x-2.18*q,z:p.z+1.73*q,dx:0,dz:1}];
  if(p===FAC2)return[f2p(8.93,-1.26,1,0)];
  if(p===FAC2B)return[f2p(1.5,-6.25,0,-1)];
@@ -188,7 +188,8 @@ function econStep(dt,silent){const F=S.fac,sat=powSat();ECON.sat=sat;
   const rr=S.links[p.id]&&segPathTo(p.id);const sg=rr&&rr.path;const ok2=p.mill?MILLS[p.k].out:p.k;
   if(sg){while(p.buf>0&&sg.every(s=>s.tok>=1)&&roomAt(sg[0])){sg.forEach(s=>s.tok-=1);p.buf--;let L=0;for(const s of sg)L+=s.len;ECON.items.push({k:ok2,path:sg,L,d:0,m:null,dest:rr.dest});ECON.transit[ok2]++}}}
  if(S.unl[1]){const f=FAC2;f.acc=Math.min(2,f.acc+(f2rate()/60)*sat*dt);const lk=S.storeBuilt&&(S.links.FAC2||S.links.FAC2b);if(lk)while(f.acc>=1&&f.in>=1&&f.buf<MBUF){f.in--;f.buf++;f.acc-=1}f.work=lk&&f.in>0?1:0;
-  {const outs=[];if(S.links.FAC2)outs.push('FAC2');if(S.links.FAC2b)outs.push('FAC2b');let gn=0;while(f.buf>0&&outs.length&&gn++<4){let done=false;for(let t=0;t<outs.length&&!done;t++){const oi=((f.alt||0)+t)%outs.length,rr=segPathTo(outs[oi]),sg=rr&&rr.path;if(sg&&sg.every(s=>s.tok>=1)&&roomAt(sg[0])){sg.forEach(s=>s.tok-=1);f.buf--;let L=0;for(const s of sg)L+=s.len;ECON.items.push({k:'wood',path:sg,L,d:0,m:null,dest:rr.dest});ECON.transit.wood++;f.alt=(oi+1)%outs.length;done=true}}if(!done)break}}}
+  {const r=f2split();const hasA=!!S.links.FAC2,hasB=!!S.links.FAC2b;let gn=0;while(f.buf>0&&(hasA||hasB)&&gn++<4){let first;if(hasA&&hasB){if(r<=0)first=['FAC2'];else if(r>=1)first=['FAC2b'];else{f.cb=(f.cb||0)+r;first=f.cb>=1?['FAC2b','FAC2']:['FAC2','FAC2b']}}else first=[hasB?'FAC2b':'FAC2'];
+   let done=false;for(const id of first){const rr=segPathTo(id),sg=rr&&rr.path;if(sg&&sg.every(s=>s.tok>=1)&&roomAt(sg[0])){sg.forEach(s=>s.tok-=1);f.buf--;let L=0;for(const s of sg)L+=s.len;ECON.items.push({k:'wood',path:sg,L,d:0,m:null,dest:rr.dest});ECON.transit.wood++;if(id==='FAC2b'&&hasA&&hasB&&r>0&&r<1)f.cb=Math.max(0,f.cb-1);done=true;break}}if(!done){if(hasA&&hasB&&r>0&&r<1&&f.cb>=1)f.cb-=r;break}}}}
  for(const k in SEG)SEG[k].tok=Math.min(3,SEG[k].tok+beltRate()*dt);
  { // items queue up on the belt when their destination is full (backpressure)
   const Q=new Map();for(const it of ECON.items){const k=it.path[it.path.length-1].id+'>'+it.dest;let q=Q.get(k);if(!q)Q.set(k,q=[]);q.push(it)}
