@@ -28,7 +28,7 @@ const cap=()=>60+40*S.up.cargo;
 const toolPow=()=>TOOLS[S.tool].pow;
 const reach=()=>3.5+.45*S.up.reach;
 const bl=id=>(S.base&&S.base[id])||0;
-const machMul=()=>1;
+const EV={pod:null,next:70+Math.random()*50,surge:0,bar:null};const machMul=()=>EV.surge>0?1.5:1;
 const droneMul=()=>(1+.15*bl('dish'));
 const regrowMul=()=>1+.35*bl('dome');
 const refineMul=()=>(1+.1*S.up.refine)*(1+.1*bl('pad'));
@@ -89,6 +89,30 @@ function setupLost(){LOST.y=gy(LOST.x,LOST.z);if(S.rescued)return;const o=makeRo
  const g=padRing('#ff9a6a',LOST.x,LOST.z,1.6);g.position.set(LOST.x,LOST.y+.2,LOST.z);scene.add(g);LOST.ring=g}
 function lostStep(dt){if(S.rescued||!LOST.obj)return;const t=performance.now()*.001;LOST.beam.material.opacity=.15+.1*Math.sin(t*4);LOST.ring.userData.m1.material.opacity=.4+.4*(.5+.5*Math.sin(t*4));LOST.obj.userData.tip.material.color.setScalar(Math.sin(t*9)>0?1:.2);
  if(Math.hypot(P.x-LOST.x,P.z-LOST.z)<5){S.rescued=1;scene.remove(LOST.obj);scene.remove(LOST.beam);scene.remove(LOST.ring);LOST.obj=null;chips(LOST.x,LOST.y+2,LOST.z,'#ffe9a0',60,10,.3,1.4,1.5);AU.unlock();shake=.4;UI.banner('ROVER RESCUED','It rejoins the colony');syncRovers();save()}}
+
+// ================= RANDOM EVENTS: supply pods and solar surges =================
+function podSpawn(){for(let a=0;a<14;a++){const an=Math.random()*6.283,d=14+Math.random()*12,x=P.x+Math.cos(an)*d,z=P.z+Math.sin(an)*d;const ow=ownerOf(x,z);if(ow>0&&!S.unl[ow])continue;if(ow<0)continue;if(Math.hypot(x-FACT.x,z-FACT.z)<14||Math.hypot(x-FACT2.x,z-FACT2.z)<10)continue;
+  const y=gy(x,z);const g=new THREE.Group();const body=new THREE.Mesh(new THREE.SphereGeometry(.9,18,12),new THREE.MeshStandardMaterial({color:'#ffd9a0',roughness:.45,emissive:'#ff9a4a',emissiveIntensity:.5}));body.scale.set(1,.8,1);body.position.y=1;g.add(body);const band=new THREE.Mesh(new THREE.TorusGeometry(.92,.12,8,24),new THREE.MeshStandardMaterial({color:'#38d6c8',roughness:.4,emissive:'#38d6c8',emissiveIntensity:.6}));band.rotation.x=Math.PI/2;band.position.y=1;g.add(band);const cap=new THREE.Mesh(new THREE.SphereGeometry(.28,10,8),new THREE.MeshBasicMaterial({color:'#9ff9ff'}));cap.position.y=1.8;g.add(cap);g.position.set(x,y,z);scene.add(g);
+  const beam=new THREE.Mesh(new THREE.CylinderGeometry(.35,1.1,26,14,1,true),new THREE.MeshBasicMaterial({color:'#ffcf6a',transparent:true,opacity:.24,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending}));beam.position.set(x,y+13,z);scene.add(beam);
+  const ring=padRing('#ffcf6a',x,z,1.2);ring.position.set(x,y+.2,z);scene.add(ring);
+  EV.pod={x,z,y,g,beam,ring,t:100,fall:1.2};chips(x,y+1,z,'#ffe9a0',30,9,.25,1.2,1.2);UI.banner('SUPPLY POD','A pod landed nearby. Grab it!');AU.unlock();return true}return false}
+function podClear(){const p=EV.pod;if(!p)return;scene.remove(p.g);scene.remove(p.beam);scene.remove(p.ring);EV.pod=null}
+function podReward(){const p=EV.pod;const r=Math.random();let txt;
+ if(r<.65){const n=Math.max(40,Math.min(6000,Math.round(40+S.stats.earned*.04)));addCoins(n);txt='+'+fmtC(n)+' coins'}
+ else{const ks=['wood','stone'];if(S.stats.ore>0)ks.push('ore');if(S.stats.crystal>0)ks.push('crystal');const k=ks[Math.floor(Math.random()*ks.length)];const room=Math.max(0,cap()-S.inv[k]);const n=Math.min(room,Math.max(8,Math.ceil(cap()*.18)));S.inv[k]+=n;S.stats[k]+=n;UI.pulse(k);txt='+'+n+' '+RNAME[k].toLowerCase()}
+ chips(p.x,p.y+1.5,p.z,'#ffe9a0',50,10,.3,1.3,1.4);floater(p.x,p.y+4,p.z,txt,'#ffd24a',1);UI.banner('POD OPENED',txt);AU.coin(0);shake=.25;podClear();save()}
+function eventStep(dt){if(EDIT.on)return;
+ if(EV.surge>0){EV.surge-=dt;if(EV.surge<=0){EV.surge=0;UI.toast('Solar surge ended')}}
+ if(!EV.bar){const b=document.createElement('div');b.style.cssText='position:fixed;top:calc(env(safe-area-inset-top,0px) + 58px);left:50%;transform:translateX(-50%);padding:5px 14px;border-radius:999px;background:linear-gradient(#ffe08a,#ffc24a);color:#6a3a08;font:700 13px Fredoka,system-ui,sans-serif;box-shadow:0 3px 10px rgba(80,30,0,.3);display:none;z-index:20;pointer-events:none';document.body.appendChild(b);EV.bar=b}
+ if(EV.surge>0){EV.bar.style.display='block';EV.bar.textContent='☀ Solar surge: +50% production · '+Math.ceil(EV.surge)+'s'}else EV.bar.style.display='none';
+ const p=EV.pod;
+ if(p){const t=performance.now()*.001;p.t-=dt;p.fall=Math.max(0,p.fall-dt*1.6);p.g.position.y=p.y+p.fall*18+Math.sin(t*2)*.12;p.g.rotation.y+=dt*.6;p.beam.material.opacity=.18+.1*Math.sin(t*4);p.ring.userData.m1&&(p.ring.userData.m1.material.opacity=.4+.4*(.5+.5*Math.sin(t*4)));
+  if(p.fall<=0&&Math.hypot(P.x-p.x,P.z-p.z)<4.6){podReward();return}
+  if(p.t<=0){podClear();UI.toast('The supply pod faded away')}
+  return}
+ if(S.playT<60||EV.surge>0)return;EV.next-=dt;if(EV.next>0)return;EV.next=110+Math.random()*90;
+ const hasM=Object.keys(S.mach).length>0;
+ if(hasM&&Math.random()<.4){EV.surge=45;UI.banner('SOLAR SURGE','+50% production for 45s');AU.unlock();shake=.2}else podSpawn()}
 // ================= NODES =================
 const nodes=[];const VAR={};
 function variant(type,kind,v){const k=type+kind+v;if(VAR[k])return VAR[k];seed=v*977+type.length*31+kind.length*7+11;let g;
