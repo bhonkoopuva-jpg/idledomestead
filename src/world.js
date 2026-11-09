@@ -136,7 +136,7 @@ ZTINT.forEach(t=>{if(t)t.col=col(t.c)});
   {const dn=duneAt(x,z)*smoothstep(26,60,Math.hypot(x,z));t.lerp(col('#f6bc88'),Math.max(0,dn-.15)*.55);t.lerp(cB,Math.max(0,-dn)*.0+Math.max(0,.2-dn)*.07)}
   const pd=pathDist(x,z);t.lerp(pth,Math.max(0,1-pd/2.8)*.85);
   const out=-allVal(x,z);if(out>4)t.lerp(rimC,smoothstep(4,26,out)*.8);
-  t.offsetHSL(0,0,(noise3(x*3,0,z*3)-.5)*.05);cc[i*3]=t.r;cc[i*3+1]=t.g;cc[i*3+2]=t.b}
+  t.offsetHSL(0,0,(noise3(x*3,0,z*3)-.5)*.05);{const hs={};t.getHSL(hs);t.setHSL(hs.h,Math.min(1,hs.s*1.2),hs.l*.95)}cc[i*3]=t.r;cc[i*3+1]=t.g;cc[i*3+2]=t.b}
  tgeo.setAttribute('color',new THREE.BufferAttribute(cc,3));tgeo.computeVertexNormals();}
 TERR_BASE=new Float32Array(tgeo.attributes.color.array);
 const terrMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.95});

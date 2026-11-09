@@ -1,5 +1,5 @@
 // ---------------- tree ----------------
-const TREE_COLORS={teal:['#3cc6cb','#1f78a6'],deep:['#34c8c8','#157aa0'],blue:['#7a92ff','#2430b4'],sky:['#5cc2f0','#1c5aa8']};
+const TREE_COLORS={teal:['#b8d86d','#5f8f34'],deep:['#34c8c8','#157aa0'],blue:['#7a92ff','#2430b4'],sky:['#5cc2f0','#1c5aa8']};
 // tapered, twisting, ridged tube (trunks, branches, roots)
 function sweepTube(pts,r0,r1,{seg=40,rad=14,ridge=.07,twist=1.2,sd=0,c0='#6f6d6a',c1='#a09d98',flare=0}={}){
  const cv=new THREE.CatmullRomCurve3(pts.map(p=>new THREE.Vector3(...p)));const pos=[],col=[],idx=[];const ca=col2(c0),cb=col2(c1),tmp=new THREE.Color();
@@ -19,7 +19,7 @@ function sweepTube(pts,r0,r1,{seg=40,rad=14,ridge=.07,twist=1.2,sd=0,c0='#6f6d6a
 const _trG={},_trM={};
 function treeMats(kind){if(_trM[kind])return _trM[kind];const ld=u=>{const t=new THREE.Texture();const im=new Image();im.onload=()=>{t.image=im;t.needsUpdate=true};im.src=u;t.flipY=false;t.anisotropy=4;return t};
  const mp=_trM.mp||(_trM.mp=ld(TREE_TEX.b));mp.colorSpace=THREE.SRGBColorSpace;const nm=_trM.nm||(_trM.nm=ld(TREE_TEX.n));
- const tc=new THREE.Color(TREE_COLORS[kind][0]),b=new THREE.Color(TREE_COLORS.teal[0]),hue=(tc.getHSL({}).h-b.getHSL({}).h)*6.2832;
+ const tc=new THREE.Color(TREE_COLORS[kind][0]),b=new THREE.Color('#3cc6cb'),hue=(tc.getHSL({}).h-b.getHSL({}).h)*6.2832;
  const hook=sh=>{sh.uniforms.hueA={value:hue};sh.fragmentShader=sh.fragmentShader.replace('uniform vec3 diffuse;','uniform vec3 diffuse;uniform float hueA;').replace('#include <map_fragment>','#include <map_fragment>\n float tsat=max(diffuseColor.r,max(diffuseColor.g,diffuseColor.b))-min(diffuseColor.r,min(diffuseColor.g,diffuseColor.b));{vec3 k=vec3(.57735);float cs=cos(hueA),sn=sin(hueA);vec3 rr=diffuseColor.rgb*cs+cross(k,diffuseColor.rgb)*sn+k*dot(k,diffuseColor.rgb)*(1.-cs);diffuseColor.rgb=mix(diffuseColor.rgb,max(rr,0.),smoothstep(.06,.2,tsat));}')};
  const main=new THREE.MeshStandardMaterial({map:mp,normalMap:nm,roughness:.8,metalness:0});main.color.setScalar(1.1);main.onBeforeCompile=hook;main.customProgramCacheKey=()=>'tr'+kind;
  const glow=new THREE.MeshStandardMaterial({map:mp,normalMap:nm,emissiveMap:mp,emissive:new THREE.Color(1,1,1),emissiveIntensity:1.6,roughness:.6});glow.onBeforeCompile=hook;glow.customProgramCacheKey=()=>'trg'+kind;
@@ -307,7 +307,17 @@ function scanMat(){if(_scanMat)return _scanMat;const ld=u=>{const t=new THREE.Te
 function scanPart(i){if(_scanG[i])return _scanG[i];const S0=SCAN[i],dec=b=>{const s=atob(b),u=new Uint8Array(s.length);for(let j=0;j<s.length;j++)u[j]=s.charCodeAt(j);return u.buffer};
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(dec(S0.p)),3));g.setAttribute('uv',new THREE.BufferAttribute(new Uint16Array(dec(S0.t)),2,true));
  g.setAttribute('normal',new THREE.BufferAttribute(new Int8Array(dec(S0.n)),3,true));g.setIndex(new THREE.BufferAttribute(new Uint16Array(dec(S0.i)),1));return _scanG[i]=g}
-function makeScanStone(stage,sd=1){const g=new THREE.Group();const m=new THREE.Mesh(scanPart((stage-1)*2+(sd%2)),scanMat());m.scale.set(12.6,12.6,12.6);m.position.y=-.1;m.rotation.y=sd*2.1;g.add(m);g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});return g}
+let _scanMat2=null;
+function scanMat2(){if(_scanMat2)return _scanMat2;const ld=u=>{const t=new THREE.Texture();const im=new Image();im.onload=()=>{t.image=im;t.needsUpdate=true};im.src=u;t.flipY=false;t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping;t.anisotropy=4;return t};
+ const mp=ld(SCAN2_TEX.b);mp.colorSpace=THREE.SRGBColorSpace;const nm=ld(SCAN2_TEX.n);
+ _scanMat2=new THREE.MeshStandardMaterial({map:mp,normalMap:nm,normalScale:new THREE.Vector2(1,1),roughness:.85,metalness:0});_scanMat2.color.setScalar(1.8);_scanMat2.emissive.setScalar(1);_scanMat2.emissiveMap=mp;_scanMat2.emissiveIntensity=.16;return _scanMat2}
+const _scanG2={};
+function scanPart2(i){if(_scanG2[i])return _scanG2[i];const S0=SCAN2[i],dec=b=>{const s=atob(b),u=new Uint8Array(s.length);for(let j=0;j<s.length;j++)u[j]=s.charCodeAt(j);return u.buffer};
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(dec(S0.p)),3));g.setAttribute('uv',new THREE.BufferAttribute(new Uint16Array(dec(S0.t)),2,true));
+ g.setAttribute('normal',new THREE.BufferAttribute(new Int8Array(dec(S0.n)),3,true));g.setIndex(new THREE.BufferAttribute(new Uint16Array(dec(S0.i)),1));return _scanG2[i]=g}
+function makeScanStone(stage,sd=1){const g=new THREE.Group();
+ if(stage>=3&&typeof SCAN2!=='undefined'){const m=new THREE.Mesh(scanPart2(((sd-1)%5+5)%5),scanMat2());m.scale.setScalar(15);m.position.y=-.1;m.rotation.y=sd*2.1;g.add(m);g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});return g}
+ const m=new THREE.Mesh(scanPart((stage-1)*2+(sd%2)),scanMat());m.scale.set(12.6,12.6,12.6);m.position.y=-.1;m.rotation.y=sd*2.1;g.add(m);g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});return g}
 function makeStoneStage(stage,sd=1){
  if(stage>=1&&typeof SCAN!=='undefined')return makeScanStone(stage,sd);
  const g=new THREE.Group();const mat=clay({roughness:.78});
