@@ -139,7 +139,7 @@ const UI={panel:null,tab:'tools',openId:null,qEls:[],pillEls:{},tagEls:[],fullT:
   UPG.filter(u=>u.tab==='mach').forEach(u=>this.upCard(b,u));
  },
  rBase(b){const sec=t=>{const d=document.createElement('div');d.className='sec';d.textContent=t;b.appendChild(d)};sec('MAIN BASE — BUILD AND UPGRADE');if(!BASE_ON){const t0=document.createElement('div');t0.className='sec';t0.style.lineHeight='1.5';t0.textContent='Base buildings are switched off for now.';b.appendChild(t0);return}
-  const ICB={solar:'solar',dome:'dome',dish:'dish',pad:'lpad',reactor:'reactor'};
+  const ICB={solar:'solar',dome:'dome',dish:'dish',pad:'lpad',reactor:'reactor',air:'reactor',water:'dome',bio:'dome'};
   BASE.forEach(b2=>{const l=bl(b2.id),full=l>=b2.max;const c=full?null:b2.cost(l);const txt=c?costText(c):'';
    b.appendChild(this.card(ICB[b2.id],b2.name+(l?' Lv '+l:''),b2.d,{lv:l,max:b2.max,done:full,tag:full?'MAX LEVEL':'Cost: '+txt,btn:full?null:(l?'UPGRADE':'BUILD'),canbuy:!full&&baseCanAfford(b2),onbuy:()=>{buildBase(b2);this.renderPanel()}}));
    if(!l){const row=b.lastChild;const tr=document.createElement('button');tr.className='btn';tr.style.cssText='margin-top:6px;font-size:11px;padding:3px 10px';tr.textContent='SHOW SITE';tr.onclick=()=>{S.track={x:b2.x,z:b2.z,t:14};this.closeAll()};row.querySelector('.act').appendChild(tr)}});

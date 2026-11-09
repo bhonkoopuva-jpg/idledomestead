@@ -63,7 +63,7 @@ function ownerOf(x,zz){for(const q of ZONES)if(terrS(q,x,zz)>0)return q.i;return
 const mulb=s=>()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
 function zonePoint(z,margin,rnd){const ar=z.lobes.map(l=>l.a*l.b),tot=ar.reduce((a,b)=>a+b,0);for(let g=0;g<60;g++){let r=rnd()*tot,k=0;while(k<ar.length-1&&r>ar[k]){r-=ar[k];k++}const l=z.lobes[k],a=rnd()*6.2832,rr=Math.sqrt(rnd());const x=l.x+Math.cos(a)*l.a*rr,zz=l.z+Math.sin(a)*l.b*rr;if(ownerOf(x,zz)===z.i&&terrS(z,x,zz)>=margin)return[x,zz]}return null}
 // gates: the unlock ring of region N sits at the edge of the region it connects to
-const BASE_POS={dome:{a:120,r:20},pad:{a:142,r:27},dish:{a:232,r:28},reactor:{a:300,r:31},solar:{a:0,r:24}};
+const BASE_POS={dome:{a:120,r:20},pad:{a:142,r:27},dish:{a:232,r:28},reactor:{a:300,r:31},solar:{a:0,r:24},air:{a:60,r:26},water:{a:195,r:30},bio:{a:335,r:33}};
 const KEEP=[[0,-2,12],[-14,5.6,8],[0,7,6],[15,-2,9],[-6,12,6],[18,10,6],[-13,-9,6],
  [-20,-14,5.5],[-9,-18,5.5],[-21,3,5.5],[12,-12,5.5],[16,-15,5.5],[14,-19,5.5],[-3,18,5.5],[4,16,5.5],[0,22,5.5],[8,21,5.5],[11,17,5.5],[22,2,5.5],[25,5,5.5],[23,8,5.5]];
 for(const b of Object.values(BASE_POS)){const a=b.a*Math.PI/180;KEEP.push([Math.cos(a)*b.r,Math.sin(a)*b.r,9])}
@@ -146,14 +146,16 @@ ZTINT.forEach(t=>{if(t)t.col=col(t.c)});
   t.offsetHSL(0,0,(noise3(x*3,0,z*3)-.5)*.05);{const hs={};t.getHSL(hs);t.setHSL(hs.h,Math.min(1,hs.s*1.2),hs.l*.95)}cc[i*3]=t.r;cc[i*3+1]=t.g;cc[i*3+2]=t.b}
  tgeo.setAttribute('color',new THREE.BufferAttribute(cc,3));tgeo.computeVertexNormals();}
 TERR_BASE=new Float32Array(tgeo.attributes.color.array);
+const TERRA={a:{value:0},w:{value:0},g:{value:0}};
 const terrMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.95});
-terrMat.onBeforeCompile=sh=>{sh.uniforms.uSoft=TERR_SOFT;sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vTP;').replace('#include <begin_vertex>','#include <begin_vertex>\nvTP=position;');
+terrMat.onBeforeCompile=sh=>{sh.uniforms.uSoft=TERR_SOFT;sh.uniforms.uTA=TERRA.a;sh.uniforms.uTW=TERRA.w;sh.uniforms.uTG=TERRA.g;sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vTP;').replace('#include <begin_vertex>','#include <begin_vertex>\nvTP=position;');
  sh.fragmentShader=sh.fragmentShader.replace('#include <common>',`#include <common>
-varying vec3 vTP;uniform float uSoft;
+varying vec3 vTP;uniform float uSoft,uTA,uTW,uTG;
 float h21(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 vec2 h22(vec2 p){return fract(sin(vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3))))*43758.5453);}
 float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h21(i),h21(i+vec2(1.,0.)),f.x),mix(h21(i+vec2(0.,1.)),h21(i+vec2(1.,1.)),f.x),f.y);}
 float crk(vec2 p){vec2 i=floor(p),f=fract(p);float d1=8.,d2=8.;for(int y=-1;y<=1;y++)for(int x=-1;x<=1;x++){vec2 g=vec2(float(x),float(y));float d=length(g+h22(i+g)-f);if(d<d1){d2=d1;d1=d;}else if(d<d2)d2=d;}return d2-d1;}`).replace('#include <color_fragment>',`#include <color_fragment>
+{float hh=vTP.y;float nW=vn(vTP.xz*.11+3.),nG=vn(vTP.xz*.06+11.);float wm=uTW*smoothstep(.6,.68,nW)*(1.-smoothstep(-.3,1.2,hh));diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.08,.5,.9),wm*.9);float gm=uTG*smoothstep(.42,.6,nG)*(1.-smoothstep(1.2,3.2,hh))*(1.-wm);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.38,.72,.16),gm*.7);diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(.97,.995,1.04),uTA);}
 {vec2 q=vTP.xz;
  float pat=smoothstep(.64,.76,vn(q*.03+7.));float cr=crk(q*.42+vn(q*.35)*.7);float ln=1.-smoothstep(.02,.07,cr);diffuseColor.rgb*=1.-ln*pat*.28*(1.-.65*uSoft);
  float rp=sin(dot(q,vec2(.82,.57))*1.1+vn(q*.1)*9.)*.5+.5;float rm=smoothstep(.35,.75,vn(q*.018+3.));diffuseColor.rgb*=1.+(rp-.5)*.09*rm;

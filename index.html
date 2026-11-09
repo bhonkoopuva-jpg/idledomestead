@@ -645,6 +645,24 @@ function makeReactor(){const g=new THREE.Group();const steel=std('#6a5d7a',{roug
  const cap=new THREE.Mesh(new THREE.SphereGeometry(1.45,22,12,0,6.283,0,1.571),steel);cap.position.y=4.3;g.add(cap);
  for(let i=0;i<4;i++){const a=i*1.571,p=new THREE.Mesh(new THREE.CylinderGeometry(.25,.3,3.2,10),steel);p.position.set(Math.cos(a)*2.2,1.8,Math.sin(a)*2.2);g.add(p)}
  g.add(glow('#58ecff',7,new THREE.Vector3(0,2.8,0)));g.userData.rings=rings;g.userData.core=core;g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});return g}
+function makeAir(){const g=new THREE.Group();const steel=std('#8d94a3',{roughness:.45,metalness:.2}),cream=std('#e4dcc8',{roughness:.5}),teal=std('#38d6c8',{roughness:.4,emissive:'#38d6c8',emissiveIntensity:.25}),dk=std('#454b66',{roughness:.6});
+ const base=new THREE.Mesh(new THREE.CylinderGeometry(3,3.3,.7,28),dk);base.position.y=.35;g.add(base);
+ const tw=new THREE.Mesh(new THREE.CylinderGeometry(1.5,1.9,6,24),cream);tw.position.y=3.7;g.add(tw);
+ for(let i=0;i<3;i++){const r=new THREE.Mesh(new THREE.TorusGeometry(1.7+i*.05,.16,10,28),teal);r.rotation.x=Math.PI/2;r.position.y=2+i*1.6;g.add(r)}
+ const top=new THREE.Mesh(new THREE.SphereGeometry(1.5,22,12,0,6.283,0,1.571),steel);top.position.y=6.7;g.add(top);
+ for(let i=0;i<3;i++){const a=i*2.094,p=new THREE.Mesh(new THREE.CylinderGeometry(.35,.45,2.4,12),steel);p.position.set(Math.cos(a)*2.4,1.6,Math.sin(a)*2.4);g.add(p);const fan=new THREE.Mesh(new THREE.TorusGeometry(.5,.08,8,16),teal);fan.rotation.x=Math.PI/2;fan.position.set(Math.cos(a)*2.4,2.9,Math.sin(a)*2.4);g.add(fan)}
+ g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});return g}
+function makeWater(){const g=new THREE.Group();const dk=std('#454b66',{roughness:.6}),steel=std('#8d94a3',{roughness:.45,metalness:.2}),blue=std('#6fcff2',{roughness:.25,emissive:'#3aa8e0',emissiveIntensity:.25}),cream=std('#e4dcc8',{roughness:.5}),yel=std('#e8b02c',{roughness:.45});
+ add(g,rbox(8,.6,6.4,.25,dk),0,.3,0);
+ for(const[x,z] of [[-2.2,-1],[0,-1.4],[2.2,-1]]){const t=new THREE.Mesh(new THREE.SphereGeometry(1.25,20,14),blue);t.position.set(x,2.1,z);g.add(t);const b=new THREE.Mesh(new THREE.CylinderGeometry(1.0,1.2,.8,18),cream);b.position.set(x,.9,z);g.add(b)}
+ const pipe=new THREE.Mesh(new THREE.CylinderGeometry(.3,.3,6,12),steel);pipe.rotation.z=Math.PI/2;pipe.position.set(0,.9,1.6);g.add(pipe);
+ const rig=new THREE.Mesh(new THREE.CylinderGeometry(.25,.5,4.6,10),yel);rig.position.set(3,2.6,2.1);rig.rotation.z=.12;g.add(rig);const hd=new THREE.Mesh(new THREE.BoxGeometry(1.2,.7,1.2),yel);hd.position.set(2.7,5,2.1);g.add(hd);
+ g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});return g}
+function makeBio(){const g=new THREE.Group();const dk=std('#454b66',{roughness:.6}),cream=std('#e4dcc8',{roughness:.5}),glass=new THREE.MeshStandardMaterial({color:'#bff0dc',transparent:true,opacity:.5,roughness:.1}),leaf=std('#79c95a',{roughness:.6}),leaf2=std('#a8e07a',{roughness:.6});
+ add(g,rbox(9,.6,7,.25,dk),0,.3,0);
+ for(const[x,z,r] of [[-2.6,-.8,2],[2.4,-1,2.2],[0,2,1.6]]){const rim=new THREE.Mesh(new THREE.CylinderGeometry(r+.2,r+.3,.5,24),cream);rim.position.set(x,.85,z);g.add(rim);const d=new THREE.Mesh(new THREE.SphereGeometry(r,22,14,0,6.283,0,1.571),glass);d.position.set(x,1.1,z);g.add(d);
+  for(let i=0;i<4;i++){const a=i*1.57+x,l=new THREE.Mesh(new THREE.SphereGeometry(.38+i%2*.12,10,8),i%2?leaf:leaf2);l.position.set(x+Math.cos(a)*r*.4,1.5+i%2*.45,z+Math.sin(a)*r*.4);g.add(l)}}
+ g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});return g}
 function makeRover(){const g=new THREE.Group();const cream=std('#e8e0c6',{roughness:.45}),dark=std('#34373f',{roughness:.85});
  for(const sx of [-1,1])add(g,rbox(.45,.5,1.9,.2,dark),sx*.8,.3,0);
  add(g,rbox(1.6,.6,1.7,.25,cream),0,.8,0);const top=rbox(1.1,.35,1.1,.18,std('#2fb0ac'));top.position.set(0,1.25,-.1);g.add(top);
@@ -1004,7 +1022,7 @@ function ownerOf(x,zz){for(const q of ZONES)if(terrS(q,x,zz)>0)return q.i;return
 const mulb=s=>()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
 function zonePoint(z,margin,rnd){const ar=z.lobes.map(l=>l.a*l.b),tot=ar.reduce((a,b)=>a+b,0);for(let g=0;g<60;g++){let r=rnd()*tot,k=0;while(k<ar.length-1&&r>ar[k]){r-=ar[k];k++}const l=z.lobes[k],a=rnd()*6.2832,rr=Math.sqrt(rnd());const x=l.x+Math.cos(a)*l.a*rr,zz=l.z+Math.sin(a)*l.b*rr;if(ownerOf(x,zz)===z.i&&terrS(z,x,zz)>=margin)return[x,zz]}return null}
 // gates: the unlock ring of region N sits at the edge of the region it connects to
-const BASE_POS={dome:{a:120,r:20},pad:{a:142,r:27},dish:{a:232,r:28},reactor:{a:300,r:31},solar:{a:0,r:24}};
+const BASE_POS={dome:{a:120,r:20},pad:{a:142,r:27},dish:{a:232,r:28},reactor:{a:300,r:31},solar:{a:0,r:24},air:{a:60,r:26},water:{a:195,r:30},bio:{a:335,r:33}};
 const KEEP=[[0,-2,12],[-14,5.6,8],[0,7,6],[15,-2,9],[-6,12,6],[18,10,6],[-13,-9,6],
  [-20,-14,5.5],[-9,-18,5.5],[-21,3,5.5],[12,-12,5.5],[16,-15,5.5],[14,-19,5.5],[-3,18,5.5],[4,16,5.5],[0,22,5.5],[8,21,5.5],[11,17,5.5],[22,2,5.5],[25,5,5.5],[23,8,5.5]];
 for(const b of Object.values(BASE_POS)){const a=b.a*Math.PI/180;KEEP.push([Math.cos(a)*b.r,Math.sin(a)*b.r,9])}
@@ -1087,14 +1105,16 @@ ZTINT.forEach(t=>{if(t)t.col=col(t.c)});
   t.offsetHSL(0,0,(noise3(x*3,0,z*3)-.5)*.05);{const hs={};t.getHSL(hs);t.setHSL(hs.h,Math.min(1,hs.s*1.2),hs.l*.95)}cc[i*3]=t.r;cc[i*3+1]=t.g;cc[i*3+2]=t.b}
  tgeo.setAttribute('color',new THREE.BufferAttribute(cc,3));tgeo.computeVertexNormals();}
 TERR_BASE=new Float32Array(tgeo.attributes.color.array);
+const TERRA={a:{value:0},w:{value:0},g:{value:0}};
 const terrMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.95});
-terrMat.onBeforeCompile=sh=>{sh.uniforms.uSoft=TERR_SOFT;sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vTP;').replace('#include <begin_vertex>','#include <begin_vertex>\nvTP=position;');
+terrMat.onBeforeCompile=sh=>{sh.uniforms.uSoft=TERR_SOFT;sh.uniforms.uTA=TERRA.a;sh.uniforms.uTW=TERRA.w;sh.uniforms.uTG=TERRA.g;sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vTP;').replace('#include <begin_vertex>','#include <begin_vertex>\nvTP=position;');
  sh.fragmentShader=sh.fragmentShader.replace('#include <common>',`#include <common>
-varying vec3 vTP;uniform float uSoft;
+varying vec3 vTP;uniform float uSoft,uTA,uTW,uTG;
 float h21(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 vec2 h22(vec2 p){return fract(sin(vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3))))*43758.5453);}
 float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h21(i),h21(i+vec2(1.,0.)),f.x),mix(h21(i+vec2(0.,1.)),h21(i+vec2(1.,1.)),f.x),f.y);}
 float crk(vec2 p){vec2 i=floor(p),f=fract(p);float d1=8.,d2=8.;for(int y=-1;y<=1;y++)for(int x=-1;x<=1;x++){vec2 g=vec2(float(x),float(y));float d=length(g+h22(i+g)-f);if(d<d1){d2=d1;d1=d;}else if(d<d2)d2=d;}return d2-d1;}`).replace('#include <color_fragment>',`#include <color_fragment>
+{float hh=vTP.y;float nW=vn(vTP.xz*.11+3.),nG=vn(vTP.xz*.06+11.);float wm=uTW*smoothstep(.6,.68,nW)*(1.-smoothstep(-.3,1.2,hh));diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.08,.5,.9),wm*.9);float gm=uTG*smoothstep(.42,.6,nG)*(1.-smoothstep(1.2,3.2,hh))*(1.-wm);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.38,.72,.16),gm*.7);diffuseColor.rgb=mix(diffuseColor.rgb,diffuseColor.rgb*vec3(.97,.995,1.04),uTA);}
 {vec2 q=vTP.xz;
  float pat=smoothstep(.64,.76,vn(q*.03+7.));float cr=crk(q*.42+vn(q*.35)*.7);float ln=1.-smoothstep(.02,.07,cr);diffuseColor.rgb*=1.-ln*pat*.28*(1.-.65*uSoft);
  float rp=sin(dot(q,vec2(.82,.57))*1.1+vn(q*.1)*9.)*.5+.5;float rm=smoothstep(.35,.75,vn(q*.018+3.));diffuseColor.rgb*=1.+(rp-.5)*.09*rm;
@@ -1318,10 +1338,13 @@ const BASE=[
  {id:'dome',name:'Greenhouse Dome',a:62,max:3,clr:5,col:'#7ff0c8',d:'Trees regrow 35% faster, per level.',cost:l=>({coins:[500,1600,4500][l],brick:[12,30,60][l],plank:[8,20,40][l],cell:[3,8,16][l]})},
  {id:'dish',name:'Comms Dish',a:200,max:3,clr:4,col:'#9ad0ff',d:'Drones fly and work 15% faster, per level.',cost:l=>({coins:[700,2200,5500][l],plate:[10,24,48][l],circuit:[6,14,28][l]})},
  {id:'pad',name:'Landing Pad',a:105,max:3,clr:7,col:'#ffe28a',d:'Sends a Rover along the ring road and adds +10% sale value, per level.',cost:l=>({coins:[900,3000,7500][l],brick:[25,55,100][l],plate:[12,28,50][l],circuit:[4,12,24][l]})},
+ {id:'air',name:'Atmosphere Processor',a:60,max:1,clr:5,col:'#bfe6ff',d:'Thickens the thin air. The sky softens and the dust settles.',cost:l=>({coins:4000,module:4,plate:20,cell:10})},
+ {id:'water',name:'Water Extractor',a:195,max:1,clr:5,col:'#7ad4ff',d:'Draws water from the ground. Small pools appear on the plains.',cost:l=>({coins:9000,module:10,core:4,circuit:20})},
+ {id:'bio',name:'Bio Seeder',a:335,max:1,clr:6,col:'#a8e07a',d:'Seeds the first plants. Green spreads across the flats.',cost:l=>({coins:20000,module:20,core:10,plank:40,stick:20})},
  {id:'reactor',name:'Quantum Reactor',a:287,max:2,clr:5,col:'#58ecff',d:'Fusion core: +60 power per level.',cost:l=>({coins:[6000,20000][l],module:[6,16][l],core:[3,8][l],cell:[10,25][l]})}];
 BASE.forEach(b=>{const bp=BASE_POS[b.id],a=bp.a*Math.PI/180;b.a=bp.a;b.x=Math.cos(a)*bp.r;b.z=Math.sin(a)*bp.r;b.y=gy(b.x,b.z);b.obj=null;b.ghost=null;b.lbl=null});
-const BMAK={solar:()=>makeSolar(),dome:()=>makeDome(),dish:()=>makeDish(),pad:()=>makePad(),reactor:()=>makeReactor()};
-const BCOLR={solar:4.6,dome:3.3,dish:2.4,pad:0,reactor:3.3};
+const BMAK={air:()=>makeAir(),water:()=>makeWater(),bio:()=>makeBio(),solar:()=>makeSolar(),dome:()=>makeDome(),dish:()=>makeDish(),pad:()=>makePad(),reactor:()=>makeReactor()};
+const BCOLR={air:3.2,water:3.6,bio:4,solar:4.6,dome:3.3,dish:2.4,pad:0,reactor:3.3};
 function baseCanAfford(b){const l=bl(b.id);if(l>=b.max)return false;return canPay(b.cost(l))}
 function showBase(b,pop){if(!BASE_ON)return;if(b.obj){scene.remove(b.obj);b.obj=null}const l=bl(b.id);if(b.ghost)b.ghost.visible=!l;if(!l)return;
  const o=BMAK[b.id]();o.position.set(b.x,b.y,b.z);o.rotation.y=Math.atan2(-b.x,-b.z);scene.add(o);b.obj=o;b.pop=pop?1:0;if(pop)o.scale.setScalar(.01);}
@@ -1329,11 +1352,12 @@ function buildBase(b){const l=bl(b.id);if(l>=b.max)return false;if(!baseCanAffor
  payCost(b.cost(l));
  S.base[b.id]=l+1;S.stats.built++;showBase(b,true);
  for(let i=0;i<48;i++){const a=i/48*6.283;chips(b.x+Math.cos(a)*b.clr,gy(b.x,b.z)+.5,b.z+Math.sin(a)*b.clr,b.col,1,7,.26,1.3,2,10)}
- chips(b.x,b.y+2,b.z,'#ffe9a0',50,11,.3,1.3,1.5);AU.unlock();shake=.5;{const ST={solar:['THE COLONY HAS POWER','The first step toward a home'],dome:['FIRST GREEN ON MARS','Something is growing here'],dish:['CONTACT WITH EARTH','They can hear you now'],pad:['A PLACE TO LAND','Mars is ready for visitors'],reactor:['A HEART FOR THE CITY','Power for thousands']};const s=ST[b.id];UI.banner(l?b.name.toUpperCase()+' LV '+(l+1):(s?s[0]:'BASE BUILT'),l?b.name:(s?s[1]:b.name))}
+ chips(b.x,b.y+2,b.z,'#ffe9a0',50,11,.3,1.3,1.5);AU.unlock();shake=.5;{const ST={solar:['THE COLONY HAS POWER','The first step toward a home'],dome:['FIRST GREEN ON MARS','Something is growing here'],dish:['CONTACT WITH EARTH','They can hear you now'],pad:['A PLACE TO LAND','Mars is ready for visitors'],reactor:['A HEART FOR THE CITY','Power for thousands'],air:['THE SKY IS CHANGING','Mars starts to breathe'],water:['WATER ON MARS','The first pools appear'],bio:['LIFE TAKES ROOT','Green spreads across the plains']};const s=ST[b.id];UI.banner(l?b.name.toUpperCase()+' LV '+(l+1):(s?s[0]:'BASE BUILT'),l?b.name:(s?s[1]:b.name))}
  if(b.id==='pad')syncRovers();UI.pulse('coins');save();return true}
-const BASE_ON=true;
+const BASE_ON=true;const _skyC=new THREE.Color('#9fbfdc');
 function setupBase(){if(!BASE_ON)return;BASE.forEach(b=>{const g=padRing(b.col,b.x,b.z,2.1);g.position.set(b.x,b.y+.2,b.z);scene.add(g);b.ghost=g;const lab=new THREE.Sprite(new THREE.SpriteMaterial({map:labelTex(b.name.toUpperCase(),'BUILD SITE'),transparent:true,depthWrite:false,fog:false}));lab.scale.set(8.5,3.3,1);lab.position.set(0,5.2,0);g.add(lab);showBase(b,false)})}
 function baseStep(dt){if(!BASE_ON)return;const t=performance.now()*.001;
+ {const k=Math.min(1,dt*.6),ta=bl('air')?1:0,tw=bl('water')?1:0,tg=bl('bio')?1:0;TERRA.a.value+=(ta-TERRA.a.value)*k;TERRA.w.value+=(tw-TERRA.w.value)*k;TERRA.g.value+=(tg-TERRA.g.value)*k;const m=TERRA.a.value*.4;scene.fog.color.set('#e6987a').lerp(_skyC,m);scene.background.set('#dc7d52').lerp(_skyC,m)}
  for(const b of BASE){const lv=bl(b.id);
   if(!lv){const aq=QUESTS[S.qa[0]],tg=aq&&aq.at?aq.at():null;const near=tg===b&&Math.hypot(P.x-b.x,P.z-b.z)<40;b.ghost.visible=near;if(!near)continue;const pu=.5+.5*Math.sin(t*3+b.a);b.ghost.userData.m1.material.opacity=.35+.4*pu;b.ghost.userData.m2.material.opacity=.08+.1*pu;continue}
   const o=b.obj;if(!o)continue;
@@ -1737,7 +1761,10 @@ const QUESTS=[
  {t:'Buy the Plasma Pick',goal:1,c:()=>S.tool>=3?1:0,r:2500,shop:1},
  {t:'Build 8 machines',goal:8,c:()=>Object.keys(S.mach).length,r:3000,at:()=>nearestPad()},
  {t:'Deliver 30 slabs to the Upgrade Center',goal:30,c:()=>S.fac.made.slab,r:3500,at:()=>FACT},
- {t:'Build the Quantum Reactor',goal:1,c:()=>bl('reactor'),r:4000,at:()=>BASE[4]},
+ {t:'Build the Quantum Reactor',goal:1,c:()=>bl('reactor'),r:4000,at:()=>BASE.find(b=>b.id==='reactor')},
+ {t:'Terraform: build the Atmosphere Processor',goal:1,c:()=>bl('air'),r:5000,at:()=>BASE.find(b=>b.id==='air')},
+ {t:'Terraform: build the Water Extractor',goal:1,c:()=>bl('water'),r:9000,at:()=>BASE.find(b=>b.id==='water')},
+ {t:'Terraform: build the Bio Seeder',goal:1,c:()=>bl('bio'),r:15000,at:()=>BASE.find(b=>b.id==='bio')},
  {t:'Clear Sandstorm: Far Rim',goal:1,c:()=>S.unl[5],r:5000,at:()=>ZONES[5].gate},
  {t:'Clear Sandstorm: Rust Badlands',goal:1,c:()=>S.unl[6],r:8000,at:()=>ZONES[6].gate},
  {t:'Clear Sandstorm: Glass Canyon',goal:1,c:()=>S.unl[7],r:12000,at:()=>ZONES[7].gate},
@@ -2136,7 +2163,7 @@ const UI={panel:null,tab:'tools',openId:null,qEls:[],pillEls:{},tagEls:[],fullT:
   UPG.filter(u=>u.tab==='mach').forEach(u=>this.upCard(b,u));
  },
  rBase(b){const sec=t=>{const d=document.createElement('div');d.className='sec';d.textContent=t;b.appendChild(d)};sec('MAIN BASE — BUILD AND UPGRADE');if(!BASE_ON){const t0=document.createElement('div');t0.className='sec';t0.style.lineHeight='1.5';t0.textContent='Base buildings are switched off for now.';b.appendChild(t0);return}
-  const ICB={solar:'solar',dome:'dome',dish:'dish',pad:'lpad',reactor:'reactor'};
+  const ICB={solar:'solar',dome:'dome',dish:'dish',pad:'lpad',reactor:'reactor',air:'reactor',water:'dome',bio:'dome'};
   BASE.forEach(b2=>{const l=bl(b2.id),full=l>=b2.max;const c=full?null:b2.cost(l);const txt=c?costText(c):'';
    b.appendChild(this.card(ICB[b2.id],b2.name+(l?' Lv '+l:''),b2.d,{lv:l,max:b2.max,done:full,tag:full?'MAX LEVEL':'Cost: '+txt,btn:full?null:(l?'UPGRADE':'BUILD'),canbuy:!full&&baseCanAfford(b2),onbuy:()=>{buildBase(b2);this.renderPanel()}}));
    if(!l){const row=b.lastChild;const tr=document.createElement('button');tr.className='btn';tr.style.cssText='margin-top:6px;font-size:11px;padding:3px 10px';tr.textContent='SHOW SITE';tr.onclick=()=>{S.track={x:b2.x,z:b2.z,t:14};this.closeAll()};row.querySelector('.act').appendChild(tr)}});

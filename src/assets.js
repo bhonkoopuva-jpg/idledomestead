@@ -369,6 +369,24 @@ function makeReactor(){const g=new THREE.Group();const steel=std('#6a5d7a',{roug
  const cap=new THREE.Mesh(new THREE.SphereGeometry(1.45,22,12,0,6.283,0,1.571),steel);cap.position.y=4.3;g.add(cap);
  for(let i=0;i<4;i++){const a=i*1.571,p=new THREE.Mesh(new THREE.CylinderGeometry(.25,.3,3.2,10),steel);p.position.set(Math.cos(a)*2.2,1.8,Math.sin(a)*2.2);g.add(p)}
  g.add(glow('#58ecff',7,new THREE.Vector3(0,2.8,0)));g.userData.rings=rings;g.userData.core=core;g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});return g}
+function makeAir(){const g=new THREE.Group();const steel=std('#8d94a3',{roughness:.45,metalness:.2}),cream=std('#e4dcc8',{roughness:.5}),teal=std('#38d6c8',{roughness:.4,emissive:'#38d6c8',emissiveIntensity:.25}),dk=std('#454b66',{roughness:.6});
+ const base=new THREE.Mesh(new THREE.CylinderGeometry(3,3.3,.7,28),dk);base.position.y=.35;g.add(base);
+ const tw=new THREE.Mesh(new THREE.CylinderGeometry(1.5,1.9,6,24),cream);tw.position.y=3.7;g.add(tw);
+ for(let i=0;i<3;i++){const r=new THREE.Mesh(new THREE.TorusGeometry(1.7+i*.05,.16,10,28),teal);r.rotation.x=Math.PI/2;r.position.y=2+i*1.6;g.add(r)}
+ const top=new THREE.Mesh(new THREE.SphereGeometry(1.5,22,12,0,6.283,0,1.571),steel);top.position.y=6.7;g.add(top);
+ for(let i=0;i<3;i++){const a=i*2.094,p=new THREE.Mesh(new THREE.CylinderGeometry(.35,.45,2.4,12),steel);p.position.set(Math.cos(a)*2.4,1.6,Math.sin(a)*2.4);g.add(p);const fan=new THREE.Mesh(new THREE.TorusGeometry(.5,.08,8,16),teal);fan.rotation.x=Math.PI/2;fan.position.set(Math.cos(a)*2.4,2.9,Math.sin(a)*2.4);g.add(fan)}
+ g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});return g}
+function makeWater(){const g=new THREE.Group();const dk=std('#454b66',{roughness:.6}),steel=std('#8d94a3',{roughness:.45,metalness:.2}),blue=std('#6fcff2',{roughness:.25,emissive:'#3aa8e0',emissiveIntensity:.25}),cream=std('#e4dcc8',{roughness:.5}),yel=std('#e8b02c',{roughness:.45});
+ add(g,rbox(8,.6,6.4,.25,dk),0,.3,0);
+ for(const[x,z] of [[-2.2,-1],[0,-1.4],[2.2,-1]]){const t=new THREE.Mesh(new THREE.SphereGeometry(1.25,20,14),blue);t.position.set(x,2.1,z);g.add(t);const b=new THREE.Mesh(new THREE.CylinderGeometry(1.0,1.2,.8,18),cream);b.position.set(x,.9,z);g.add(b)}
+ const pipe=new THREE.Mesh(new THREE.CylinderGeometry(.3,.3,6,12),steel);pipe.rotation.z=Math.PI/2;pipe.position.set(0,.9,1.6);g.add(pipe);
+ const rig=new THREE.Mesh(new THREE.CylinderGeometry(.25,.5,4.6,10),yel);rig.position.set(3,2.6,2.1);rig.rotation.z=.12;g.add(rig);const hd=new THREE.Mesh(new THREE.BoxGeometry(1.2,.7,1.2),yel);hd.position.set(2.7,5,2.1);g.add(hd);
+ g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});return g}
+function makeBio(){const g=new THREE.Group();const dk=std('#454b66',{roughness:.6}),cream=std('#e4dcc8',{roughness:.5}),glass=new THREE.MeshStandardMaterial({color:'#bff0dc',transparent:true,opacity:.5,roughness:.1}),leaf=std('#79c95a',{roughness:.6}),leaf2=std('#a8e07a',{roughness:.6});
+ add(g,rbox(9,.6,7,.25,dk),0,.3,0);
+ for(const[x,z,r] of [[-2.6,-.8,2],[2.4,-1,2.2],[0,2,1.6]]){const rim=new THREE.Mesh(new THREE.CylinderGeometry(r+.2,r+.3,.5,24),cream);rim.position.set(x,.85,z);g.add(rim);const d=new THREE.Mesh(new THREE.SphereGeometry(r,22,14,0,6.283,0,1.571),glass);d.position.set(x,1.1,z);g.add(d);
+  for(let i=0;i<4;i++){const a=i*1.57+x,l=new THREE.Mesh(new THREE.SphereGeometry(.38+i%2*.12,10,8),i%2?leaf:leaf2);l.position.set(x+Math.cos(a)*r*.4,1.5+i%2*.45,z+Math.sin(a)*r*.4);g.add(l)}}
+ g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});return g}
 function makeRover(){const g=new THREE.Group();const cream=std('#e8e0c6',{roughness:.45}),dark=std('#34373f',{roughness:.85});
  for(const sx of [-1,1])add(g,rbox(.45,.5,1.9,.2,dark),sx*.8,.3,0);
  add(g,rbox(1.6,.6,1.7,.25,cream),0,.8,0);const top=rbox(1.1,.35,1.1,.18,std('#2fb0ac'));top.position.set(0,1.25,-.1);g.add(top);

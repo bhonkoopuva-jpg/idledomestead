@@ -50,10 +50,13 @@ const BASE=[
  {id:'dome',name:'Greenhouse Dome',a:62,max:3,clr:5,col:'#7ff0c8',d:'Trees regrow 35% faster, per level.',cost:l=>({coins:[500,1600,4500][l],brick:[12,30,60][l],plank:[8,20,40][l],cell:[3,8,16][l]})},
  {id:'dish',name:'Comms Dish',a:200,max:3,clr:4,col:'#9ad0ff',d:'Drones fly and work 15% faster, per level.',cost:l=>({coins:[700,2200,5500][l],plate:[10,24,48][l],circuit:[6,14,28][l]})},
  {id:'pad',name:'Landing Pad',a:105,max:3,clr:7,col:'#ffe28a',d:'Sends a Rover along the ring road and adds +10% sale value, per level.',cost:l=>({coins:[900,3000,7500][l],brick:[25,55,100][l],plate:[12,28,50][l],circuit:[4,12,24][l]})},
+ {id:'air',name:'Atmosphere Processor',a:60,max:1,clr:5,col:'#bfe6ff',d:'Thickens the thin air. The sky softens and the dust settles.',cost:l=>({coins:4000,module:4,plate:20,cell:10})},
+ {id:'water',name:'Water Extractor',a:195,max:1,clr:5,col:'#7ad4ff',d:'Draws water from the ground. Small pools appear on the plains.',cost:l=>({coins:9000,module:10,core:4,circuit:20})},
+ {id:'bio',name:'Bio Seeder',a:335,max:1,clr:6,col:'#a8e07a',d:'Seeds the first plants. Green spreads across the flats.',cost:l=>({coins:20000,module:20,core:10,plank:40,stick:20})},
  {id:'reactor',name:'Quantum Reactor',a:287,max:2,clr:5,col:'#58ecff',d:'Fusion core: +60 power per level.',cost:l=>({coins:[6000,20000][l],module:[6,16][l],core:[3,8][l],cell:[10,25][l]})}];
 BASE.forEach(b=>{const bp=BASE_POS[b.id],a=bp.a*Math.PI/180;b.a=bp.a;b.x=Math.cos(a)*bp.r;b.z=Math.sin(a)*bp.r;b.y=gy(b.x,b.z);b.obj=null;b.ghost=null;b.lbl=null});
-const BMAK={solar:()=>makeSolar(),dome:()=>makeDome(),dish:()=>makeDish(),pad:()=>makePad(),reactor:()=>makeReactor()};
-const BCOLR={solar:4.6,dome:3.3,dish:2.4,pad:0,reactor:3.3};
+const BMAK={air:()=>makeAir(),water:()=>makeWater(),bio:()=>makeBio(),solar:()=>makeSolar(),dome:()=>makeDome(),dish:()=>makeDish(),pad:()=>makePad(),reactor:()=>makeReactor()};
+const BCOLR={air:3.2,water:3.6,bio:4,solar:4.6,dome:3.3,dish:2.4,pad:0,reactor:3.3};
 function baseCanAfford(b){const l=bl(b.id);if(l>=b.max)return false;return canPay(b.cost(l))}
 function showBase(b,pop){if(!BASE_ON)return;if(b.obj){scene.remove(b.obj);b.obj=null}const l=bl(b.id);if(b.ghost)b.ghost.visible=!l;if(!l)return;
  const o=BMAK[b.id]();o.position.set(b.x,b.y,b.z);o.rotation.y=Math.atan2(-b.x,-b.z);scene.add(o);b.obj=o;b.pop=pop?1:0;if(pop)o.scale.setScalar(.01);}
@@ -61,11 +64,12 @@ function buildBase(b){const l=bl(b.id);if(l>=b.max)return false;if(!baseCanAffor
  payCost(b.cost(l));
  S.base[b.id]=l+1;S.stats.built++;showBase(b,true);
  for(let i=0;i<48;i++){const a=i/48*6.283;chips(b.x+Math.cos(a)*b.clr,gy(b.x,b.z)+.5,b.z+Math.sin(a)*b.clr,b.col,1,7,.26,1.3,2,10)}
- chips(b.x,b.y+2,b.z,'#ffe9a0',50,11,.3,1.3,1.5);AU.unlock();shake=.5;{const ST={solar:['THE COLONY HAS POWER','The first step toward a home'],dome:['FIRST GREEN ON MARS','Something is growing here'],dish:['CONTACT WITH EARTH','They can hear you now'],pad:['A PLACE TO LAND','Mars is ready for visitors'],reactor:['A HEART FOR THE CITY','Power for thousands']};const s=ST[b.id];UI.banner(l?b.name.toUpperCase()+' LV '+(l+1):(s?s[0]:'BASE BUILT'),l?b.name:(s?s[1]:b.name))}
+ chips(b.x,b.y+2,b.z,'#ffe9a0',50,11,.3,1.3,1.5);AU.unlock();shake=.5;{const ST={solar:['THE COLONY HAS POWER','The first step toward a home'],dome:['FIRST GREEN ON MARS','Something is growing here'],dish:['CONTACT WITH EARTH','They can hear you now'],pad:['A PLACE TO LAND','Mars is ready for visitors'],reactor:['A HEART FOR THE CITY','Power for thousands'],air:['THE SKY IS CHANGING','Mars starts to breathe'],water:['WATER ON MARS','The first pools appear'],bio:['LIFE TAKES ROOT','Green spreads across the plains']};const s=ST[b.id];UI.banner(l?b.name.toUpperCase()+' LV '+(l+1):(s?s[0]:'BASE BUILT'),l?b.name:(s?s[1]:b.name))}
  if(b.id==='pad')syncRovers();UI.pulse('coins');save();return true}
-const BASE_ON=true;
+const BASE_ON=true;const _skyC=new THREE.Color('#9fbfdc');
 function setupBase(){if(!BASE_ON)return;BASE.forEach(b=>{const g=padRing(b.col,b.x,b.z,2.1);g.position.set(b.x,b.y+.2,b.z);scene.add(g);b.ghost=g;const lab=new THREE.Sprite(new THREE.SpriteMaterial({map:labelTex(b.name.toUpperCase(),'BUILD SITE'),transparent:true,depthWrite:false,fog:false}));lab.scale.set(8.5,3.3,1);lab.position.set(0,5.2,0);g.add(lab);showBase(b,false)})}
 function baseStep(dt){if(!BASE_ON)return;const t=performance.now()*.001;
+ {const k=Math.min(1,dt*.6),ta=bl('air')?1:0,tw=bl('water')?1:0,tg=bl('bio')?1:0;TERRA.a.value+=(ta-TERRA.a.value)*k;TERRA.w.value+=(tw-TERRA.w.value)*k;TERRA.g.value+=(tg-TERRA.g.value)*k;const m=TERRA.a.value*.4;scene.fog.color.set('#e6987a').lerp(_skyC,m);scene.background.set('#dc7d52').lerp(_skyC,m)}
  for(const b of BASE){const lv=bl(b.id);
   if(!lv){const aq=QUESTS[S.qa[0]],tg=aq&&aq.at?aq.at():null;const near=tg===b&&Math.hypot(P.x-b.x,P.z-b.z)<40;b.ghost.visible=near;if(!near)continue;const pu=.5+.5*Math.sin(t*3+b.a);b.ghost.userData.m1.material.opacity=.35+.4*pu;b.ghost.userData.m2.material.opacity=.08+.1*pu;continue}
   const o=b.obj;if(!o)continue;
@@ -469,7 +473,10 @@ const QUESTS=[
  {t:'Buy the Plasma Pick',goal:1,c:()=>S.tool>=3?1:0,r:2500,shop:1},
  {t:'Build 8 machines',goal:8,c:()=>Object.keys(S.mach).length,r:3000,at:()=>nearestPad()},
  {t:'Deliver 30 slabs to the Upgrade Center',goal:30,c:()=>S.fac.made.slab,r:3500,at:()=>FACT},
- {t:'Build the Quantum Reactor',goal:1,c:()=>bl('reactor'),r:4000,at:()=>BASE[4]},
+ {t:'Build the Quantum Reactor',goal:1,c:()=>bl('reactor'),r:4000,at:()=>BASE.find(b=>b.id==='reactor')},
+ {t:'Terraform: build the Atmosphere Processor',goal:1,c:()=>bl('air'),r:5000,at:()=>BASE.find(b=>b.id==='air')},
+ {t:'Terraform: build the Water Extractor',goal:1,c:()=>bl('water'),r:9000,at:()=>BASE.find(b=>b.id==='water')},
+ {t:'Terraform: build the Bio Seeder',goal:1,c:()=>bl('bio'),r:15000,at:()=>BASE.find(b=>b.id==='bio')},
  {t:'Clear Sandstorm: Far Rim',goal:1,c:()=>S.unl[5],r:5000,at:()=>ZONES[5].gate},
  {t:'Clear Sandstorm: Rust Badlands',goal:1,c:()=>S.unl[6],r:8000,at:()=>ZONES[6].gate},
  {t:'Clear Sandstorm: Glass Canyon',goal:1,c:()=>S.unl[7],r:12000,at:()=>ZONES[7].gate},
