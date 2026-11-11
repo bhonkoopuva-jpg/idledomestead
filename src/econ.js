@@ -59,7 +59,7 @@ function junctionFor(p,px,pz,maxd){let best=null;for(const k in SEG){if(k===p.id
  for(const k in SEG){if(k===p.id)continue;const a=SEG[k];if(!(a.arcs||[]).length)continue;const rr=segPathTo(k);if(!rr)continue;const pa=segPath(k);if(!pa||pa.some(q=>q.id===p.id))continue;
   const dest=rr.dest;if(dest==='F2'){if(!p.gath)continue}else if(!isT(dest)){const m=padById(dest);if(!m||p.mill||m.k!==p.k)continue}else if(p.gath&&S.storeBuilt)continue;
   for(const r of a.arcs){if(r.ds<3||r.de>a.len-3)continue;const c=arcCorner(a,r,1);const dist=Math.hypot(px-c.V.x,pz-c.V.z)-1.5;if(dist>maxd||(best&&dist>=best.dist))continue;
-   const d1=(p.x-c.V.x)*c.hu.x+(p.z-c.V.z)*c.hu.z,d2=-((p.x-c.V.x)*c.hv.x+(p.z-c.V.z)*c.hv.z),sd=d1>=d2?1:-1;
+   const d1=(p.x-c.V.x)*c.hu.x+(p.z-c.V.z)*c.hu.z,d2=-((p.x-c.V.x)*c.hv.x+(p.z-c.V.z)*c.hv.z),sd=-1;
    best={tgt:'J|'+k+'|'+((r.ds+r.de)/2).toFixed(2)+'|'+sd,x:c.V.x,z:c.V.z,y:gy(c.V.x,c.V.z)+BDECK+2.4,dist}}}
  return best}
 function linkTarget(p,tx,tz){ // resolve a tapped point to 'F' or a connected pad id (not creating a cycle)
