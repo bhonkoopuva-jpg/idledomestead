@@ -181,11 +181,33 @@ function tStrip(x0,z0,x1,z1,y0,y1,hideDir){const L=Math.hypot(x1-x0,z1-z0),dx=(x
   if(cv.length){ // dedicated T-piece instead of the rounded corner
    const o1={},o2={};segAt(seg,a.ds,o1);segAt(seg,a.de,o2);const hu={x:Math.round(Math.sin(o1.yaw)),z:Math.round(Math.cos(o1.yaw))},hv={x:Math.round(Math.sin(o2.yaw)),z:Math.round(Math.cos(o2.yaw))};
    const Vx=o1.x+hu.x*a.R,Vz=o1.z+hu.z*a.R,yv=(o1.y+o2.y)/2;
-   tStrip(o1.x,o1.z,Vx-hu.x*.78,Vz-hu.z*.78,o1.y,yv,null);              // stem (incoming belt)
-   tStrip(Vx-hv.x*.8,Vz-hv.z*.8,Vx+hv.x*.8,Vz+hv.z*.8,yv,yv,{x:-hu.x,z:-hu.z}); // bar, open on the stem side
-   tStrip(Vx+hv.x*.8,Vz+hv.z*.8,o2.x,o2.z,yv,o2.y,null);
-   {const yaw=Math.atan2(hu.x,hu.z),bx=Vx+hu.x*.8,bz=Vz+hu.z*.8;const hood=rbox(1.3,.5,.14,.05,yel);hood.position.set(bx,yv+.2,bz);hood.rotation.y=yaw;grp.add(hood);const win=rbox(.82,.28,.06,.03,teal);win.position.set(bx+hu.x*.09,yv+.22,bz+hu.z*.09);win.rotation.y=yaw;grp.add(win)}
-   for(const [lx,lz] of [[-.7,-.7],[.7,-.7],[-.7,.7],[.7,.7]]){leg(Vx+hv.x*lx*1.1+hu.x*lz*1.1,Vz+hv.z*lx*1.1+hu.z*lz*1.1,yv-.5)}
+   {const HW=.58,RF=.6,XB=.8,XR=a.R,WR=a.R,Y=yv,W3=(x,w)=>[Vx+hv.x*x-hu.x*w,Vz+hv.z*x-hu.z*w];
+    // deck: one flat T-shaped plate with rounded inner corners
+    const P=[[-XB,-HW],[XR,-HW],[XR,HW]];for(let k=0;k<=8;k++){const g=(270-90*k/8)*Math.PI/180;P.push([HW+RF+RF*Math.cos(g),HW+RF+RF*Math.sin(g)])}
+    P.push([HW,WR],[-HW,WR]);for(let k=0;k<=8;k++){const g=(0-90*k/8)*Math.PI/180;P.push([-HW-RF+RF*Math.cos(g),HW+RF+RF*Math.sin(g)])}P.push([-XB,HW]);
+    const tri=THREE.ShapeUtils.triangulateShape(P.map(q=>new THREE.Vector2(q[0],q[1])),[]);const dp=[];for(const q of P){const w=W3(q[0],q[1]);dp.push(w[0],Y+.0,w[1])}
+    const dg=new THREE.BufferGeometry();dg.setAttribute('position',new THREE.Float32BufferAttribute(dp,3));dg.setIndex(tri.flat());dg.computeVertexNormals();dkm.side=THREE.DoubleSide;const dm=new THREE.Mesh(dg,dkm);dm.receiveShadow=true;grp.add(dm);
+    // walls/rims swept along the outline (yellow rim + cream skirt)
+    const WP=[[0,0,cY],[0,.1,cY],[.12,.1,cY],[.2,-.05,cC],[.2,-.55,cC]];
+    const sweep=(path,sg)=>{const Pp=[],Pc=[],Ix=[],n=path.length;const nr=[];for(let q=0;q<n;q++){const a0=path[Math.max(0,q-1)],a1=path[Math.min(n-1,q+1)];let tx=a1[0]-a0[0],tw=a1[1]-a0[1];const l=Math.hypot(tx,tw)||1;tx/=l;tw/=l;nr.push(sg>0?[-tw,tx]:[tw,-tx])}
+     for(let e=0;e<WP.length-1;e++){const b=Pp.length/3;for(let q=0;q<n;q++)for(const pp of [WP[e],WP[e+1]]){const w=W3(path[q][0]+nr[q][0]*pp[0],path[q][1]+nr[q][1]*pp[0]);Pp.push(w[0],Y+pp[1],w[1]);Pc.push(pp[2].r,pp[2].g,pp[2].b)}for(let q=0;q<n-1;q++){const i0=b+q*2;Ix.push(i0,i0+1,i0+2,i0+1,i0+3,i0+2)}}
+     const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(Pp,3));g.setAttribute('color',new THREE.Float32BufferAttribute(Pc,3));g.setIndex(Ix);g.computeVertexNormals();const m=new THREE.Mesh(g,_belMat);m.castShadow=true;m.receiveShadow=true;grp.add(m)};
+    const arcP=(cx,cw,g0,g1)=>{const o=[];for(let k=0;k<=8;k++){const g=(g0+(g1-g0)*k/8)*Math.PI/180;o.push([cx+RF*Math.cos(g),cw+RF*Math.sin(g)])}return o};
+    sweep([[-XB,-HW],[XR,-HW]],-1);                                                                   // outer wall of the bar
+    const L=[[-XB,HW],...arcP(-HW-RF,HW+RF,-90,0).map(q=>q),[-HW,WR]];sweep(L,1);                  // left inner corner
+    const Rr=[[XR,HW],...arcP(HW+RF,HW+RF,270,180),[HW,WR]];sweep(Rr,-1);                          // right inner corner
+    // grey pipe handrails around the two inner corners
+    const rail=(pts)=>{const v=pts.map(q=>{const w=W3(q[0],q[1]);return new THREE.Vector3(w[0],Y+.62,w[1])});const t=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(v),24,.055,6),grey);t.castShadow=true;grp.add(t);
+     for(const q of [v[0],v[Math.floor(v.length/2)],v[v.length-1]]){const pc=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,.62,6),grey);pc.position.set(q.x,Y+.3,q.z);grp.add(pc)}};
+    const arcR=(cx,cw,g0,g1,r)=>{const o=[];for(let k=0;k<=8;k++){const g=(g0+(g1-g0)*k/8)*Math.PI/180;o.push([cx+r*Math.cos(g),cw+r*Math.sin(g)])}return o};
+    rail([[-HW-RF-.9,HW+.25],...arcR(-HW-RF,HW+RF,-90,0,RF-.25),[-HW-.25,HW+RF+.9]]);
+    rail([[HW+RF+.9,HW+.25],...arcR(HW+RF,HW+RF,270,180,RF-.25),[HW+.25,HW+RF+.9]]);
+    for(let x=-XB+.5;x<XR-.2;x+=.95){const w=W3(x,0),sl=new THREE.Mesh(slatGeo,slatMat);sl.position.set(w[0],Y+.04,w[1]);sl.rotation.y=Math.atan2(hv.x,hv.z);grp.add(sl)}
+    for(let y=HW+.7;y<WR-.2;y+=.95){const w=W3(0,y),sl=new THREE.Mesh(slatGeo,slatMat);sl.position.set(w[0],Y+.04,w[1]);sl.rotation.y=Math.atan2(hu.x,hu.z);grp.add(sl)}
+    // teal display + frame on the outer wall, and legs
+    const yaw=Math.atan2(hu.x,hu.z),dpos=W3(.45,-HW-.27);const fr=rbox(.95,.5,.14,.05,grey);fr.position.set(dpos[0],Y-.3,dpos[1]);fr.rotation.y=yaw;grp.add(fr);
+    const scr=rbox(.7,.32,.06,.03,std('#5fe3c0',{roughness:.3,emissive:'#2fb89a',emissiveIntensity:.7}));scr.position.set(dpos[0]+hu.x*.08,Y-.3,dpos[1]+hu.z*.08);scr.rotation.y=yaw;grp.add(scr);
+    for(const [lx,lw] of [[-.45,-.4],[1.35,-.4],[0,1.45],[-.45,.4]]){const w=W3(lx,lw);leg(w[0],w[1],Y-.5)}}
    (hideR=hideR||[]).push([a.ds,a.de]);continue}
   for(let ei=0;ei<PR.length-1;ei++){const base=Ppos.length/3;const p0=PR[ei],p1=PR[ei+1];
    for(let k=0;k<=ns;k++){const t=k/ns,ang=a.a0+a.sw*t;segAt(seg,a.ds+(a.de-a.ds)*t,po);const cs=Math.cos(ang),sn=Math.sin(ang);
