@@ -1857,7 +1857,12 @@ const isT=t=>t==='F'||t==='F2';const termPos=t=>t==='F2'?FACT2:FACT;
 // junction targets: 'J|<belt owner id>|<distance along that belt>|<side +1/-1>' = a T-split onto another belt
 function jn(t){if(typeof t!=='string'||t[0]!=='J'||t[1]!=='|')return null;const a=t.split('|');return{id:a[1],d:+a[2],s:+a[3]}}
 function wrapSeg(a,d){const w={id:a.id,base:a,off:d,len:Math.max(.5,a.len-d)};Object.defineProperty(w,'tok',{get:()=>a.tok,set:v=>{a.tok=v}});return w}
-function jPort(j,off=4.6){const a=SEG[j.id];if(!a)return[{x:0,z:0,dx:0,dz:1}];const o={};segAt(a,j.d,o);const hx=Math.round(Math.sin(o.yaw)),hz=Math.round(Math.cos(o.yaw)),nx=-hz,nz=hx;return[{x:o.x+j.s*nx*off,z:o.z+j.s*nz*off,dx:-j.s*nx,dz:-j.s*nz}]}
+function arcAt(a,d){return (a.arcs||[]).find(r=>d>=r.ds-.01&&d<=r.de+.01)||null}
+function arcCorner(a,r,sd){const o1={},o2={};segAt(a,r.ds,o1);segAt(a,r.de,o2);const hu={x:Math.round(Math.sin(o1.yaw)),z:Math.round(Math.cos(o1.yaw))},hv={x:Math.round(Math.sin(o2.yaw)),z:Math.round(Math.cos(o2.yaw))};
+ const V={x:o1.x+hu.x*r.R,z:o1.z+hu.z*r.R},arm=sd>0?{x:hu.x,z:hu.z}:{x:-hv.x,z:-hv.z};return{V,arm,hu,hv}}
+function jPort(j,off=4.6){const a=SEG[j.id];if(!a)return[{x:0,z:0,dx:0,dz:1}];const r=arcAt(a,j.d);
+ if(r){const c=arcCorner(a,r,j.s);return[{x:c.V.x+c.arm.x*(off+.1),z:c.V.z+c.arm.z*(off+.1),dx:-c.arm.x,dz:-c.arm.z}]}
+ const o={};segAt(a,j.d,o);const hx=Math.round(Math.sin(o.yaw)),hz=Math.round(Math.cos(o.yaw)),nx=-hz,nz=hx;return[{x:o.x+j.s*nx*off,z:o.z+j.s*nz*off,dx:-j.s*nx,dz:-j.s*nz}]}
 function segPath(id){const out=[];let cur=id,guard=0;while(cur&&!isT(cur)&&guard++<30){const s=SEG[cur];if(!s)return null;out.push(s);let t=s.tgt,j=jn(t),g2=0;while(j&&g2++<10){const a=SEG[j.id];if(!a)return null;out.push(a);t=a.tgt;j=jn(t)}cur=t}return isT(cur)?out:null}
 function segEnd(id){let cur=id,g=0;while(g++<30){let t=S.links[cur];if(!t)return null;let j=jn(t),g2=0;while(j&&g2++<10){cur=j.id;t=S.links[cur];if(!t)return null;j=jn(t)}if(isT(t))return t;const q=padById(t);if(q&&q.mill)return t;cur=t}return null}
 function segPathTo(id){const out=[];let cur=id,g=0;while(cur&&g++<30){const s=SEG[cur];if(!s)return null;out.push(s);let t=s.tgt,j=jn(t),g2=0;while(j&&g2++<10){const a=SEG[j.id];if(!a)return null;out.push(wrapSeg(a,j.d));t=a.tgt;j=jn(t)}
@@ -1869,7 +1874,13 @@ function junctionFor(p,px,pz,maxd){let best=null;for(const k in SEG){if(k===p.id
   const dest=rr.dest;if(dest==='F2'){if(!p.gath)continue}else if(!isT(dest)){const m=padById(dest);if(!m||p.mill||m.k!==p.k)continue}else if(p.gath&&S.storeBuilt)continue;
   const sp=beltSpot(a,px,pz);if(!sp||sp.dist>maxd||(best&&sp.dist>=best.dist))continue;
   const o={};segAt(a,sp.d,o);const hx=Math.round(Math.sin(o.yaw)),hz=Math.round(Math.cos(o.yaw)),nx=-hz,nz=hx;const side=((p.x-sp.x)*nx+(p.z-sp.z)*nz)>=0?1:-1;
-  best={tgt:'J|'+k+'|'+sp.d.toFixed(2)+'|'+side,x:sp.x,z:sp.z,y:sp.y+2.4,dist:sp.dist}}return best}
+  best={tgt:'J|'+k+'|'+sp.d.toFixed(2)+'|'+side,x:sp.x,z:sp.z,y:sp.y+2.4,dist:sp.dist}}
+ for(const k in SEG){if(k===p.id)continue;const a=SEG[k];if(!(a.arcs||[]).length)continue;const rr=segPathTo(k);if(!rr)continue;const pa=segPath(k);if(!pa||pa.some(q=>q.id===p.id))continue;
+  const dest=rr.dest;if(dest==='F2'){if(!p.gath)continue}else if(!isT(dest)){const m=padById(dest);if(!m||p.mill||m.k!==p.k)continue}else if(p.gath&&S.storeBuilt)continue;
+  for(const r of a.arcs){if(r.ds<3||r.de>a.len-3)continue;const c=arcCorner(a,r,1);const dist=Math.hypot(px-c.V.x,pz-c.V.z)-1.5;if(dist>maxd||(best&&dist>=best.dist))continue;
+   const d1=(p.x-c.V.x)*c.hu.x+(p.z-c.V.z)*c.hu.z,d2=-((p.x-c.V.x)*c.hv.x+(p.z-c.V.z)*c.hv.z),sd=d1>=d2?1:-1;
+   best={tgt:'J|'+k+'|'+((r.ds+r.de)/2).toFixed(2)+'|'+sd,x:c.V.x,z:c.V.z,y:gy(c.V.x,c.V.z)+BDECK+2.4,dist}}}
+ return best}
 function linkTarget(p,tx,tz){ // resolve a tapped point to 'F' or a connected pad id (not creating a cycle)
  if(!isF2(p)&&S.unl[1]&&S.storeBuilt&&Math.hypot(tx-FACT2.x,tz-FACT2.z)<8.5)return 'F2';
  let best=null,bd=3.6;for(const q of PADS){if(q===p||!S.links[q.id]||!machLv(q)||(isF2(p)&&!q.mill)||(p.gath&&S.storeBuilt))continue;const d=Math.hypot(tx-q.x,tz-q.z);if(d>=bd)continue;
