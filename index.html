@@ -1943,7 +1943,7 @@ function routeFor(p,tgt){
  for(let i=w.length-2;i>0;i--){const a=w[i-1],b=w[i],c=w[i+1];if(Math.abs((b.x-a.x)*(c.z-b.z)-(b.z-a.z)*(c.x-b.x))<1e-3)w.splice(i,1)}
  return {w,out:bo?{dx:bo.dx,dz:bo.dz}:null,inn:bi?{dx:bi.dx,dz:bi.dz}:null}}
 function buildSeg(p,tgt){killSeg(p.id);const R0=routeFor(p,tgt),w=R0.w,pts=[],arcs=[];
- {const jj=jn(tgt);if(jj&&SEG[jj.id]){const e=jPort(jj,.35)[0];w[w.length-1]={x:e.x,z:e.z}}}
+ {const jj=jn(tgt);if(jj&&SEG[jj.id]){const e=jPort(jj,arcAt(SEG[jj.id],jj.d)?-.3:.35)[0];w[w.length-1]={x:e.x,z:e.z}}}
  const dist=(a,b)=>Math.hypot(b.x-a.x,b.z-a.z),push=(x,z)=>pts.push({x,z,y:gy(x,z)+BDECK});
  const line=(a,b)=>{const n=Math.max(1,Math.ceil(dist(a,b)/1.4));for(let i=(pts.length?1:0);i<=n;i++)push(a.x+(b.x-a.x)*i/n,a.z+(b.z-a.z)*i/n)};
  // corner radii
@@ -1960,15 +1960,16 @@ function buildSeg(p,tgt){killSeg(p.id);const R0=routeFor(p,tgt),w=R0.w,pts=[],ar
  for(let k=0;k<2;k++)for(let i=1;i<n;i++)pts[i].y=(pts[i-1].y+pts[i].y*2+pts[i+1].y)/4;
  let acc=0;pts[0].d=0;for(let i=1;i<=n;i++){acc+=Math.hypot(pts[i].x-pts[i-1].x,pts[i].z-pts[i-1].z);pts[i].d=acc}
  for(const a of arcs){a.ds=pts[a.i0].d;a.de=pts[a.i1].d}
- const seg={id:p.id,tgt,pts,arcs,out:R0.out,inn:R0.inn,len:acc,tok:3,ratio:1,vis:null};SEG[p.id]=seg;seg.vis=segVisual(seg);refreshBeltClear()}
+ const seg={id:p.id,tgt,pts,arcs,out:R0.out,inn:R0.inn,len:acc,tok:3,ratio:1,vis:null};SEG[p.id]=seg;seg.vis=segVisual(seg);{const jj2=jn(tgt);if(jj2&&SEG[jj2.id])refreshVis(jj2.id)}refreshBeltClear()}
 function refreshBeltClear(){BELTPTS=[];for(const k in SEG){const s=SEG[k];for(let i=0;i<s.pts.length;i+=1)BELTPTS.push(s.pts[i])}
  for(const n of nodes){if(!n.alive)continue;let b=null,bd=1e9;for(const q of BELTPTS){const d=Math.hypot(n.x-q.x,n.z-q.z);if(d<bd){bd=d;b=q}}const need=n.r+2.4;if(b&&bd<need){const dx=n.x-b.x,dz=n.z-b.z,l=Math.hypot(dx,dz)||1;n.x=b.x+dx/l*need;n.z=b.z+dz/l*need;n.y=gy(n.x,n.z);n.obj.position.set(n.x,n.y,n.z);if(n.stump)n.stump.position.set(n.x,n.y+.2,n.z)}}
  applyDecor()}
-function killSeg(id){const s=SEG[id];if(!s)return;if(s.vis){scene.remove(s.vis.grp);s.vis.grp.traverse(o=>{if(o.geometry)o.geometry.dispose()})}delete SEG[id];
+function refreshVis(id){const s=SEG[id];if(!s||!s.vis)return;scene.remove(s.vis.grp);s.vis.grp.traverse(o=>{if(o.geometry)o.geometry.dispose()});s.vis=segVisual(s)}
+function killSeg(id){const s=SEG[id];if(!s)return;const _jj=jn(s.tgt);if(s.vis){scene.remove(s.vis.grp);s.vis.grp.traverse(o=>{if(o.geometry)o.geometry.dispose()})}delete SEG[id];if(_jj&&SEG[_jj.id])refreshVis(_jj.id);
  for(let i=ECON.items.length-1;i>=0;i--){const it=ECON.items[i];if(it.path.some(s=>s.id===id)){if(it.m)ECON.dead.push(it.m);ECON.transit[it.k]--;ECON.items.splice(i,1)}}}
 const _belMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.6,side:THREE.DoubleSide});
 const slatGeo=new THREE.BoxGeometry(1.0,.05,.14);const slatMat=new THREE.MeshStandardMaterial({color:'#3b3647',roughness:.7});
-function segVisual(seg){const grp=new THREE.Group();
+function segVisual(seg){const grp=new THREE.Group();const carve=[];for(const k in S.links){const j=jn(S.links[k]);if(j&&j.id===seg.id)carve.push(j)}
  const arcs=seg.arcs||[],spans=[];{let c=0;for(const a of arcs){if(a.ds>c+.3)spans.push([c,a.ds]);c=a.de}if(seg.len>c+.3)spans.push([c,seg.len])}
  const mods=[];for(const [s0,s1] of spans){const n=Math.max(1,Math.round((s1-s0)/2.4)),L=(s1-s0)/n;for(let i=0;i<n;i++)mods.push({d:s0+(i+.5)*L,L})}
  const N=mods.length,Lmax=Math.max(1,...mods.map(m=>m.L));
@@ -1984,17 +1985,17 @@ function segVisual(seg){const grp=new THREE.Group();
  let kr=0,kp=0,kl=0;
  const leg=(wx,wz,top)=>{const gnd=gy(wx,wz),h=Math.max(.12,top-gnd);iLeg.setMatrixAt(kl,new THREE.Matrix4().compose(new THREE.Vector3(wx,gnd+h/2,wz),Q0,new THREE.Vector3(1,h,1)));iFoot.setMatrixAt(kl,new THREE.Matrix4().compose(new THREE.Vector3(wx,gnd+.05,wz),Q0,S1));kl++};
  mods.forEach((m,i)=>{segAt(seg,m.d,po);E.set(po.pitch,po.yaw,0,'YXZ');Q.setFromEuler(E);V.set(po.x,po.y,po.z);M.compose(V,Q,S1);const sz=m.L+.02;
-  put(iBody,i,0,-.3,0,sz);put(iDeck,i,0,-.06,0,sz);put(iRail,kr++,-.62,.02,0,sz);put(iRail,kr++,.62,.02,0,sz);
+  put(iBody,i,0,-.3,0,sz);put(iDeck,i,0,-.06,0,sz);for(const sx of [-1,1]){if(carve.some(c=>!arcAt(seg,c.d)&&Math.abs(m.d-c.d)<m.L/2+.9&&sx===-c.s))continue;put(iRail,kr++,sx*.62,.02,0,sz)}
   if(i%3===1)for(const sd of [-1,1]){put(iPl,kp,sd*.8,-.3,0);put(iHd,kp,sd*.88,-.38,0);kp++}
   if(i%2===0)for(const sd of [-1,1]){const lx=sd*.55;leg(po.x+lx*Math.cos(po.yaw),po.z-lx*Math.sin(po.yaw),po.y-.5)}});
  // 90-degree corner pieces: ribbon along the arc with the same cross-section
  const cC=new THREE.Color('#e4dcc8'),cY=new THREE.Color('#e8b02c'),cD=new THREE.Color('#1f1c26');
  const PR=[[-.58,0,cD],[.58,0,cD],[.58,.1,cY],[.7,.1,cY],[.78,-.05,cC],[.78,-.55,cC],[-.78,-.55,cC],[-.78,-.05,cC],[-.7,.1,cY],[-.58,.1,cY],[-.58,0,cD]];
- for(const a of arcs){const Ppos=[],Pcol=[],Idx=[],ns=14;
+ for(const a of arcs){const Ppos=[],Pcol=[],Idx=[],ns=14,cv=carve.filter(c=>c.d>=a.ds-.01&&c.d<=a.de+.01);
   for(let ei=0;ei<PR.length-1;ei++){const base=Ppos.length/3;const p0=PR[ei],p1=PR[ei+1];
    for(let k=0;k<=ns;k++){const t=k/ns,ang=a.a0+a.sw*t;segAt(seg,a.ds+(a.de-a.ds)*t,po);const cs=Math.cos(ang),sn=Math.sin(ang);
     for(const pp of [p0,p1]){const r=a.R+pp[0];Ppos.push(a.cx+cs*r,po.y+pp[1],a.cz+sn*r);Pcol.push(pp[2].r,pp[2].g,pp[2].b)}}
-   for(let k=0;k<ns;k++){const i0=base+k*2;Idx.push(i0,i0+1,i0+2,i0+1,i0+3,i0+2)}}
+   for(let k=0;k<ns;k++){if(ei>=1&&ei<=4&&cv.some(c=>{const tc=1-Math.atan(Math.sqrt((a.R+.78)*(a.R+.78)-a.R*a.R)/a.R)/(Math.PI/2),hw=Math.asin(.66/(a.R+.78))/(Math.PI/2);const tk=(k+.5)/ns;return Math.abs(tk-tc)<hw+.5/ns}))continue;const i0=base+k*2;Idx.push(i0,i0+1,i0+2,i0+1,i0+3,i0+2)}}
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(Ppos,3));g.setAttribute('color',new THREE.Float32BufferAttribute(Pcol,3));g.setIndex(Idx);g.computeVertexNormals();
   const me=new THREE.Mesh(g,_belMat);me.castShadow=true;me.receiveShadow=true;grp.add(me);
   // legs on the curve + a yellow plate on the outer wall
