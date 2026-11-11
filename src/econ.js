@@ -35,9 +35,22 @@ const FAC2B={id:'FAC2b',fixed:1,k:'stick',x:FACT2.x,z:FACT2.z,y:FAC2.y,near:fals
 function padById(id){return id==='FAC2'?FAC2:id==='FAC2b'?FAC2B:PADS.find(p=>p.id===id)}
 function intakePoint(from,t){const F0=termPos(t||'F'),dx=from.x-F0.x,dz=from.z-F0.z,l=Math.hypot(dx,dz)||1;return{x:F0.x+dx/l*7.8,z:F0.z+dz/l*5.7}}
 const isT=t=>t==='F'||t==='F2';const termPos=t=>t==='F2'?FACT2:FACT;
-function segPath(id){const out=[];let cur=id,guard=0;while(cur&&!isT(cur)&&guard++<30){const s=SEG[cur];if(!s)return null;out.push(s);cur=s.tgt}return isT(cur)?out:null}
-function segEnd(id){let cur=id,g=0;while(g++<30){const t=S.links[cur];if(!t)return null;if(isT(t))return t;const q=padById(t);if(q&&q.mill)return t;cur=t}return null}
-function segPathTo(id){const out=[];let cur=id,g=0;while(cur&&!isT(cur)&&g++<30){const s=SEG[cur];if(!s)return null;out.push(s);if(!isT(s.tgt)){const q=padById(s.tgt);if(q&&q.mill)return{path:out,dest:s.tgt}}cur=s.tgt}return isT(cur)?{path:out,dest:cur}:null}
+// junction targets: 'J|<belt owner id>|<distance along that belt>|<side +1/-1>' = a T-split onto another belt
+function jn(t){if(typeof t!=='string'||t[0]!=='J'||t[1]!=='|')return null;const a=t.split('|');return{id:a[1],d:+a[2],s:+a[3]}}
+function wrapSeg(a,d){const w={id:a.id,base:a,off:d,len:Math.max(.5,a.len-d)};Object.defineProperty(w,'tok',{get:()=>a.tok,set:v=>{a.tok=v}});return w}
+function jPort(j){const a=SEG[j.id];if(!a)return[{x:0,z:0,dx:0,dz:1}];const o={};segAt(a,j.d,o);const hx=Math.round(Math.sin(o.yaw)),hz=Math.round(Math.cos(o.yaw)),nx=-hz,nz=hx;return[{x:o.x+j.s*nx*.95,z:o.z+j.s*nz*.95,dx:-j.s*nx,dz:-j.s*nz}]}
+function segPath(id){const out=[];let cur=id,guard=0;while(cur&&!isT(cur)&&guard++<30){const s=SEG[cur];if(!s)return null;out.push(s);let t=s.tgt,j=jn(t),g2=0;while(j&&g2++<10){const a=SEG[j.id];if(!a)return null;out.push(a);t=a.tgt;j=jn(t)}cur=t}return isT(cur)?out:null}
+function segEnd(id){let cur=id,g=0;while(g++<30){let t=S.links[cur];if(!t)return null;let j=jn(t),g2=0;while(j&&g2++<10){cur=j.id;t=S.links[cur];if(!t)return null;j=jn(t)}if(isT(t))return t;const q=padById(t);if(q&&q.mill)return t;cur=t}return null}
+function segPathTo(id){const out=[];let cur=id,g=0;while(cur&&g++<30){const s=SEG[cur];if(!s)return null;out.push(s);let t=s.tgt,j=jn(t),g2=0;while(j&&g2++<10){const a=SEG[j.id];if(!a)return null;out.push(wrapSeg(a,j.d));t=a.tgt;j=jn(t)}
+  if(isT(t))return{path:out,dest:t};const q=padById(t);if(q&&q.mill)return{path:out,dest:t};cur=t}return null}
+// nearest straight stretch of a belt to a point (for T-splits)
+function beltSpot(a,px,pz){let best=null;const pts=a.pts;for(let i=1;i<pts.length;i++){const A=pts[i-1],B=pts[i],dx=B.x-A.x,dz=B.z-A.z,l2=dx*dx+dz*dz;if(l2<1e-6)continue;const u=Math.max(0,Math.min(1,((px-A.x)*dx+(pz-A.z)*dz)/l2)),x=A.x+dx*u,z=A.z+dz*u,d=A.d+(B.d-A.d)*u;
+  if(d<3||d>a.len-3)continue;if((a.arcs||[]).some(r=>d>r.ds-1.4&&d<r.de+1.4))continue;const hl=Math.hypot(dx,dz);if(Math.abs(dx/hl)<.97&&Math.abs(dz/hl)<.97)continue;const dist=Math.hypot(px-x,pz-z);if(!best||dist<best.dist)best={x,z,y:A.y+(B.y-A.y)*u,d,dist}}return best}
+function junctionFor(p,px,pz,maxd){let best=null;for(const k in SEG){if(k===p.id)continue;const a=SEG[k];const rr=segPathTo(k);if(!rr)continue;const pa=segPath(k);if(!pa||pa.some(q=>q.id===p.id))continue;
+  const dest=rr.dest;if(dest==='F2'){if(!p.gath)continue}else if(!isT(dest)){const m=padById(dest);if(!m||p.mill||m.k!==p.k)continue}else if(p.gath&&S.storeBuilt)continue;
+  const sp=beltSpot(a,px,pz);if(!sp||sp.dist>maxd||(best&&sp.dist>=best.dist))continue;
+  const o={};segAt(a,sp.d,o);const hx=Math.round(Math.sin(o.yaw)),hz=Math.round(Math.cos(o.yaw)),nx=-hz,nz=hx;const side=((p.x-sp.x)*nx+(p.z-sp.z)*nz)>=0?1:-1;
+  best={tgt:'J|'+k+'|'+sp.d.toFixed(2)+'|'+side,x:sp.x,z:sp.z,y:sp.y+2.4,dist:sp.dist}}return best}
 function linkTarget(p,tx,tz){ // resolve a tapped point to 'F' or a connected pad id (not creating a cycle)
  if(!isF2(p)&&S.unl[1]&&S.storeBuilt&&Math.hypot(tx-FACT2.x,tz-FACT2.z)<8.5)return 'F2';
  let best=null,bd=3.6;for(const q of PADS){if(q===p||!S.links[q.id]||!machLv(q)||(isF2(p)&&!q.mill)||(p.gath&&S.storeBuilt))continue;const d=Math.hypot(tx-q.x,tz-q.z);if(d>=bd)continue;
@@ -48,7 +61,7 @@ function segLen(p,tgt){const r=routeFor(p,tgt);let L=0;for(let i=1;i<r.w.length;
 function linkCost(p,tgt){return Math.round(segLen(p,tgt)*BELT_COST)}
 function makeLink(p,tgt,free){const c=linkCost(p,tgt);if(!free){if(S.coins<c){AU.deny();UI.toast('Belt costs '+fmtC(c)+' coins',1);return false}S.coins-=c}
  S.links[p.id]=tgt;buildSeg(p,tgt);if(!free){AU.buy();UI.pulse('coins');UI.toast('Belt connected!');save()}return true}
-function dropLink(p,refund){const q=[p.id];while(q.length){const id=q.pop();if(S.links[id]){for(const k in S.links)if(S.links[k]===id)q.push(k);if(refund&&id===p.id)addCoins(Math.floor(linkCost(padById(id),S.links[id])*.5));delete S.links[id];killSeg(id)}}save()}
+function dropLink(p,refund){const q=[p.id];while(q.length){const id=q.pop();if(S.links[id]){for(const k in S.links){const lv=S.links[k];if(lv===id||(jn(lv)&&jn(lv).id===id))q.push(k)};if(refund&&id===p.id)addCoins(Math.floor(linkCost(padById(id),S.links[id])*.5));delete S.links[id];killSeg(id)}}save()}
 // ---- belt routing: orthogonal paths with rounded 90-degree corners, joined to machine ports ----
 const BDIRS=[[0,1],[1,0],[0,-1],[-1,0]],BR=1.9,BDECK=.74;
 const f2split=()=>S.f2split===undefined?.5:S.f2split;const F2Q=Math.round((LAY.store.r||0)/(Math.PI/2));function f2p(ox,oz,dx,dz){ox*=F2S;oz*=F2S;const k=((F2Q%4)+4)%4;let a=[ox,oz,dx,dz];for(let i=0;i<k;i++)a=[a[1],-a[0],a[3],-a[2]];return{x:FACT2.x+a[0],z:FACT2.z+a[1],dx:a[2],dz:a[3]}}
@@ -58,7 +71,7 @@ function portsOut(p){const q=p.sc||1;if(p.gath)return[{x:p.x-2.18*q,z:p.z+1.73*q
  if(p.mill&&p.k==='stick')return[{x:p.x,z:p.z-4.64*q,dx:0,dz:-1}];
  if(p.mill)return p.k==='stone'?[{x:p.x+4.64*q,z:p.z,dx:1,dz:0}]:[{x:p.x,z:p.z+4.64*q,dx:0,dz:1}];
  return BDIRS.map(d=>({x:p.x+d[0]*2.7*q,z:p.z+d[1]*2.7*q,dx:d[0],dz:d[1]}))}
-function portsIn(t){if(t==='F2')return[f2p(-8.09,-1.05,1,0)];
+function portsIn(t){if(jn(t))return jPort(jn(t));if(t==='F2')return[f2p(-8.09,-1.05,1,0)];
  if(t==='F'){const c=FACT;return BDIRS.map(d=>({x:c.x-d[0]*10.2*FACS,z:c.z-d[1]*8.4*FACS,dx:d[0],dz:d[1]}))}
  const c=padById(t),q=(c&&c.sc)||1;if(c&&c.mill&&c.k==='stick')return[{x:c.x,z:c.z+4.64*q,dx:0,dz:-1}];if(c&&c.mill)return c.k==='stone'?[{x:c.x-4.64*q,z:c.z,dx:1,dz:0}]:[{x:c.x,z:c.z-4.64*q,dx:0,dz:1}];
  return BDIRS.map(d=>({x:c.x-d[0]*2.7*q,z:c.z-d[1]*2.7*q,dx:d[0],dz:d[1]}))}
@@ -221,7 +234,7 @@ function econVis(dt){const t=performance.now()*.001;
  for(const k in SEG){const s=SEG[k],v=s.vis;if(!v)continue;const off=(t*1.4)%.95;for(let i=0;i<v.count;i++){const d=(i*.95+off)%(v.count*.95);segAt(s,Math.min(s.len,d),_po);_sp.set(_po.x,_po.y+.04,_po.z);_se.set(_po.pitch,_po.yaw,0,'YXZ');_sq.setFromEuler(_se);_sm.compose(_sp,_sq,_ss);v.im.setMatrixAt(i,_sm)}v.im.instanceMatrix.needsUpdate=true}
  for(const it of ECON.items){if(!it.m){it.m=new THREE.Mesh(ITEM_GEO[it.k]||ITEM_BOX,lootMat[it.k]);it.m.castShadow=false;scene.add(it.m)}
   let d=it.d,seg=null;for(const s of it.path){if(d<=s.len){seg=s;break}d-=s.len}if(!seg){seg=it.path[it.path.length-1];d=seg.len}
-  segAt(seg,d,_po);it.m.position.set(_po.x,_po.y+.34,_po.z);it.m.rotation.set(_po.pitch,_po.yaw,0,'YXZ')}
+  segAt(seg.base||seg,d+(seg.off||0),_po);it.m.position.set(_po.x,_po.y+.34,_po.z);it.m.rotation.set(_po.pitch,_po.yaw,0,'YXZ')}
  while(ECON.dead.length){const m=ECON.dead.pop();scene.remove(m)}
  ECON.craftT-=dt;ECON.sellT-=dt;for(const e of ECON.events.splice(0)){if(e.t==='craft'){if(ECON.craftT<=0||ECON.craftT===undefined){ECON.craftT=.4;AU.pick(3);chips(FACT.x+(Math.random()-.5)*4,gy(FACT.x,FACT.z)+4.2,FACT.z+2.2,GOODS[e.k].col,6,4,.14,.7,1)}}if(e.t==='sell'&&ECON.sellT<=0){ECON.sellT=.35;AU.coin(0);chips(HOPPER.x,gy(HOPPER.x,HOPPER.z)+2.2,HOPPER.z,'#ffe9a0',6,4,.14,.7,1);floater(HOPPER.x,gy(HOPPER.x,HOPPER.z)+4.2,HOPPER.z,'+'+e.v+' '+GOODS[e.k].n,GOODS[e.k].col)}}}
 // ---- link mode (tap machine, then tap destination) ----
@@ -232,10 +245,11 @@ function linkNear(p,px,pz){ // walk-up targeting: the machine/terminal the playe
  for(const q of PADS){if(q===p||!machLv(q))continue;
   if(q.mill){if(p===FAC2){if(q.k!=='wood')continue}else if(p===FAC2B){if(q.k!=='stick')continue}else{if(p.mill||p.k!==q.k||(p.gath&&S.storeBuilt))continue}cand(q.id,q.x,q.z,q.y+8,7)}
   else if(!isF2(p)&&!(p.gath&&S.storeBuilt)&&S.links[q.id]){const pa=segPath(q.id);if(!pa||pa.some(s=>s.id===p.id))continue;const en=segEnd(q.id);if(en&&!isT(en)){const m=padById(en);if(p.mill||m.k!==p.k)continue}cand(q.id,q.x,q.z,q.y+6,6)}}
+ if(!isF2(p)&&!p.mill){const jc=junctionFor(p,px,pz,5);if(jc&&jc.dist<(best?bd:1e9)){best={tgt:jc.tgt,x:jc.x,z:jc.z,y:jc.y}}}
  return best}
-function startLink(p){LINK.from=p;UI.toast(p.gath&&S.storeBuilt?'Walk to the Log Storage':p===FAC2B?'Walk to the Stick Lathe':p.fixed?'Walk to the Plank Mill':p.mill?'Walk to a connected machine':'Walk to a Mill or a connected machine');}
+function startLink(p){LINK.from=p;UI.toast(p.gath&&S.storeBuilt?'Walk to the Log Storage or to a belt':p===FAC2B?'Walk to the Stick Lathe':p.fixed?'Walk to the Plank Mill':p.mill?'Walk to a connected machine':'Walk to a Mill or a connected machine');}
 function cancelLink(){if(LINK.from){LINK.from=null;UI.toast('Belt cancelled')}}
 function tryLink(x,z){if(!LINK.from)return false;const p=LINK.from;const tgt=linkTarget(p,x,z);if(!tgt){cancelLink();return true}
  if(makeLink(p,tgt)){LINK.from=null}return true}
 function rebuildLinks(){for(const id in S.links){const p=padById(id);if(!p||!machLv(p)||S.links[id]==='F'){delete S.links[id];continue}}
- const pend=Object.keys(S.links);let guard=0;while(pend.length&&guard++<200){const id=pend.shift(),tg=S.links[id],p=padById(id);if(isT(tg)||SEG[tg]||(padById(tg)&&padById(tg).mill&&machLv(padById(tg))))buildSeg(p,tg);else if(S.links[tg])pend.push(id);else delete S.links[id]}}
+ const pend=Object.keys(S.links);let guard=0;while(pend.length&&guard++<200){const id=pend.shift(),tg=S.links[id],p=padById(id);if(isT(tg)||SEG[tg]||(jn(tg)&&SEG[jn(tg).id])||(padById(tg)&&padById(tg).mill&&machLv(padById(tg))))buildSeg(p,tg);else if(S.links[jn(tg)?jn(tg).id:tg])pend.push(id);else delete S.links[id]}}
