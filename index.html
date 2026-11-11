@@ -1353,7 +1353,7 @@ const PADS=[];
 const HOME_PADS=[{x:-6,z:12,k:'wood'},{x:18,z:10,k:'stone'},{x:-13,z:-9,k:'ore'}];
 // home pads removed: only the area-1 gatherer and later-zone machines remain
 ZONES.forEach((z,zi)=>{(z.pads||[]).forEach((p,i)=>PADS.push({id:z.id+i,x:z.x+p.x,z:z.z+p.z,k:p.k,zone:zi,mill:p.mill?1:0,gath:p.gath?1:0,h:(LAY.pads[z.id+i]||{}).h||0,sc:(LAY.pads[z.id+i]||{}).s||1}))});
-PADS.forEach(p=>{if(p.gath){const c=ZONES[p.zone].clusters[0];p.wx=c.x+c.r*.72;p.wz=c.z+2}});
+PADS.forEach(p=>{if(p.gath){let c=ZONES[p.zone].clusters[0],bd=1e9;for(const cc of ZONES[p.zone].clusters){if(cc.type!=='tree')continue;const d=Math.hypot(cc.x-p.x,cc.z-p.z);if(d<bd){bd=d;c=cc}}p.wx=c.x+c.r*.72;p.wz=c.z+2}});
 
 // ================= COLONY BASE =================
 const BASE=[
@@ -1484,6 +1484,7 @@ const padRing=(c,x,z,s=1)=>{const g=new THREE.Group();const y0=gy(x,z);
  const m1=new THREE.Mesh(ringG,new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.85,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));g.add(m1);
  const m2=new THREE.Mesh(discG,new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.16,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));m2.position.y=.03;g.add(m2);g.userData.m1=m1;g.userData.m2=m2;return g};
 const PCOL={wood:'#58f0d0',stone:'#ffc08a',ore:'#4fdcff',crystal:'#7aa8ff'};
+function tintYellow(o,hex){const th={};new THREE.Color(hex).getHSL(th);const cache=new Map();o.traverse(m=>{if(!m.isMesh)return;const arr=Array.isArray(m.material);const mats=arr?m.material:[m.material];const nm=mats.map(mt=>{if(!mt||!mt.color)return mt;const h={};mt.color.getHSL(h);if(h.h>.08&&h.h<.17&&h.s>.45){if(!cache.has(mt)){const c=mt.clone();c.color.setHSL(th.h,Math.min(1,h.s*.85),h.l);if(c.emissive&&c.emissive.getHex()){const e={};c.emissive.getHSL(e);c.emissive.setHSL(th.h,e.s,e.l)}cache.set(mt,c)}return cache.get(mt)}return mt});m.material=arr?nm:nm[0]})}
 function setupPad(p){p.ring=padRing(p.mill?'#ffd24a':PCOL[p.k],p.x,p.z);p.y=gy(p.x,p.z)+p.h;p.ring.position.set(p.x,p.y+.2,p.z);p.ring.visible=false;scene.add(p.ring);p.obj=null;p.acc=0;p.work=0;p.dust=0;if(p.gath)mkGhost(p)}
 function mkGhost(p){const gr=padRing('#ffd24a',p.x,p.z,1.3);gr.position.set(p.x,gy(p.x,p.z)+.2+p.h,p.z);gr.visible=false;scene.add(gr);p.ghost=gr}
 function padOpen(p){return S.unl[p.zone]===1&&(p.k!=='stick'||PADS.some(q=>q.mill&&q.k==='stone'&&machLv(q)))}
@@ -1495,7 +1496,7 @@ function upCost(p){const l=machLv(p);return Math.round(mkOf(p).base*.7*Math.pow(
 function showMachine(p){if(p.obj){scene.remove(p.obj);p.obj=null}if(p.gobj){scene.remove(p.gobj);p.gobj=null}const l=machLv(p);if(!l)return;
  if(p.gath){const c=ZONES[p.zone].clusters[0];p.ux=p.x-4.5;p.uz=p.z-2.5;
   const ch=makeLogDepot();ch.scale.setScalar(.91*(p.sc||1));ch.position.set(p.x,p.y,p.z);ch.rotation.y=0;scene.add(ch);p.obj=ch;
-  const go=makeGatherer();go.scale.setScalar(1.6875);go.position.set(p.wx,gy(p.wx,p.wz),p.wz);go.rotation.y=-1.57;scene.add(go);p.gobj=go;
+  const go=makeGatherer();go.scale.setScalar(1.6875);go.position.set(p.wx,gy(p.wx,p.wz),p.wz);go.rotation.y=-1.57;scene.add(go);p.gobj=go;if(PADS.filter(q=>q.gath).indexOf(p)>0){tintYellow(ch,'#a98be0');tintYellow(go,'#a98be0')}
   p.gst='seek';p.carry=0;p.gt=0;p.tn=null;p.pop=0;return}
  const o=p.mill?(p.k==='stone'?makeSlabPress():p.k==='stick'?makeStickLathe():makeSawmill(true)):p.k==='wood'?makeHarvester():makeDrill();o.scale.setScalar((p.mill?1:p.k==='wood'?1.25:1.35)*(p.sc||1));o.position.set(p.x,p.y,p.z);o.rotation.y=p.mill?0:-.5+(p.x*.37%1);scene.add(o);p.obj=o;p.pop=0}
 function gathStep(p,dt){const o=p.gobj,sat=ECON.sat||1,a=performance.now()*.001,lg=o.userData.logs;
