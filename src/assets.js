@@ -591,7 +591,11 @@ function lathePart(){if(_ltG)return _ltG;const S0=LATHEP[0],dec=b=>{const s=atob
  g.setAttribute('normal',new THREE.BufferAttribute(new Int8Array(dec(S0.n)),3,true));
  {const P=new Float32Array(dec(S0.p)),I=new Uint32Array(dec(S0.i)),keep=[];for(let i=0;i<I.length;i+=3){const a=I[i],b=I[i+1],c=I[i+2],cx=(P[a*3]+P[b*3]+P[c*3])/3,cz=(P[a*3+2]+P[b*3+2]+P[c*3+2])/3;if(Math.abs(cx)<.06&&(cz>.03||cz<-.09))continue;keep.push(a,b,c)}g.setIndex(new THREE.BufferAttribute(new Uint32Array(keep),1))}return _ltG=g}
 function makeStickLathe(){const g=new THREE.Group();const m=new THREE.Mesh(lathePart(),latheMat());m.scale.setScalar(26);m.position.set(0,-.45,.8);m.castShadow=true;g.add(m);
- beltStub(g,0,-2.7,3.8,'z',.7);beltStub(g,0,2.7,3.8,'z',.7);g.userData.saw=new THREE.Object3D();g.userData.boom=new THREE.Object3D();g.userData.logs=[];return g}
+ beltStub(g,0,-2.7,3.8,'z',.7);beltStub(g,0,2.7,3.8,'z',.7);{const pm=std('#c98f5a',{roughness:.7}),pm2=std('#a8723e',{roughness:.7});const pile=new THREE.Group();pile.position.set(4.6,0,0);pile.scale.setScalar(1.6);g.add(pile);
+  const base=new THREE.Mesh(new THREE.BoxGeometry(1.6,.14,2.2),std('#5a6080',{roughness:.55}));base.position.y=.1;pile.add(base);
+  for(let i=0;i<20;i++){const col=i%2,zz=Math.floor(i/2)%2,L=Math.floor(i/4);const m=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,.95,8),i%3===0?pm2:pm);m.rotation.x=Math.PI/2;m.position.set((col?.33:-.33)+(L%2?.04:-.04),.28+L*.17,(zz?.45:-.45)+(L%2?.05:-.05));m.visible=false;pile.add(m)}
+  g.userData.pile=pile}
+ g.userData.saw=new THREE.Object3D();g.userData.boom=new THREE.Object3D();g.userData.logs=[];return g}
 function makeLogStorage(){const g=new THREE.Group();
  if(typeof STOREP!=='undefined'&&/[?&]newstore=1/.test(location.search)){const m=new THREE.Mesh(storePart(),storeMat());m.scale.setScalar(48.3);m.castShadow=true;m.receiveShadow=false;g.add(m);
   beltStub(g,-6.65,-1.0,2.1,'x',.7);beltStub(g,7.45,-1.2,2.1,'x',.7);g.userData.arm=new THREE.Object3D();g.userData.up=new THREE.Object3D();g.userData.logs=[];return g}
