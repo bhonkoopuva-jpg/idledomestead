@@ -123,7 +123,7 @@ function routeFor(p,tgt){
  for(let i=w.length-2;i>0;i--){const a=w[i-1],b=w[i],c=w[i+1];if(Math.abs((b.x-a.x)*(c.z-b.z)-(b.z-a.z)*(c.x-b.x))<1e-3)w.splice(i,1)}
  return {w,out:bo?{dx:bo.dx,dz:bo.dz}:null,inn:bi?{dx:bi.dx,dz:bi.dz}:null}}
 function buildSeg(p,tgt){killSeg(p.id);const R0=routeFor(p,tgt),w=R0.w,pts=[],arcs=[];
- {const jj=jn(tgt);if(jj&&SEG[jj.id]){const e=jPort(jj,arcAt(SEG[jj.id],jj.d)?-.3:.35)[0];w[w.length-1]={x:e.x,z:e.z}}}
+ {const jj=jn(tgt);if(jj&&SEG[jj.id]){const e=jPort(jj,arcAt(SEG[jj.id],jj.d)?.7:.35)[0];w[w.length-1]={x:e.x,z:e.z}}}
  const dist=(a,b)=>Math.hypot(b.x-a.x,b.z-a.z),push=(x,z)=>pts.push({x,z,y:gy(x,z)+BDECK});
  const line=(a,b)=>{const n=Math.max(1,Math.ceil(dist(a,b)/1.4));for(let i=(pts.length?1:0);i<=n;i++)push(a.x+(b.x-a.x)*i/n,a.z+(b.z-a.z)*i/n)};
  // corner radii
@@ -149,7 +149,7 @@ function killSeg(id){const s=SEG[id];if(!s)return;const _jj=jn(s.tgt);if(s.vis){
  for(let i=ECON.items.length-1;i>=0;i--){const it=ECON.items[i];if(it.path.some(s=>s.id===id)){if(it.m)ECON.dead.push(it.m);ECON.transit[it.k]--;ECON.items.splice(i,1)}}}
 const _belMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.6,side:THREE.DoubleSide});
 const slatGeo=new THREE.BoxGeometry(1.0,.05,.14);const slatMat=new THREE.MeshStandardMaterial({color:'#3b3647',roughness:.7});
-function segVisual(seg){const grp=new THREE.Group();const carve=[];for(const k in S.links){const j=jn(S.links[k]);if(j&&j.id===seg.id)carve.push(j)}
+function segVisual(seg){const grp=new THREE.Group();let hideR=null;const carve=[];for(const k in S.links){const j=jn(S.links[k]);if(j&&j.id===seg.id)carve.push(j)}
  const arcs=seg.arcs||[],spans=[];{let c=0;for(const a of arcs){if(a.ds>c+.3)spans.push([c,a.ds]);c=a.de}if(seg.len>c+.3)spans.push([c,seg.len])}
  const mods=[];for(const [s0,s1] of spans){const n=Math.max(1,Math.round((s1-s0)/2.4)),L=(s1-s0)/n;for(let i=0;i<n;i++)mods.push({d:s0+(i+.5)*L,L})}
  const N=mods.length,Lmax=Math.max(1,...mods.map(m=>m.L));
@@ -171,7 +171,22 @@ function segVisual(seg){const grp=new THREE.Group();const carve=[];for(const k i
  // 90-degree corner pieces: ribbon along the arc with the same cross-section
  const cC=new THREE.Color('#e4dcc8'),cY=new THREE.Color('#e8b02c'),cD=new THREE.Color('#1f1c26');
  const PR=[[-.58,0,cD],[.58,0,cD],[.58,.1,cY],[.7,.1,cY],[.78,-.05,cC],[.78,-.55,cC],[-.78,-.55,cC],[-.78,-.05,cC],[-.7,.1,cY],[-.58,.1,cY],[-.58,0,cD]];
+function tStrip(x0,z0,x1,z1,y0,y1,hideDir){const L=Math.hypot(x1-x0,z1-z0),dx=(x1-x0)/L,dz=(z1-z0)/L,lx=-dz,lz=dx,ns=Math.max(2,Math.round(L/.5));const hp=hideDir?((lx*hideDir.x+lz*hideDir.z)>0?1:-1):0;const Ppos=[],Pcol=[],Idx=[];
+  for(let ei=0;ei<PR.length-1;ei++){if(hp&&((hp>0&&ei>=1&&ei<=4)||(hp<0&&ei>=6&&ei<=9)))continue;const base=Ppos.length/3,p0=PR[ei],p1=PR[ei+1];
+   for(let k=0;k<=ns;k++){const t=k/ns,x=x0+(x1-x0)*t,z=z0+(z1-z0)*t,y=y0+(y1-y0)*t;for(const pp of [p0,p1]){Ppos.push(x+lx*pp[0],y+pp[1],z+lz*pp[0]);Pcol.push(pp[2].r,pp[2].g,pp[2].b)}}
+   for(let k=0;k<ns;k++){const i0=base+k*2;Idx.push(i0,i0+1,i0+2,i0+1,i0+3,i0+2)}}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(Ppos,3));g.setAttribute('color',new THREE.Float32BufferAttribute(Pcol,3));g.setIndex(Idx);g.computeVertexNormals();
+  const me=new THREE.Mesh(g,_belMat);me.castShadow=true;me.receiveShadow=true;grp.add(me)}
  for(const a of arcs){const Ppos=[],Pcol=[],Idx=[],ns=14,cv=carve.filter(c=>c.d>=a.ds-.01&&c.d<=a.de+.01);
+  if(cv.length){ // dedicated T-piece instead of the rounded corner
+   const o1={},o2={};segAt(seg,a.ds,o1);segAt(seg,a.de,o2);const hu={x:Math.round(Math.sin(o1.yaw)),z:Math.round(Math.cos(o1.yaw))},hv={x:Math.round(Math.sin(o2.yaw)),z:Math.round(Math.cos(o2.yaw))};
+   const Vx=o1.x+hu.x*a.R,Vz=o1.z+hu.z*a.R,yv=(o1.y+o2.y)/2;
+   tStrip(o1.x,o1.z,Vx-hu.x*.78,Vz-hu.z*.78,o1.y,yv,null);              // stem (incoming belt)
+   tStrip(Vx-hv.x*.8,Vz-hv.z*.8,Vx+hv.x*.8,Vz+hv.z*.8,yv,yv,{x:-hu.x,z:-hu.z}); // bar, open on the stem side
+   tStrip(Vx+hv.x*.8,Vz+hv.z*.8,o2.x,o2.z,yv,o2.y,null);
+   {const yaw=Math.atan2(hu.x,hu.z),bx=Vx+hu.x*.8,bz=Vz+hu.z*.8;const hood=rbox(1.3,.5,.14,.05,yel);hood.position.set(bx,yv+.2,bz);hood.rotation.y=yaw;grp.add(hood);const win=rbox(.82,.28,.06,.03,teal);win.position.set(bx+hu.x*.09,yv+.22,bz+hu.z*.09);win.rotation.y=yaw;grp.add(win)}
+   for(const [lx,lz] of [[-.7,-.7],[.7,-.7],[-.7,.7],[.7,.7]]){leg(Vx+hv.x*lx*1.1+hu.x*lz*1.1,Vz+hv.z*lx*1.1+hu.z*lz*1.1,yv-.5)}
+   (hideR=hideR||[]).push([a.ds,a.de]);continue}
   for(let ei=0;ei<PR.length-1;ei++){const base=Ppos.length/3;const p0=PR[ei],p1=PR[ei+1];
    for(let k=0;k<=ns;k++){const t=k/ns,ang=a.a0+a.sw*t;segAt(seg,a.ds+(a.de-a.ds)*t,po);const cs=Math.cos(ang),sn=Math.sin(ang);
     for(const pp of [p0,p1]){const r=a.R+pp[0];Ppos.push(a.cx+cs*r,po.y+pp[1],a.cz+sn*r);Pcol.push(pp[2].r,pp[2].g,pp[2].b)}}
@@ -183,8 +198,8 @@ function segVisual(seg){const grp=new THREE.Group();const carve=[];for(const k i
  for(let j=0;j<2;j++){if(j&&jn(seg.tgt))continue;segAt(seg,j?seg.len-.05:.05,po);E.set(po.pitch,po.yaw,0,'YXZ');Q.setFromEuler(E);V.set(po.x,po.y,po.z);M.compose(V,Q,S1);put(iRol,j,0,-.16,0);put(iCap,j,0,-.16,0)}
  for(const im of [iBody,iDeck,iRail,iPl,iHd,iLeg,iFoot,iRol,iCap])im.instanceMatrix.needsUpdate=true;
  iLeg.count=kl;iFoot.count=kl;iPl.count=kp;iHd.count=kp;
- const count=Math.max(2,Math.floor(seg.len/.95));const im=new THREE.InstancedMesh(slatGeo,slatMat,count);im.frustumCulled=false;grp.add(im);scene.add(grp);return{grp,im,count,mesh:iBody}}
-const _sm=new THREE.Matrix4(),_sq=new THREE.Quaternion(),_sp=new THREE.Vector3(),_ss=new THREE.Vector3(1,1,1),_se=new THREE.Euler();
+ const count=Math.max(2,Math.floor(seg.len/.95));const im=new THREE.InstancedMesh(slatGeo,slatMat,count);im.frustumCulled=false;grp.add(im);scene.add(grp);return{grp,im,count,mesh:iBody,hide:hideR}}
+const _s0=new THREE.Vector3(0,0,0),_sm=new THREE.Matrix4(),_sq=new THREE.Quaternion(),_sp=new THREE.Vector3(),_ss=new THREE.Vector3(1,1,1),_se=new THREE.Euler();
 function segAt(seg,d,out){const pts=seg.pts;d=Math.max(0,Math.min(seg.len,d));let i=1;while(i<pts.length-1&&pts[i].d<d)i++;const a=pts[i-1],b=pts[i],t=(d-a.d)/Math.max(1e-4,b.d-a.d);out.x=a.x+(b.x-a.x)*t;out.y=a.y+(b.y-a.y)*t;out.z=a.z+(b.z-a.z)*t;out.yaw=Math.atan2(b.x-a.x,b.z-a.z);out.pitch=-Math.atan2(b.y-a.y,Math.hypot(b.x-a.x,b.z-a.z));return out}
 const _po={x:0,y:0,z:0,yaw:0,pitch:0};
 // ---- simulation ----
@@ -244,7 +259,7 @@ const ITEM_GEO={trunk:(()=>{const g=new THREE.CylinderGeometry(.2,.2,1.25,10);g.
  stone:new THREE.DodecahedronGeometry(.45,0),ore:new THREE.OctahedronGeometry(.48,0),crystal:(()=>{const g=new THREE.OctahedronGeometry(.4,0);g.scale(1,1.5,1);return g})(),
  plank:new THREE.BoxGeometry(1.2,.16,.5),slab:new THREE.BoxGeometry(.95,.24,.95),stick:new THREE.BoxGeometry(1.3,.15,.15)};
 function econVis(dt){const t=performance.now()*.001;
- for(const k in SEG){const s=SEG[k],v=s.vis;if(!v)continue;const off=(t*1.4)%.95;for(let i=0;i<v.count;i++){const d=(i*.95+off)%(v.count*.95);segAt(s,Math.min(s.len,d),_po);_sp.set(_po.x,_po.y+.04,_po.z);_se.set(_po.pitch,_po.yaw,0,'YXZ');_sq.setFromEuler(_se);_sm.compose(_sp,_sq,_ss);v.im.setMatrixAt(i,_sm)}v.im.instanceMatrix.needsUpdate=true}
+ for(const k in SEG){const s=SEG[k],v=s.vis;if(!v)continue;const off=(t*1.4)%.95;for(let i=0;i<v.count;i++){const d=(i*.95+off)%(v.count*.95);segAt(s,Math.min(s.len,d),_po);_sp.set(_po.x,_po.y+.04,_po.z);_se.set(_po.pitch,_po.yaw,0,'YXZ');_sq.setFromEuler(_se);_sm.compose(_sp,_sq,v.hide&&v.hide.some(h=>d>h[0]&&d<h[1])?_s0:_ss);v.im.setMatrixAt(i,_sm)}v.im.instanceMatrix.needsUpdate=true}
  for(const it of ECON.items){if(!it.m){it.m=new THREE.Mesh(ITEM_GEO[it.k]||ITEM_BOX,lootMat[it.k]);it.m.castShadow=false;scene.add(it.m)}
   let d=it.d,seg=null;for(const s of it.path){if(d<=s.len){seg=s;break}d-=s.len}if(!seg){seg=it.path[it.path.length-1];d=seg.len}
   segAt(seg.base||seg,d+(seg.off||0),_po);it.m.position.set(_po.x,_po.y+.34,_po.z);it.m.rotation.set(_po.pitch,_po.yaw,0,'YXZ')}
