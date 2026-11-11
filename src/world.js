@@ -29,7 +29,7 @@ const ZONES=[
  {id:'home',name:'Main Base',lobes:[mkL(0,-.8,35.9,29.2,1.03)],free:true},
  {id:'grove',name:'Teal Alien Forest',from:0,lobes:[mkL(9.2,38,36.7,12.1,1.2),mkL(3,29,15,8,1),mkL(-27,24,8,8,1),mkL(33,28,10,9,1)],cost:{wood:30,stone:20},blurb:'Dense teal forest. Lots of wood.',
   trees:{n:0,kinds:['teal']},stone:2,ore:2,crystal:0,
-  fixedPads:[{x:-12,z:42,k:'wood',gath:1},{x:38,z:31,k:'wood',mill:1},{x:4,z:26,k:'stick',mill:1},{x:-12,z:52,k:'wood',gath:1}],
+  fixedPads:[{x:-12,z:42,k:'wood',gath:1},{x:38,z:31,k:'wood',mill:1},{x:4,z:26,k:'stick',mill:1},{x:10,z:50,k:'wood',gath:1}],
   clusters:[{x:-22,z:38,r:9,type:'tree',kinds:['teal','deep','blue'],n:14,s:[.62,.88]},{x:20,z:49.5,r:8,ex:2,type:'tree',kinds:['sky','blue'],n:10,s:[1.3,1.6]}]},
  {id:'flats',name:'Turquoise Mineral Fields',from:0,lobes:[mkL(-47.2,6.3,17.1,32.1,1.15)],cost:{wood:80,stone:60,coins:200,plate:6,plank:8},blurb:'Rocky flats: stone and teal ore.',
   trees:{n:3,kinds:['sky']},stone:0,ore:0,crystal:1,

@@ -38,7 +38,7 @@ const isT=t=>t==='F'||t==='F2';const termPos=t=>t==='F2'?FACT2:FACT;
 // junction targets: 'J|<belt owner id>|<distance along that belt>|<side +1/-1>' = a T-split onto another belt
 function jn(t){if(typeof t!=='string'||t[0]!=='J'||t[1]!=='|')return null;const a=t.split('|');return{id:a[1],d:+a[2],s:+a[3]}}
 function wrapSeg(a,d){const w={id:a.id,base:a,off:d,len:Math.max(.5,a.len-d)};Object.defineProperty(w,'tok',{get:()=>a.tok,set:v=>{a.tok=v}});return w}
-function jPort(j){const a=SEG[j.id];if(!a)return[{x:0,z:0,dx:0,dz:1}];const o={};segAt(a,j.d,o);const hx=Math.round(Math.sin(o.yaw)),hz=Math.round(Math.cos(o.yaw)),nx=-hz,nz=hx;return[{x:o.x+j.s*nx*.95,z:o.z+j.s*nz*.95,dx:-j.s*nx,dz:-j.s*nz}]}
+function jPort(j,off=4.6){const a=SEG[j.id];if(!a)return[{x:0,z:0,dx:0,dz:1}];const o={};segAt(a,j.d,o);const hx=Math.round(Math.sin(o.yaw)),hz=Math.round(Math.cos(o.yaw)),nx=-hz,nz=hx;return[{x:o.x+j.s*nx*off,z:o.z+j.s*nz*off,dx:-j.s*nx,dz:-j.s*nz}]}
 function segPath(id){const out=[];let cur=id,guard=0;while(cur&&!isT(cur)&&guard++<30){const s=SEG[cur];if(!s)return null;out.push(s);let t=s.tgt,j=jn(t),g2=0;while(j&&g2++<10){const a=SEG[j.id];if(!a)return null;out.push(a);t=a.tgt;j=jn(t)}cur=t}return isT(cur)?out:null}
 function segEnd(id){let cur=id,g=0;while(g++<30){let t=S.links[cur];if(!t)return null;let j=jn(t),g2=0;while(j&&g2++<10){cur=j.id;t=S.links[cur];if(!t)return null;j=jn(t)}if(isT(t))return t;const q=padById(t);if(q&&q.mill)return t;cur=t}return null}
 function segPathTo(id){const out=[];let cur=id,g=0;while(cur&&g++<30){const s=SEG[cur];if(!s)return null;out.push(s);let t=s.tgt,j=jn(t),g2=0;while(j&&g2++<10){const a=SEG[j.id];if(!a)return null;out.push(wrapSeg(a,j.d));t=a.tgt;j=jn(t)}
@@ -112,6 +112,7 @@ function routeFor(p,tgt){
  for(let i=w.length-2;i>0;i--){const a=w[i-1],b=w[i],c=w[i+1];if(Math.abs((b.x-a.x)*(c.z-b.z)-(b.z-a.z)*(c.x-b.x))<1e-3)w.splice(i,1)}
  return {w,out:bo?{dx:bo.dx,dz:bo.dz}:null,inn:bi?{dx:bi.dx,dz:bi.dz}:null}}
 function buildSeg(p,tgt){killSeg(p.id);const R0=routeFor(p,tgt),w=R0.w,pts=[],arcs=[];
+ {const jj=jn(tgt);if(jj&&SEG[jj.id]){const e=jPort(jj,.35)[0];w[w.length-1]={x:e.x,z:e.z}}}
  const dist=(a,b)=>Math.hypot(b.x-a.x,b.z-a.z),push=(x,z)=>pts.push({x,z,y:gy(x,z)+BDECK});
  const line=(a,b)=>{const n=Math.max(1,Math.ceil(dist(a,b)/1.4));for(let i=(pts.length?1:0);i<=n;i++)push(a.x+(b.x-a.x)*i/n,a.z+(b.z-a.z)*i/n)};
  // corner radii
@@ -167,7 +168,7 @@ function segVisual(seg){const grp=new THREE.Group();
   const me=new THREE.Mesh(g,_belMat);me.castShadow=true;me.receiveShadow=true;grp.add(me);
   // legs on the curve + a yellow plate on the outer wall
   for(const tt of [.3,.7]){const ang=a.a0+a.sw*tt;segAt(seg,a.ds+(a.de-a.ds)*tt,po);for(const sd of [-.55,.55]){const r=a.R+sd;leg(a.cx+Math.cos(ang)*r,a.cz+Math.sin(ang)*r,po.y-.5)}}}
- for(let j=0;j<2;j++){segAt(seg,j?seg.len-.05:.05,po);E.set(po.pitch,po.yaw,0,'YXZ');Q.setFromEuler(E);V.set(po.x,po.y,po.z);M.compose(V,Q,S1);put(iRol,j,0,-.16,0);put(iCap,j,0,-.16,0)}
+ for(let j=0;j<2;j++){if(j&&jn(seg.tgt))continue;segAt(seg,j?seg.len-.05:.05,po);E.set(po.pitch,po.yaw,0,'YXZ');Q.setFromEuler(E);V.set(po.x,po.y,po.z);M.compose(V,Q,S1);put(iRol,j,0,-.16,0);put(iCap,j,0,-.16,0)}
  for(const im of [iBody,iDeck,iRail,iPl,iHd,iLeg,iFoot,iRol,iCap])im.instanceMatrix.needsUpdate=true;
  iLeg.count=kl;iFoot.count=kl;iPl.count=kp;iHd.count=kp;
  const count=Math.max(2,Math.floor(seg.len/.95));const im=new THREE.InstancedMesh(slatGeo,slatMat,count);im.frustumCulled=false;grp.add(im);scene.add(grp);return{grp,im,count,mesh:iBody}}
