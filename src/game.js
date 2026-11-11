@@ -80,9 +80,10 @@ function shipStep(dt){const o=SHIP.obj;if(!o)return;const t=SHIP.land;if(SHIP.t<
   if(Math.random()<dt*20&&k<1)chips(t.x,o.position.y-2,t.z,'#ffd9a0',2,5,.3,1.2,-1);
   if(k>=1){SHIP.t=99;shake=.6;chips(t.x,t.y+.5,t.z,'#ffe9a0',60,12,.35,1.5,1.5);AU.unlock();S.won=2;UI.banner('WELCOME HOME','The settlers have arrived. Mars is home now.');save()}}}
 function baseStep(dt){if(!BASE_ON)return;shipStep(dt);const t=performance.now()*.001;
+ {const qi=S.qa[0];if(qi!==baseStep.lastQ){baseStep.lastQ=qi;const q=QUESTS[qi],o=q&&q.at?q.at():null;if(o&&BASE.includes(o))S.track={x:o.x,z:o.z,t:90}}}
  {const k=Math.min(1,dt*.6),ta=bl('air')?1:0,tw=bl('water')?1:0,tg=bl('bio')?1:0;TERRA.a.value+=(ta-TERRA.a.value)*k;TERRA.w.value+=(tw-TERRA.w.value)*k;TERRA.g.value+=(tg-TERRA.g.value)*k;const m=TERRA.a.value*.4;scene.fog.color.set('#e6987a').lerp(_skyC,m);scene.background.set('#dc7d52').lerp(_skyC,m)}
  for(const b of BASE){const lv=bl(b.id);
-  if(!lv){const aq=QUESTS[S.qa[0]],tg=aq&&aq.at?aq.at():null;const near=tg===b&&Math.hypot(P.x-b.x,P.z-b.z)<40;b.ghost.visible=near;if(!near)continue;const pu=.5+.5*Math.sin(t*3+b.a);b.ghost.userData.m1.material.opacity=.35+.4*pu;b.ghost.userData.m2.material.opacity=.08+.1*pu;continue}
+  if(!lv){const aq=QUESTS[S.qa[0]],tg=aq&&aq.at?aq.at():null;const near=tg===b&&Math.hypot(P.x-b.x,P.z-b.z)<140;b.ghost.visible=near;if(!near)continue;const pu=.5+.5*Math.sin(t*3+b.a);b.ghost.userData.m1.material.opacity=.35+.4*pu;b.ghost.userData.m2.material.opacity=.08+.1*pu;continue}
   const o=b.obj;if(!o)continue;
   if(b.pop>0){b.pop=Math.max(0,b.pop-dt*2.2);const k=1-b.pop;o.scale.setScalar(Math.max(.01,k<.7?k/.7*1.12:1.12-(k-.7)/.3*.12))}
   if(b.id==='dish'){o.userData.dish.rotation.y+=dt*.5*(1+lv*.4)}
