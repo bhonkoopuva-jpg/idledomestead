@@ -56,6 +56,7 @@ function onMove(e){if(!EDIT.on)return;if(erase.on&&brush){const g0=gpt(e.clientX
 function onUp(e){if(!drag||e.pointerId!==drag.id)return;e.stopImmediatePropagation();drag=null}
 glc.addEventListener('pointerdown',onDown,true);glc.addEventListener('pointermove',onMove,true);glc.addEventListener('pointerup',onUp,true);glc.addEventListener('pointercancel',onUp,true);
 function leave(){location.reload()}
+function closeNoSave(){EDIT.on=0;drag=null;erase.on=0;marks.forEach(m=>m.parent&&m.parent.remove(m));marks.length=0;H=[];sel=null;if(brush){brush.parent&&brush.parent.remove(brush);brush=null}if(panel){panel.remove();panel=null}}
 function enter(){if(EDIT.on)return;EDIT.on=1;build();sel=H[0];
  panel=document.createElement('div');panel.id='editp';
  panel.style.cssText='position:fixed;left:50%;bottom:max(12px,env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;width:min(94vw,470px);background:rgba(40,16,24,.92);color:#fff;border:2px solid #ffd24a;border-radius:14px;padding:10px 12px;font:600 13px Fredoka,system-ui,sans-serif;display:flex;flex-direction:column;gap:8px;max-height:46vh;overflow-y:auto;opacity:.94;pointer-events:auto';
@@ -79,7 +80,7 @@ function enter(){if(EDIT.on)return;EDIT.on=1;build();sel=H[0];
  q('edsv').onclick=()=>{try{localStorage.setItem(LAYOUT_KEY,json())}catch(e){}leave()};
  q('edex').onclick=()=>{const t=q('edta');t.style.display='block';t.value=json();t.select();try{navigator.clipboard.writeText(t.value).catch(()=>{})}catch(e){}};
  q('edrs').onclick=()=>{try{localStorage.removeItem(LAYOUT_KEY)}catch(e){}leave()};
- q('edx').onclick=leave;q('edcl').onclick=leave;
+ q('edx').onclick=leave;q('edcl').onclick=closeNoSave;
  {let mn=0;q('edmin').onclick=()=>{mn=!mn;[...panel.children].forEach((c,i)=>{if(i>0&&c.id!=='edta')c.style.display=mn?'none':''});q('edmin').textContent=mn?'▴':'▾';if(!mn)refresh()}}
  q('edadd').onclick=()=>{const [t,k]=curType.split(':');if(t==='p')addProp(k);else addNode(t,k)};
  q('edera').onclick=()=>{if(!erase.on){erase.on=1}else if(erase.r<6){erase.r=erase.r<3?4:6}else{erase.on=0;erase.r=2.5}brush.visible=!!erase.on;brush.scale.setScalar(erase.r/2.5);q('edera').textContent=erase.on?'🧹 Kwast '+erase.r+' (tik = ander formaat / uit)':'🧹 Wis details'};
