@@ -37,6 +37,9 @@ function intakePoint(from,t){const F0=termPos(t||'F'),dx=from.x-F0.x,dz=from.z-F
 const isT=t=>t==='F'||t==='F2';const termPos=t=>t==='F2'?FACT2:FACT;
 // junction targets: 'J|<belt owner id>|<distance along that belt>|<side +1/-1>' = a T-split onto another belt
 function jn(t){if(typeof t!=='string'||t[0]!=='J'||t[1]!=='|')return null;const a=t.split('|');return{id:a[1],d:+a[2],s:+a[3]}}
+const _BR=new Map();
+function bridgeSeg(j){const a=SEG[j.id];const key=j.id+'|'+j.d+'|'+j.s;const r=arcAt(a,j.d);const e=jPort(j,.7)[0];const o={};segAt(a,r.de,o);const ys=(()=>{const q={};segAt(a,(r.ds+r.de)/2,q);return q.y})();
+ const c=_BR.get(key);if(c&&c.a===a)return c.seg;const L=Math.hypot(o.x-e.x,o.z-e.z);const seg={id:'br|'+key,pts:[{x:e.x,y:ys,z:e.z,d:0},{x:o.x,y:o.y,z:o.z,d:L}],arcs:[],len:L,br:1};Object.defineProperty(seg,'tok',{get:()=>99,set:()=>{}});_BR.set(key,{a,seg});return seg}
 function wrapSeg(a,d){const w={id:a.id,base:a,off:d,len:Math.max(.5,a.len-d)};Object.defineProperty(w,'tok',{get:()=>a.tok,set:v=>{a.tok=v}});return w}
 function arcAt(a,d){return (a.arcs||[]).find(r=>d>=r.ds-.01&&d<=r.de+.01)||null}
 function arcCorner(a,r,sd){const o1={},o2={};segAt(a,r.ds,o1);segAt(a,r.de,o2);const hu={x:Math.round(Math.sin(o1.yaw)),z:Math.round(Math.cos(o1.yaw))},hv={x:Math.round(Math.sin(o2.yaw)),z:Math.round(Math.cos(o2.yaw))};
@@ -46,7 +49,7 @@ function jPort(j,off=4.6){const a=SEG[j.id];if(!a)return[{x:0,z:0,dx:0,dz:1}];co
  const o={};segAt(a,j.d,o);const hx=Math.round(Math.sin(o.yaw)),hz=Math.round(Math.cos(o.yaw)),nx=-hz,nz=hx;return[{x:o.x+j.s*nx*off,z:o.z+j.s*nz*off,dx:-j.s*nx,dz:-j.s*nz}]}
 function segPath(id){const out=[];let cur=id,guard=0;while(cur&&!isT(cur)&&guard++<30){const s=SEG[cur];if(!s)return null;out.push(s);let t=s.tgt,j=jn(t),g2=0;while(j&&g2++<10){const a=SEG[j.id];if(!a)return null;out.push(a);t=a.tgt;j=jn(t)}cur=t}return isT(cur)?out:null}
 function segEnd(id){let cur=id,g=0;while(g++<30){let t=S.links[cur];if(!t)return null;let j=jn(t),g2=0;while(j&&g2++<10){cur=j.id;t=S.links[cur];if(!t)return null;j=jn(t)}if(isT(t))return t;const q=padById(t);if(q&&q.mill)return t;cur=t}return null}
-function segPathTo(id){const out=[];let cur=id,g=0;while(cur&&g++<30){const s=SEG[cur];if(!s)return null;out.push(s);let t=s.tgt,j=jn(t),g2=0;while(j&&g2++<10){const a=SEG[j.id];if(!a)return null;out.push(wrapSeg(a,j.d));t=a.tgt;j=jn(t)}
+function segPathTo(id){const out=[];let cur=id,g=0;while(cur&&g++<30){const s=SEG[cur];if(!s)return null;out.push(s);let t=s.tgt,j=jn(t),g2=0;while(j&&g2++<10){const a=SEG[j.id];if(!a)return null;const ra=arcAt(a,j.d);if(ra){out.push(bridgeSeg(j));out.push(wrapSeg(a,ra.de))}else out.push(wrapSeg(a,j.d));t=a.tgt;j=jn(t)}
   if(isT(t))return{path:out,dest:t};const q=padById(t);if(q&&q.mill)return{path:out,dest:t};cur=t}return null}
 // nearest straight stretch of a belt to a point (for T-splits)
 function beltSpot(a,px,pz){let best=null;const pts=a.pts;for(let i=1;i<pts.length;i++){const A=pts[i-1],B=pts[i],dx=B.x-A.x,dz=B.z-A.z,l2=dx*dx+dz*dz;if(l2<1e-6)continue;const u=Math.max(0,Math.min(1,((px-A.x)*dx+(pz-A.z)*dz)/l2)),x=A.x+dx*u,z=A.z+dz*u,d=A.d+(B.d-A.d)*u;
@@ -257,10 +260,16 @@ function econStep(dt,silent){const F=S.fac,sat=powSat();ECON.sat=sat;
  for(const k in SEG)SEG[k].tok=Math.min(3,SEG[k].tok+beltRate()*dt);
  { // items queue up on the belt when their destination is full (backpressure)
   const Q=new Map();for(const it of ECON.items){const k=it.path[it.path.length-1].id+'>'+it.dest;let q=Q.get(k);if(!q)Q.set(k,q=[]);q.push(it)}
-  for(const q of Q.values()){q.sort((x,y)=>(x.L-x.d)-(y.L-y.d));let prev=-ISP;
-   for(const it of q){const R0=it.L-it.d;let nr=Math.min(R0,Math.max(prev+ISP,R0-BSPEED*dt));
-    if(nr<=.0001){nr=0;if(deliverItem(it)){it.done=1;ECON.transit[it.k]--;prev=-ISP;continue}}
-    it.d=it.L-nr;prev=nr}}
+  // T-splits: belts that join another belt (side lane) and the region on the main belt they merge into
+  const JR={};for(const k in S.links){const j=jn(S.links[k]);if(!j||!SEG[j.id]||!SEG[k])continue;const a=SEG[j.id],r=arcAt(a,j.d);JR[j.id]={ds:r?r.ds:j.d,de:r?r.de:j.d,side:k}}
+  const laneOf=it=>{let d=it.d;for(const sg of it.path){if(d<=sg.len||sg===it.path[it.path.length-1]){if(sg.br||sg.base)return{l:'S'};if(SEG[sg.id]&&jn(SEG[sg.id].tgt))return{l:'P'+sg.id,side:1,toEnd:it.L-it.d-(it.L-(()=>{let a=0;for(const s2 of it.path){a+=s2.len;if(s2===sg)break}return a})())};
+     const jr=JR[sg.id];if(jr&&d<jr.ds)return{l:'P'+sg.id,main:sg.id,toEntry:jr.ds-d};return{l:'S'}}d-=sg.len}return{l:'S'}};
+  for(const q of Q.values()){q.sort((x,y)=>(x.L-x.d)-(y.L-y.d));const prev={S:-ISP};const lanes=q.map(laneOf);
+   const mainNear=lanes.some(ln=>ln.main&&ln.toEntry<2.4);
+   q.forEach((it,qi)=>{const ln=lanes[qi],R0=it.L-it.d;const pl=prev[ln.l]!==undefined?prev[ln.l]:-ISP;let nr=Math.min(R0,Math.max(pl+ISP,prev.S+ISP,R0-BSPEED*dt));
+    if(ln.side&&mainNear){const Rentry=R0-ln.toEnd;if(nr<Rentry)nr=Math.min(R0,Rentry)} // side belt waits until the main belt has a gap
+    if(nr<=.0001){nr=0;if(deliverItem(it)){it.done=1;ECON.transit[it.k]--;prev.S=-ISP;return}}
+    it.d=it.L-nr;prev[ln.l]=nr;if(ln.l==='S')prev.S=nr})}
   for(let i=ECON.items.length-1;i>=0;i--){const it=ECON.items[i];if(it.done){if(it.m)ECON.dead.push(it.m);ECON.items.splice(i,1)}}}
  // factory
  ECON.busy=false;ECON.waiting='';const J=F.jobs[0];
