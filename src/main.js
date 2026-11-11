@@ -70,7 +70,7 @@ function playerStep(dt){
 }
 const xray=new THREE.MeshBasicMaterial({color:'#8ff4ff',transparent:true,opacity:.85,depthFunc:THREE.GreaterDepth,depthWrite:false});
 function logic(dt){frameN++;
- playerStep(dt);nodeVisuals(dt);machineStep(dt);econStep(dt);droneStep(dt);gateStep(dt);ffStep(dt);baseStep(dt);roverStep(dt);lostStep(dt);eventStep(dt);updateLoot(dt);updateDrops(dt);gridStep(dt);updateParticles(dt);updateFloaters(dt);propsStep(dt);econVis(dt);dustStep(dt,P.x,P.z);craterStep(dt);
+ playerStep(dt);nodeVisuals(dt);machineStep(dt);econStep(dt);droneStep(dt);gateStep(dt);ffStep(dt);baseStep(dt);roverStep(dt);lostStep(dt);eventStep(dt);trackStep(dt);updateLoot(dt);updateDrops(dt);gridStep(dt);updateParticles(dt);updateFloaters(dt);propsStep(dt);econVis(dt);dustStep(dt,P.x,P.z);craterStep(dt);
  S.playT+=dt;S.sol=1+Math.floor(S.playT/240);
  qT+=dt;if(qT>.4){qT=0;if(questStep())save()}
  svT+=dt;if(svT>6){svT=0;save()}
@@ -104,5 +104,5 @@ function init(){
   $('go').onclick=()=>{AU.init();AU.unlock();S.seenIntro=1;UI.closeAll();save()};UI.openId='intro'}
  addEventListener('beforeunload',save);document.addEventListener('visibilitychange',()=>{if(document.hidden)save()});
  console.log('init ms',Math.round(performance.now()-T0));frame();window.__ready=true}
-window.__g={junctionFor,SEG,segPathTo,ECON,PADS,BASE,showBase,buildBase,QUESTS,EV,podSpawn,eventStep,makeLink,showMachine,padById,makeScanUC,makeScanRobot,makeUpgradeCenter,DECOR,scene,makeRobot,linkNear,cancelLink,icon,gy,makeGeode,makeStoneStage,makeTree,makeTreeStage,bake,THREE,SEG,routeFor,reqOk,zoneAvail,unlockZone,sellNow,buildStorage,sellStorage,gcarry,FAC2,FACT2,buyTool,DROPS,dropLoot,breakNode,sellGoods,buyTool,nodeReachDist,canPay,buildAll,buyDrone,finCap,placeCam,camT,zoneAvail,zoneState,reqOk,reqProg,LOST,ownerOf,GATES,craters,heightAt,stageObj,logic,draw,S,P,nodes,PADS,ZONES,drones,UI,AU,scene,cam,renderer,setZoom,DECOR,terrVal,buyMachine,startLink,tryLink,dropLink,LINK,makeLink,linkCost,ECON,powSupply,powDemand,buildBase,BASE,rovers,unlockZone,sell,save,questStep,QUESTS,giveRes,addCoins,chips};
+window.__g={trackStep,TRK,junctionFor,SEG,segPathTo,ECON,PADS,BASE,showBase,buildBase,QUESTS,EV,podSpawn,eventStep,makeLink,showMachine,padById,makeScanUC,makeScanRobot,makeUpgradeCenter,DECOR,scene,makeRobot,linkNear,cancelLink,icon,gy,makeGeode,makeStoneStage,makeTree,makeTreeStage,bake,THREE,SEG,routeFor,reqOk,zoneAvail,unlockZone,sellNow,buildStorage,sellStorage,gcarry,FAC2,FACT2,buyTool,DROPS,dropLoot,breakNode,sellGoods,buyTool,nodeReachDist,canPay,buildAll,buyDrone,finCap,placeCam,camT,zoneAvail,zoneState,reqOk,reqProg,LOST,ownerOf,GATES,craters,heightAt,stageObj,logic,draw,S,P,nodes,PADS,ZONES,drones,UI,AU,scene,cam,renderer,setZoom,DECOR,terrVal,buyMachine,startLink,tryLink,dropLink,LINK,makeLink,linkCost,ECON,powSupply,powDemand,buildBase,BASE,rovers,unlockZone,sell,save,questStep,QUESTS,giveRes,addCoins,chips};
 setTimeout(()=>{try{init()}catch(e){document.body.insertAdjacentHTML('beforeend','<pre style="position:fixed;inset:0;z-index:999;background:#300;color:#fff;padding:12px;font-size:12px;white-space:pre-wrap">'+e.stack+'</pre>');throw e}},30);

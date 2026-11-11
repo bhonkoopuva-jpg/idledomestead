@@ -315,14 +315,4 @@ for(const a of (LAY.decorDel||[]))eraseDecor(a[0],a[1],a[2]);
 let BELTPTS=[];const beltNear=(x,z)=>{for(let i=0;i<BELTPTS.length;i++){const q=BELTPTS[i];if(Math.abs(q.x-x)<2.3&&Math.abs(q.z-z)<2.3&&Math.hypot(q.x-x,q.z-z)<2.3)return true}return false};
 function applyDecor(){for(const d of DECOR){if(d.im){const A=d.im.instanceMatrix.array,O=d.orig,n=d.im.count;for(let i=0;i<n;i++){const j=i*16;if(terrVal(O[j+12],O[j+14])>-1&&!beltNear(O[j+12],O[j+14])){for(let k=0;k<16;k++)A[j+k]=O[j+k]}else{for(let k=0;k<11;k++)A[j+k]=0;A[j+12]=O[j+12];A[j+13]=O[j+13];A[j+14]=O[j+14]}}d.im.instanceMatrix.needsUpdate=true}else if(!d.dead)d.o.visible=terrVal(d.o.position.x,d.o.position.z)>-1&&!beltNear(d.o.position.x,d.o.position.z)}}
 
-// ---- tyre tracks along the paths ----
-{const c=document.createElement('canvas');c.width=64;c.height=64;const x=c.getContext('2d');x.clearRect(0,0,64,64);x.fillStyle='rgba(255,255,255,1)';for(let i=0;i<4;i++){x.beginPath();x.moveTo(8,i*16+2);x.lineTo(32,i*16+9);x.lineTo(56,i*16+2);x.lineTo(56,i*16+7);x.lineTo(32,i*16+14);x.lineTo(8,i*16+7);x.closePath();x.fill()}
- const tex=new THREE.CanvasTexture(c);tex.wrapT=THREE.RepeatWrapping;tex.colorSpace=THREE.SRGBColorSpace;tex.anisotropy=4;
- const tm=new THREE.MeshBasicMaterial({map:tex,color:'#7a3220',transparent:true,opacity:.42,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3,fog:true});
- const trackGroup=new THREE.Group();
- for(const pts of pathPts){if(pts===RING)continue;
-  const L=[];for(let i=0;i<pts.length-1;i++){const [a,b]=pts[i],[c2,d]=pts[i+1];const n=Math.max(1,Math.ceil(Math.hypot(c2-a,d-b)/1.0));for(let k=0;k<n;k++)L.push([a+(c2-a)*k/n,b+(d-b)*k/n])}L.push(pts[pts.length-1]);
-  for(const off of [-.95,.95]){const pos=[],uv=[],idx=[];let len=0;for(let i=0;i<L.length;i++){const p=L[i],q=L[Math.min(L.length-1,i+1)],o=L[Math.max(0,i-1)];let dx=q[0]-o[0],dz=q[1]-o[1];const l=Math.hypot(dx,dz)||1;dx/=l;dz/=l;const nx=-dz,nz=dx;const wob=Math.sin(i*.37+off*3)*.18;for(const sd of [-1,1]){const px=p[0]+nx*(off+wob+sd*.28),pz=p[1]+nz*(off+wob+sd*.28);pos.push(px,heightAt(px,pz)+.05,pz);uv.push(sd<0?0:1,len/1.4)}if(i>0){const dd=Math.hypot(p[0]-L[i-1][0],p[1]-L[i-1][1]);len+=dd}
-    if(i<L.length-1){const b2=i*2;idx.push(b2,b2+1,b2+2,b2+1,b2+3,b2+2)}}
-   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(idx);trackGroup.add(new THREE.Mesh(g,tm))}}
- scene.add(trackGroup)}
+// (static tyre tracks removed: robots leave short-lived tracks instead, see trackStep in game.js)

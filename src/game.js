@@ -79,6 +79,23 @@ function startFinale(){if(SHIP.obj)return;S.won=S.won||1;spawnShip(false);UI.ban
 function shipStep(dt){const o=SHIP.obj;if(!o)return;const t=SHIP.land;if(SHIP.t<99){SHIP.t+=dt;const k=Math.min(1,SHIP.t/9),e=1-Math.pow(1-k,3);o.position.y=t.y+90*(1-e);o.rotation.y+=dt*.25*(1-k);if(o.userData.flame){o.userData.flame.visible=k<1;o.userData.flame.scale.setScalar(.8+Math.random()*.4)}
   if(Math.random()<dt*20&&k<1)chips(t.x,o.position.y-2,t.z,'#ffd9a0',2,5,.3,1.2,-1);
   if(k>=1){SHIP.t=99;shake=.6;chips(t.x,t.y+.5,t.z,'#ffe9a0',60,12,.35,1.5,1.5);AU.unlock();S.won=2;UI.banner('WELCOME HOME','The settlers have arrived. Mars is home now.');save()}}}
+
+// ---- short-lived tracks behind the robots ----
+const TRK={n:240,i:0,life:7,age:null,al:null,pos:null,im:null,tr:new Map()};
+function trackInit(){const c=document.createElement('canvas');c.width=64;c.height=32;const x=c.getContext('2d');x.fillStyle='#fff';for(const cx of [14,50]){for(let k=0;k<2;k++){x.beginPath();x.moveTo(cx-9,k*16+3);x.lineTo(cx,k*16+9);x.lineTo(cx+9,k*16+3);x.lineTo(cx+9,k*16+7);x.lineTo(cx,k*16+13);x.lineTo(cx-9,k*16+7);x.closePath();x.fill()}}
+ const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;
+ const mat=new THREE.MeshBasicMaterial({map:tex,color:'#6b2c18',transparent:true,opacity:.55,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3});
+ mat.onBeforeCompile=sh=>{sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute float aA;varying float vA;').replace('#include <begin_vertex>','#include <begin_vertex>\nvA=aA;');sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying float vA;').replace('#include <opaque_fragment>','#include <opaque_fragment>\ngl_FragColor.a*=vA;')};
+ const g=new THREE.PlaneGeometry(1,1);g.rotateX(-Math.PI/2);TRK.al=new Float32Array(TRK.n);TRK.age=new Float32Array(TRK.n).fill(99);g.setAttribute('aA',new THREE.InstancedBufferAttribute(TRK.al,1));
+ TRK.im=new THREE.InstancedMesh(g,mat,TRK.n);TRK.im.frustumCulled=false;TRK.im.renderOrder=1;const z=new THREE.Matrix4().makeScale(0,0,0);for(let i=0;i<TRK.n;i++)TRK.im.setMatrixAt(i,z);scene.add(TRK.im)}
+const _tm=new THREE.Matrix4(),_tq=new THREE.Quaternion(),_tp=new THREE.Vector3(),_ts=new THREE.Vector3(),_te=new THREE.Euler();
+function trackMark(x,z,dx,dz,w){const i=TRK.i;TRK.i=(i+1)%TRK.n;TRK.age[i]=0;_te.set(0,Math.atan2(dx,dz),0);_tq.setFromEuler(_te);_tp.set(x,heightAt(x,z)+.07,z);_ts.set(w,1,.62*(w/1.4));_tm.compose(_tp,_tq,_ts);TRK.im.setMatrixAt(i,_tm);TRK.im.instanceMatrix.needsUpdate=true}
+function trackFollow(key,x,z,w,dist){let t=TRK.tr.get(key);if(!t){TRK.tr.set(key,{x,z,acc:0});return}const dx=x-t.x,dz=z-t.z,d=Math.hypot(dx,dz);t.x=x;t.z=z;if(d<.003||d>6)return;t.acc+=d;if(t.acc>=dist){t.acc=0;trackMark(x,z,dx/d,dz/d,w)}}
+function trackStep(dt){if(!TRK.im)trackInit();
+ trackFollow('P',P.x,P.z,1.5,.62);
+ for(const p of PADS)if(p.gath&&p.gobj&&p.gobj.visible!==false)trackFollow(p.id,p.gobj.position.x,p.gobj.position.z,2.3,.95);
+ let ch=false;for(let i=0;i<TRK.n;i++){if(TRK.age[i]>=TRK.life){if(TRK.al[i]!==0){TRK.al[i]=0;ch=true}continue}TRK.age[i]+=dt;const k=Math.max(0,1-TRK.age[i]/TRK.life);TRK.al[i]=Math.min(1,k*1.6);ch=true}
+ if(ch)TRK.im.geometry.attributes.aA.needsUpdate=true}
 function baseStep(dt){if(!BASE_ON)return;shipStep(dt);const t=performance.now()*.001;
  {const qi=S.qa[0];if(qi!==baseStep.lastQ){baseStep.lastQ=qi;const q=QUESTS[qi],o=q&&q.at?q.at():null;if(o&&BASE.includes(o))S.track={x:o.x,z:o.z,t:90}}}
  {const k=Math.min(1,dt*.6),ta=bl('air')?1:0,tw=bl('water')?1:0,tg=bl('bio')?1:0;TERRA.a.value+=(ta-TERRA.a.value)*k;TERRA.w.value+=(tw-TERRA.w.value)*k;TERRA.g.value+=(tg-TERRA.g.value)*k;const m=TERRA.a.value*.4;scene.fog.color.set('#e6987a').lerp(_skyC,m);scene.background.set('#dc7d52').lerp(_skyC,m)}
