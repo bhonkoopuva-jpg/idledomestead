@@ -466,7 +466,7 @@ const ZREQ={
  8:{t:'Build 6 machines',g:6,c:()=>Object.keys(S.mach).length},
  9:{t:'Own 8 drones',g:8,c:()=>S.drones}};
 ZONES.forEach(z=>{if(ZREQ[z.i])z.req=ZREQ[z.i]});
-const zoneAvail=z=>!!z.free||z.i===1||!!S.unl[z.i-1];
+const zoneAvail=z=>!z.hidden&&(!!z.free||z.i===1||!!S.unl[z.i-1]);
 const reqProg=z=>z.req?Math.min(z.req.g,z.req.c()):1;
 const reqOk=z=>!z.req||reqProg(z)>=z.req.g;
 const zoneOpen=z=>zoneAvail(z)&&reqOk(z);
@@ -564,6 +564,7 @@ const QUESTS=[
  {t:'Buy the Quantum Pick',goal:1,c:()=>S.tool>=4?1:0,r:20000,shop:1},
  {t:'Own 10 drones',goal:10,c:()=>S.drones,r:30000,shop:1}];
 if(!BASE_ON)for(let i=QUESTS.length-1;i>=0;i--)if(/BASE\[/.test(String(QUESTS[i].at)))QUESTS.splice(i,1);
+for(let i=QUESTS.length-1;i>=0;i--){const m=/S\.unl\[(\d)\]|ZONES\[(\d)\]/.exec(String(QUESTS[i].c)+String(QUESTS[i].at));if(m&&+(m[1]||m[2])>=ZMAX)QUESTS.splice(i,1)}
 for(let i=QUESTS.length-1;i>=0;i--)if(/crystal/i.test(QUESTS[i].t+String(QUESTS[i].c)+String(QUESTS[i].at)))QUESTS.splice(i,1);
 function nearestNode(type){let b=null,bd=1e9;for(const n of nodes){if(n.type!==type||!n.alive||!S.unl[n.zone])continue;const d=Math.hypot(n.x-P.x,n.z-P.z);if(d<bd){bd=d;b=n}}return b}
 function nearestPad(k){let b=null,bd=1e9;for(const p of PADS){if(!padOpen(p)||machLv(p)||(k&&(p.k!==k||p.mill)))continue;const d=Math.hypot(p.x-P.x,p.z-P.z);if(d<bd){bd=d;b=p}}return b}

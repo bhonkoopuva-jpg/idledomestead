@@ -52,7 +52,7 @@ const ZONES=[
 ];
 ZONES.forEach(z=>{if(z.cost)z.cost=convCost(z.cost)});
 ZONES.forEach(z=>{(z.fixedPads||[]).forEach(p=>{p.x*=WS;p.z*=WS});(z.clusters||[]).forEach(c=>{c.x*=WS;c.z*=WS;c.r*=1.4;c.n*=2})});
-ZONES.forEach((z,i)=>{z.i=i;const l=z.lobes[0];z.x=l.x;z.z=l.z;z.R=Math.sqrt(l.a*l.b)});
+const ZMAX=5;ZONES.forEach((z,i)=>{z.i=i;z.hidden=i>=ZMAX?1:0;const l=z.lobes[0];z.x=l.x;z.z=l.z;z.R=Math.sqrt(l.a*l.b)});
 function wob(z,a){return 1+.04*Math.sin(a*3+z.i*1.7)+.03*Math.sin(a*5+z.i*3.1)+.02*Math.sin(a*9+z.i*.7)}
 // approx distance (world units) inside a lobe; <0 outside
 function lobeS(z,l,x,zz){const dx=x-l.x,dz=zz-l.z;const dn=Math.hypot(dx/l.a,dz/l.b);if(dn<1e-3)return 200;const g=Math.hypot(dx/(l.a*l.a),dz/(l.b*l.b))/dn;return(wob(z,Math.atan2(dz,dx))-dn)/Math.max(g,1e-3)}

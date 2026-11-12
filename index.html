@@ -1034,7 +1034,7 @@ const ZONES=[
 ];
 ZONES.forEach(z=>{if(z.cost)z.cost=convCost(z.cost)});
 ZONES.forEach(z=>{(z.fixedPads||[]).forEach(p=>{p.x*=WS;p.z*=WS});(z.clusters||[]).forEach(c=>{c.x*=WS;c.z*=WS;c.r*=1.4;c.n*=2})});
-ZONES.forEach((z,i)=>{z.i=i;const l=z.lobes[0];z.x=l.x;z.z=l.z;z.R=Math.sqrt(l.a*l.b)});
+const ZMAX=5;ZONES.forEach((z,i)=>{z.i=i;z.hidden=i>=ZMAX?1:0;const l=z.lobes[0];z.x=l.x;z.z=l.z;z.R=Math.sqrt(l.a*l.b)});
 function wob(z,a){return 1+.04*Math.sin(a*3+z.i*1.7)+.03*Math.sin(a*5+z.i*3.1)+.02*Math.sin(a*9+z.i*.7)}
 // approx distance (world units) inside a lobe; <0 outside
 function lobeS(z,l,x,zz){const dx=x-l.x,dz=zz-l.z;const dn=Math.hypot(dx/l.a,dz/l.b);if(dn<1e-3)return 200;const g=Math.hypot(dx/(l.a*l.a),dz/(l.b*l.b))/dn;return(wob(z,Math.atan2(dz,dx))-dn)/Math.max(g,1e-3)}
@@ -1767,7 +1767,7 @@ const ZREQ={
  8:{t:'Build 6 machines',g:6,c:()=>Object.keys(S.mach).length},
  9:{t:'Own 8 drones',g:8,c:()=>S.drones}};
 ZONES.forEach(z=>{if(ZREQ[z.i])z.req=ZREQ[z.i]});
-const zoneAvail=z=>!!z.free||z.i===1||!!S.unl[z.i-1];
+const zoneAvail=z=>!z.hidden&&(!!z.free||z.i===1||!!S.unl[z.i-1]);
 const reqProg=z=>z.req?Math.min(z.req.g,z.req.c()):1;
 const reqOk=z=>!z.req||reqProg(z)>=z.req.g;
 const zoneOpen=z=>zoneAvail(z)&&reqOk(z);
@@ -1865,6 +1865,7 @@ const QUESTS=[
  {t:'Buy the Quantum Pick',goal:1,c:()=>S.tool>=4?1:0,r:20000,shop:1},
  {t:'Own 10 drones',goal:10,c:()=>S.drones,r:30000,shop:1}];
 if(!BASE_ON)for(let i=QUESTS.length-1;i>=0;i--)if(/BASE\[/.test(String(QUESTS[i].at)))QUESTS.splice(i,1);
+for(let i=QUESTS.length-1;i>=0;i--){const m=/S\.unl\[(\d)\]|ZONES\[(\d)\]/.exec(String(QUESTS[i].c)+String(QUESTS[i].at));if(m&&+(m[1]||m[2])>=ZMAX)QUESTS.splice(i,1)}
 for(let i=QUESTS.length-1;i>=0;i--)if(/crystal/i.test(QUESTS[i].t+String(QUESTS[i].c)+String(QUESTS[i].at)))QUESTS.splice(i,1);
 function nearestNode(type){let b=null,bd=1e9;for(const n of nodes){if(n.type!==type||!n.alive||!S.unl[n.zone])continue;const d=Math.hypot(n.x-P.x,n.z-P.z);if(d<bd){bd=d;b=n}}return b}
 function nearestPad(k){let b=null,bd=1e9;for(const p of PADS){if(!padOpen(p)||machLv(p)||(k&&(p.k!==k||p.mill)))continue;const d=Math.hypot(p.x-P.x,p.z-P.z);if(d<bd){bd=d;b=p}}return b}
@@ -2298,7 +2299,7 @@ const UI={panel:null,tab:'tools',openId:null,qEls:[],pillEls:{},tagEls:[],fullT:
   $('modal').addEventListener('pointerdown',e=>{if(e.target===$('modal'))this.closeAll()});
   $('quests').querySelector('h3').addEventListener('pointerdown',()=>{$('quests').classList.toggle('min')});
   // gate tags
-  ZONES.forEach(z=>{if(z.free)return;const t=document.createElement('div');t.className='tag gate';t.innerHTML='<h4></h4><div class="cr"></div>';$('tags').appendChild(t);z.tag=t;z.tagK=''});
+  ZONES.forEach(z=>{if(z.free)return;const t=document.createElement('div');t.className='tag gate';if(z.hidden)t.style.visibility='hidden';t.innerHTML='<h4></h4><div class="cr"></div>';$('tags').appendChild(t);z.tag=t;z.tagK=''});
   PADS.forEach(p=>{const t=document.createElement('div');t.className='tag padtag';t.appendChild(icon(p.mill?'gear':p.k==='wood'?'harv':'rig',48));const s=document.createElement('span');t.appendChild(s);$('tags').appendChild(t);p.tag=t;p.tagS=s;p.tagC=null;});
   this.sellTag=document.createElement('div');this.sellTag.className='tag padtag';this.sellTag.appendChild(icon('factory',48));const sp=document.createElement('span');sp.textContent='UPGRADE CENTER';this.sellTag.appendChild(sp);$('tags').appendChild(this.sellTag);this.jobTag=document.createElement('div');this.jobTag.className='tag padtag';this.jobTag.appendChild(icon('gear',48));this.jobS=document.createElement('span');this.jobTag.appendChild(this.jobS);$('tags').appendChild(this.jobTag);
   this.gEls={};GKEYS.forEach(k=>{const d=document.createElement('div');d.className='pill';d.style.display='none';d.style.cursor='pointer';d.appendChild(icon(k,64));const s=document.createElement('span');d.appendChild(s);const sm=document.createElement('small');sm.textContent='/'+GCAP;d.appendChild(sm);d.onpointerdown=e=>{e.stopPropagation();AU.init();AU.click();this.open('inv')};$('pills').appendChild(d);this.gEls[k]={d,s,last:-1}});
@@ -2396,7 +2397,7 @@ const UI={panel:null,tab:'tools',openId:null,qEls:[],pillEls:{},tagEls:[],fullT:
  rBag(b){{const d=document.createElement('div');d.className='sec';d.textContent='RAW MATERIALS';b.appendChild(d)}RES.forEach(r=>{const row=document.createElement('div');row.className='bagr';const ci=document.createElement('div');ci.className='ci';ci.style.cssText='width:44px;height:44px;border-radius:11px;background:linear-gradient(#5a4850,#3f3038);display:grid;place-items:center';ci.appendChild(icon(r,60));ci.firstChild.style.cssText='width:34px;height:34px';row.appendChild(ci);const m=document.createElement('div');m.innerHTML='<div style="display:flex;justify-content:space-between;font-size:16px"><span></span><b></b></div><div class="bar"><u></u></div>';m.querySelector('span').textContent=RNAME[r]+' · '+VAL[r]+'c each';m.querySelector('b').textContent=S.inv[r]+' / '+cap();m.querySelector('u').style.width=(S.inv[r]/cap()*100)+'%';row.appendChild(m);b.appendChild(row)});
   {const d=document.createElement('div');d.className='sec';d.textContent='MILL GOODS';b.appendChild(d);GKEYS.forEach(k=>{if(!GOODS[k].mill)return;const row=document.createElement('div');row.className='bagr';const ci=document.createElement('div');ci.style.cssText='width:44px;height:44px;border-radius:11px;background:linear-gradient(#5a4850,#3f3038);display:grid;place-items:center';ci.appendChild(icon(k,60));ci.firstChild.style.cssText='width:34px;height:34px';row.appendChild(ci);const m=document.createElement('div');m.innerHTML='<div style="display:flex;justify-content:space-between;font-size:16px"><span></span><b></b></div><div class="bar"><u></u></div>';m.querySelector('span').textContent=GOODS[k].n+' · '+GOODS[k].v+'c each';m.querySelector('b').textContent=S.goods[k]+' / '+GCAP;m.querySelector('u').style.width=(S.goods[k]/GCAP*100)+'%';row.appendChild(m);b.appendChild(row)})}
   const st=S.stats;[['Total wood harvested',st.wood],['Total stone harvested',st.stone],['Total ore mined',st.ore],['Total crystal collected',st.crystal],['Units sold',st.sold],['Coins earned',st.earned],['Machines built',Object.keys(S.mach).length],['Drones',S.drones],['Current tool',TOOLS[S.tool].n]].forEach(([a,v])=>{const d=document.createElement('div');d.className='stat';d.innerHTML='<span>'+a+'</span><b>'+(typeof v==='number'?fmtC(v):v)+'</b>';b.appendChild(d)})},
- rZones(b){ZONES.forEach(z=>{const r=document.createElement('div');r.className='zrow';const m=document.createElement('div');const un=S.unl[z.i];m.innerHTML='<h3></h3><p></p><div class="cr"></div>';m.querySelector('h3').textContent=z.name+(un?'  ✓':'');m.querySelector('p').textContent=z.free?'Your starting basin.':z.blurb;
+ rZones(b){ZONES.forEach(z=>{if(z.hidden)return;const r=document.createElement('div');r.className='zrow';const m=document.createElement('div');const un=S.unl[z.i];m.innerHTML='<h3></h3><p></p><div class="cr"></div>';m.querySelector('h3').textContent=z.name+(un?'  ✓':'');m.querySelector('p').textContent=z.free?'Your starting basin.':z.blurb;
    if(!un&&z.cost){const cr=m.querySelector('.cr');for(const k in z.cost){const paid=S.paid[z.i][k]||0;const c=document.createElement('div');c.className='cc'+(paid>=z.cost[k]?' ok':'');c.appendChild(icon(k,36));c.appendChild(document.createTextNode(fmt(paid)+'/'+fmt(z.cost[k])));cr.appendChild(c)}}
    r.appendChild(m);if(!un){const bt=document.createElement('button');bt.className='btn';bt.textContent='TRACK';bt.onclick=()=>{S.track={x:z.gate.x,z:z.gate.z,t:14};this.closeAll()};r.appendChild(bt)}b.appendChild(r)})},
  rSet(b){const mk=(t,fn,cls)=>{const bt=document.createElement('button');bt.className='btn '+(cls||'');bt.textContent=t;bt.style.cssText='width:100%;height:44px';bt.onclick=fn;b.appendChild(bt)};
@@ -2461,7 +2462,7 @@ const UI={panel:null,tab:'tools',openId:null,qEls:[],pillEls:{},tagEls:[],fullT:
   x.textAlign='center';x.lineJoin='round';const fs=Math.max(11,Math.min(22,13*b.sc/ (this.mB.fit||1)))*dpr;
   const lab=(t,px,py,c,f)=>{x.font='700 '+f+'px Fredoka,system-ui,sans-serif';x.lineWidth=f*.3;x.strokeStyle='rgba(30,10,14,.9)';x.strokeText(t,px,py);x.fillStyle=c;x.fillText(t,px,py)};
   const zs=Math.max(.8,Math.min(1.8,b.sc/(b.min/.8)));
-  for(const z of ZONES){const st=z.free?'home':zoneState(z);const lx=X(z.x),ly=Y(z.z);const r=(z.free?13:15)*dpr*zs;
+  for(const z of ZONES){if(z.hidden)continue;const st=z.free?'home':zoneState(z);const lx=X(z.x),ly=Y(z.z);const r=(z.free?13:15)*dpr*zs;
    x.fillStyle=z.free?'#ffd24a':st==='cleared'?'#38d0c0':st==='locked'?'#6a5260':st==='req'?'#ff9a6a':'#ffd24a';x.strokeStyle=b.sel===z.i?'#fff':'#40143a';x.lineWidth=(b.sel===z.i?4:3)*dpr;x.beginPath();x.arc(lx,ly,r,0,7);x.fill();x.stroke();
    lab(z.free?'S':String(z.i),lx,ly+r*.38,st==='locked'?'#e8d0d8':'#40143a',r*1.15);
    if(zs>1.35||b.sel===z.i){const nm=z.free?'START':z.name.toUpperCase().replace('TURQUOISE MINERAL FIELDS','TURQUOISE FIELDS');lab(nm,lx,ly+r+13*dpr*zs,st==='locked'?'#cdb4c0':'#fff',11*dpr*zs);if(!z.free)lab(st==='cleared'?'CLEARED':st==='locked'?'LOCKED':st==='req'?'NEEDS TASK':'READY',lx,ly+r+26*dpr*zs,st==='cleared'?'#8af0c8':st==='locked'?'#a08c98':st==='req'?'#ffb890':'#ffe9a0',9.5*dpr*zs)}}
@@ -2469,7 +2470,7 @@ const UI={panel:null,tab:'tools',openId:null,qEls:[],pillEls:{},tagEls:[],fullT:
   for(const b2 of BASE_ON?BASE:[]){x.fillStyle=bl(b2.id)?'#58f0d0':'rgba(255,211,90,.9)';x.beginPath();x.arc(X(b2.x),Y(b2.z),3.5*dpr*zs,0,7);x.fill()}
   if(!S.rescued&&S.unl[2]){x.fillStyle='#ff9a6a';x.beginPath();x.arc(X(LOST.x),Y(LOST.z),5*dpr*zs,0,7);x.fill();x.strokeStyle='#fff';x.lineWidth=2*dpr;x.stroke();lab('LOST ROVER',X(LOST.x),Y(LOST.z)-9*dpr*zs,'#ffc0a0',10*dpr*zs)}
   x.fillStyle='#ff6a4a';x.beginPath();x.arc(X(P.x),Y(P.z),6*dpr*zs,0,7);x.fill();x.strokeStyle='#fff';x.lineWidth=2.5*dpr;x.stroke();lab('YOU',X(P.x),Y(P.z)-10*dpr*zs,'#fff',11*dpr*zs)},
- bmInfo(){const el=$('bmi');const z=ZONES[this.bm.sel];if(!z){el.innerHTML='';return}el.innerHTML='';const st=z.free?'home':zoneState(z);
+ bmInfo(){const el=$('bmi');const z=ZONES[this.bm.sel];if(!z||z.hidden){el.innerHTML='';return}el.innerHTML='';const st=z.free?'home':zoneState(z);
   const c=document.createElement('div');c.className='bc';const hd=document.createElement('div');hd.className='bch';const n=document.createElement('i');n.className='bn s-'+st;n.textContent=z.free?'S':z.i;const h=document.createElement('h3');h.textContent=z.free?'Main Base':z.name;const pill=document.createElement('em');pill.className='st s-'+st;pill.textContent=z.free?'START':st==='cleared'?'CLEARED':st==='locked'?'LOCKED':st==='req'?'TASK NEEDED':'READY';hd.append(n,h,pill);c.appendChild(hd);
   const p=document.createElement('p');p.textContent=z.free?'Your starting basin: upgrade center, belts and the colony base.':z.blurb;c.appendChild(p);
   if(!z.free&&st!=='cleared'){
