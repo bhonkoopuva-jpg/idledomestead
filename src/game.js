@@ -51,11 +51,11 @@ const BASE=[
  {id:'dish',name:'Comms Dish',a:200,max:3,clr:4,col:'#9ad0ff',d:'Drones fly and work 15% faster, per level.',cost:l=>({coins:[700,2200,5500][l],stick:[10,24,48][l],ore:[6,14,28][l]})},
  {id:'pad',name:'Landing Pad',a:105,max:3,clr:7,col:'#ffe28a',d:'Sends a Rover along the ring road and adds +10% sale value, per level.',cost:l=>({coins:[900,3000,7500][l],slab:[25,55,100][l],plank:[12,28,50][l],ore:[4,12,24][l]})},
  {id:'homes',name:'Colonist Homes',a:265,max:3,clr:6,col:'#ffd7a0',d:'Homes for the first settlers. Each level adds a row of houses.',cost:l=>({coins:[6000,15000,35000][l],plank:[20,40,80][l],slab:[15,30,60][l],stick:[10,25,50][l]})},
- {id:'beacon',name:'Welcome Beacon',a:95,max:1,clr:4,col:'#fff0a0',d:'Calls the settlers. When it lights up, a ship leaves Earth for Mars.',cost:l=>({coins:60000,plank:60,stick:40,slab:40,crystal:20})},
- {id:'air',name:'Atmosphere Processor',a:60,max:1,clr:5,col:'#bfe6ff',d:'Thickens the thin air. The sky softens and the dust settles.',cost:l=>({coins:4000,slab:20,stick:10,crystal:10})},
- {id:'water',name:'Water Extractor',a:195,max:1,clr:5,col:'#7ad4ff',d:'Draws water from the ground. Small pools appear on the plains.',cost:l=>({coins:9000,slab:30,stick:20,ore:20,crystal:10})},
- {id:'bio',name:'Bio Seeder',a:335,max:1,clr:6,col:'#a8e07a',d:'Seeds the first plants. Green spreads across the flats.',cost:l=>({coins:20000,plank:40,stick:20,slab:30,crystal:15})},
- {id:'reactor',name:'Quantum Reactor',a:287,max:2,clr:5,col:'#58ecff',d:'Fusion core: +60 power per level.',cost:l=>({coins:[6000,20000][l],slab:[10,25][l],stick:[10,25][l],crystal:[5,12][l]})}];
+ {id:'beacon',name:'Welcome Beacon',a:95,max:1,clr:4,col:'#fff0a0',d:'Calls the settlers. When it lights up, a ship leaves Earth for Mars.',cost:l=>({coins:60000,plank:60,stick:40,slab:40,ore:40})},
+ {id:'air',name:'Atmosphere Processor',a:60,max:1,clr:5,col:'#bfe6ff',d:'Thickens the thin air. The sky softens and the dust settles.',cost:l=>({coins:4000,slab:20,stick:10,ore:20})},
+ {id:'water',name:'Water Extractor',a:195,max:1,clr:5,col:'#7ad4ff',d:'Draws water from the ground. Small pools appear on the plains.',cost:l=>({coins:9000,slab:30,stick:20,ore:40})},
+ {id:'bio',name:'Bio Seeder',a:335,max:1,clr:6,col:'#a8e07a',d:'Seeds the first plants. Green spreads across the flats.',cost:l=>({coins:20000,plank:40,stick:20,slab:30,ore:30})},
+ {id:'reactor',name:'Quantum Reactor',a:287,max:2,clr:5,col:'#58ecff',d:'Fusion core: +60 power per level.',cost:l=>({coins:[6000,20000][l],slab:[10,25][l],stick:[10,25][l],ore:2*([5,12][l])})}];
 BASE.forEach(b=>{const bp=BASE_POS[b.id],a=bp.a*Math.PI/180;b.a=bp.a;b.x=Math.cos(a)*bp.r;b.z=Math.sin(a)*bp.r;b.y=gy(b.x,b.z);b.obj=null;b.ghost=null;b.lbl=null});
 const BMAK={homes:()=>makeHomes(),beacon:()=>makeBeacon(),air:()=>makeAir(),water:()=>makeWater(),bio:()=>makeBio(),solar:()=>makeSolar(),dome:()=>makeDome(),dish:()=>makeDish(),pad:()=>makePad(),reactor:()=>makeReactor()};
 const BCOLR={homes:4.5,beacon:2.4,air:3.2,water:3.6,bio:4,solar:4.6,dome:3.3,dish:2.4,pad:0,reactor:3.3};
@@ -565,7 +565,7 @@ const QUESTS=[
  {t:'Own 10 drones',goal:10,c:()=>S.drones,r:30000,shop:1}];
 if(!BASE_ON)for(let i=QUESTS.length-1;i>=0;i--)if(/BASE\[/.test(String(QUESTS[i].at)))QUESTS.splice(i,1);
 for(let i=QUESTS.length-1;i>=0;i--){const m=/S\.unl\[(\d)\]|ZONES\[(\d)\]/.exec(String(QUESTS[i].c)+String(QUESTS[i].at));if(m&&+(m[1]||m[2])>=ZMAX)QUESTS.splice(i,1)}
-for(let i=QUESTS.length-1;i>=0;i--)if(/crystal/i.test(QUESTS[i].t+String(QUESTS[i].c)+String(QUESTS[i].at)))QUESTS.splice(i,1);
+for(let i=QUESTS.length-1;i>=0;i--)if(/crystal/i.test((QUESTS[i].t+String(QUESTS[i].c)+String(QUESTS[i].at)).replace(/Crystal Caves/g,'')))QUESTS.splice(i,1);
 function nearestNode(type){let b=null,bd=1e9;for(const n of nodes){if(n.type!==type||!n.alive||!S.unl[n.zone])continue;const d=Math.hypot(n.x-P.x,n.z-P.z);if(d<bd){bd=d;b=n}}return b}
 function nearestPad(k){let b=null,bd=1e9;for(const p of PADS){if(!padOpen(p)||machLv(p)||(k&&(p.k!==k||p.mill)))continue;const d=Math.hypot(p.x-P.x,p.z-P.z);if(d<bd){bd=d;b=p}}return b}
 function qProg(i){const q=QUESTS[i];return q?Math.min(q.goal,q.c(S.stats)):0}

@@ -283,6 +283,7 @@ function econStep(dt,silent){const F=S.fac,sat=powSat();ECON.sat=sat;
    q.forEach((it,qi)=>{const ln=lanes[qi],R0=it.L-it.d;const pl=prev[ln.l]!==undefined?prev[ln.l]:-ISP;let nr=Math.min(R0,Math.max(pl+ISP,prev.S+ISP,R0-BSPEED*dt));
     if(ln.side&&mainNear){const Rentry=R0-ln.toEnd;if(nr<Rentry)nr=Math.min(R0,Rentry)} // side belt waits until the main belt has a gap
     if(nr<=.0001){nr=0;if(deliverItem(it)){it.done=1;ECON.transit[it.k]--;prev.S=-ISP;return}}
+    if(it.L-nr>it.d+1e-4){let dd=it.L-nr;for(const sg of it.path){if(dd<=sg.len){const bs=sg.base||sg;if(SEG[bs.id]===bs)bs.mvT=performance.now();break}dd-=sg.len}}
     it.d=it.L-nr;prev[ln.l]=nr;if(ln.l==='S')prev.S=nr})}
   for(let i=ECON.items.length-1;i>=0;i--){const it=ECON.items[i];if(it.done){if(it.m)ECON.dead.push(it.m);ECON.items.splice(i,1)}}}
  // factory
@@ -304,7 +305,7 @@ const ITEM_GEO={trunk:(()=>{const g=new THREE.CylinderGeometry(.2,.2,1.25,10);g.
  stone:new THREE.DodecahedronGeometry(.45,0),ore:new THREE.OctahedronGeometry(.48,0),crystal:(()=>{const g=new THREE.OctahedronGeometry(.4,0);g.scale(1,1.5,1);return g})(),
  plank:new THREE.BoxGeometry(1.2,.16,.5),slab:new THREE.BoxGeometry(.95,.24,.95),stick:new THREE.BoxGeometry(1.3,.15,.15)};
 function econVis(dt){const t=performance.now()*.001;
- for(const k in SEG){const s=SEG[k],v=s.vis;if(!v)continue;const off=(t*1.4)%.95;for(let i=0;i<v.count;i++){const d=(i*.95+off)%(v.count*.95);segAt(s,Math.min(s.len,d),_po);_sp.set(_po.x,_po.y+.04,_po.z);_se.set(_po.pitch,_po.yaw,0,'YXZ');_sq.setFromEuler(_se);_sm.compose(_sp,_sq,v.hide&&v.hide.some(h=>d>h[0]&&d<h[1])?_s0:_ss);v.im.setMatrixAt(i,_sm)}v.im.instanceMatrix.needsUpdate=true}
+ const now=performance.now();for(const k in SEG){const s=SEG[k],v=s.vis;if(!v)continue;const run=s.mvT&&now-s.mvT<250;if(!run&&s.offS!==undefined)continue;s.offS=((s.offS||0)+(run?dt*1.4:0))%.95;const off=s.offS;for(let i=0;i<v.count;i++){const d=(i*.95+off)%(v.count*.95);segAt(s,Math.min(s.len,d),_po);_sp.set(_po.x,_po.y+.04,_po.z);_se.set(_po.pitch,_po.yaw,0,'YXZ');_sq.setFromEuler(_se);_sm.compose(_sp,_sq,v.hide&&v.hide.some(h=>d>h[0]&&d<h[1])?_s0:_ss);v.im.setMatrixAt(i,_sm)}v.im.instanceMatrix.needsUpdate=true}
  for(const it of ECON.items){if(!it.m){it.m=new THREE.Mesh(ITEM_GEO[it.k]||ITEM_BOX,lootMat[it.k]);it.m.castShadow=false;scene.add(it.m)}
   let d=it.d,seg=null;for(const s of it.path){if(d<=s.len){seg=s;break}d-=s.len}if(!seg){seg=it.path[it.path.length-1];d=seg.len}
   segAt(seg.base||seg,d+(seg.off||0),_po);it.m.position.set(_po.x,_po.y+.34,_po.z);it.m.rotation.set(_po.pitch,_po.yaw,0,'YXZ')}
