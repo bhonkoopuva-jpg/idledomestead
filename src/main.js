@@ -70,7 +70,7 @@ function playerStep(dt){
 }
 const xray=new THREE.MeshBasicMaterial({color:'#8ff4ff',transparent:true,opacity:.85,depthFunc:THREE.GreaterDepth,depthWrite:false});
 function logic(dt){frameN++;
- playerStep(dt);nodeVisuals(dt);machineStep(dt);econStep(dt);droneStep(dt);gateStep(dt);ffStep(dt);baseStep(dt);roverStep(dt);lostStep(dt);eventStep(dt);trackStep(dt);atmoStep(dt);gearStep(dt);updateLoot(dt);updateDrops(dt);gridStep(dt);updateParticles(dt);updateFloaters(dt);propsStep(dt);econVis(dt);dustStep(dt,P.x,P.z);craterStep(dt);
+ playerStep(dt);nodeVisuals(dt);machineStep(dt);econStep(dt);droneStep(dt);gateStep(dt);ffStep(dt);baseStep(dt);roverStep(dt);lostStep(dt);eventStep(dt);trackStep(dt);atmoStep(dt);updateLoot(dt);updateDrops(dt);gridStep(dt);updateParticles(dt);updateFloaters(dt);propsStep(dt);econVis(dt);dustStep(dt,P.x,P.z);craterStep(dt);
  S.playT+=dt;S.sol=1+Math.floor(S.playT/240);
  qT+=dt;if(qT>.4){qT=0;if(questStep())save()}
  svT+=dt;if(svT>6){svT=0;save()}
