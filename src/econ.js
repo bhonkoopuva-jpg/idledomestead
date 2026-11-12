@@ -37,8 +37,8 @@ function intakePoint(from,t){const F0=termPos(t||'F'),dx=from.x-F0.x,dz=from.z-F
 const isT=t=>t==='F'||t==='F2';const termPos=t=>t==='F2'?FACT2:FACT;
 // junction targets: 'J|<belt owner id>|<distance along that belt>|<side +1/-1>' = a T-split onto another belt
 function jn(t){if(typeof t!=='string'||t[0]!=='J'||t[1]!=='|')return null;const a=t.split('|');return{id:a[1],d:+a[2],s:+a[3]}}
-const _BR=new Map();
-function bridgeSeg(j){const a=SEG[j.id];const key=j.id+'|'+j.d+'|'+j.s;const r=arcAt(a,j.d);const e=jPort(j,.7)[0];const o={};segAt(a,r.de,o);const ys=(()=>{const q={};segAt(a,(r.ds+r.de)/2,q);return q.y})();
+const _BR=new Map(),TSX=1.6,TSW=1.5;
+function bridgeSeg(j){const a=SEG[j.id];const key=j.id+'|'+j.d+'|'+j.s;const r=arcAt(a,j.d);const e=jPort(j,r?.7:TSW)[0];const o={};segAt(a,r?r.de:j.d,o);const ys=r?(()=>{const q={};segAt(a,(r.ds+r.de)/2,q);return q.y})():o.y;
  const c=_BR.get(key);if(c&&c.a===a)return c.seg;const L=Math.hypot(o.x-e.x,o.z-e.z);const seg={id:'br|'+key,pts:[{x:e.x,y:ys,z:e.z,d:0},{x:o.x,y:o.y,z:o.z,d:L}],arcs:[],len:L,br:1};Object.defineProperty(seg,'tok',{get:()=>99,set:()=>{}});_BR.set(key,{a,seg});return seg}
 function wrapSeg(a,d){const w={id:a.id,base:a,off:d,len:Math.max(.5,a.len-d)};Object.defineProperty(w,'tok',{get:()=>a.tok,set:v=>{a.tok=v}});return w}
 function arcAt(a,d){return (a.arcs||[]).find(r=>d>=r.ds-.01&&d<=r.de+.01)||null}
@@ -49,11 +49,11 @@ function jPort(j,off=4.6){const a=SEG[j.id];if(!a)return[{x:0,z:0,dx:0,dz:1}];co
  const o={};segAt(a,j.d,o);const hx=Math.round(Math.sin(o.yaw)),hz=Math.round(Math.cos(o.yaw)),nx=-hz,nz=hx;return[{x:o.x+j.s*nx*off,z:o.z+j.s*nz*off,dx:-j.s*nx,dz:-j.s*nz}]}
 function segPath(id){const out=[];let cur=id,guard=0;while(cur&&!isT(cur)&&guard++<30){const s=SEG[cur];if(!s)return null;out.push(s);let t=s.tgt,j=jn(t),g2=0;while(j&&g2++<10){const a=SEG[j.id];if(!a)return null;out.push(a);t=a.tgt;j=jn(t)}cur=t}return isT(cur)?out:null}
 function segEnd(id){let cur=id,g=0;while(g++<30){let t=S.links[cur];if(!t)return null;let j=jn(t),g2=0;while(j&&g2++<10){cur=j.id;t=S.links[cur];if(!t)return null;j=jn(t)}if(isT(t))return t;const q=padById(t);if(q&&q.mill)return t;cur=t}return null}
-function segPathTo(id){const out=[];let cur=id,g=0;while(cur&&g++<30){const s=SEG[cur];if(!s)return null;out.push(s);let t=s.tgt,j=jn(t),g2=0;while(j&&g2++<10){const a=SEG[j.id];if(!a)return null;const ra=arcAt(a,j.d);if(ra){out.push(bridgeSeg(j));out.push(wrapSeg(a,ra.de))}else out.push(wrapSeg(a,j.d));t=a.tgt;j=jn(t)}
+function segPathTo(id){const out=[];let cur=id,g=0;while(cur&&g++<30){const s=SEG[cur];if(!s)return null;out.push(s);let t=s.tgt,j=jn(t),g2=0;while(j&&g2++<10){const a=SEG[j.id];if(!a)return null;const ra=arcAt(a,j.d);out.push(bridgeSeg(j));out.push(wrapSeg(a,ra?ra.de:j.d));t=a.tgt;j=jn(t)}
   if(isT(t))return{path:out,dest:t};const q=padById(t);if(q&&q.mill)return{path:out,dest:t};cur=t}return null}
 // nearest straight stretch of a belt to a point (for T-splits)
 function beltSpot(a,px,pz){let best=null;const pts=a.pts;for(let i=1;i<pts.length;i++){const A=pts[i-1],B=pts[i],dx=B.x-A.x,dz=B.z-A.z,l2=dx*dx+dz*dz;if(l2<1e-6)continue;const u=Math.max(0,Math.min(1,((px-A.x)*dx+(pz-A.z)*dz)/l2)),x=A.x+dx*u,z=A.z+dz*u,d=A.d+(B.d-A.d)*u;
-  if(d<3||d>a.len-3)continue;if((a.arcs||[]).some(r=>d>r.ds-1.4&&d<r.de+1.4))continue;const hl=Math.hypot(dx,dz);if(Math.abs(dx/hl)<.97&&Math.abs(dz/hl)<.97)continue;const dist=Math.hypot(px-x,pz-z);if(!best||dist<best.dist)best={x,z,y:A.y+(B.y-A.y)*u,d,dist}}return best}
+  if(d<3||d>a.len-3)continue;if((a.arcs||[]).some(r=>d>r.ds-TSX-.4&&d<r.de+TSX+.4))continue;const hl=Math.hypot(dx,dz);if(Math.abs(dx/hl)<.97&&Math.abs(dz/hl)<.97)continue;const dist=Math.hypot(px-x,pz-z);if(!best||dist<best.dist)best={x,z,y:A.y+(B.y-A.y)*u,d,dist}}return best}
 function junctionFor(p,px,pz,maxd){let best=null;for(const k in SEG){if(k===p.id)continue;const a=SEG[k];const rr=segPathTo(k);if(!rr)continue;const pa=segPath(k);if(!pa||pa.some(q=>q.id===p.id))continue;
   const dest=rr.dest;if(dest==='F2'){if(!p.gath)continue}else if(!isT(dest)){const m=padById(dest);if(!m||p.mill||m.k!==p.k)continue}else if(p.gath&&S.storeBuilt)continue;
   const sp=beltSpot(a,px,pz);if(!sp||sp.dist>maxd||(best&&sp.dist>=best.dist))continue;
@@ -126,7 +126,7 @@ function routeFor(p,tgt){
  for(let i=w.length-2;i>0;i--){const a=w[i-1],b=w[i],c=w[i+1];if(Math.abs((b.x-a.x)*(c.z-b.z)-(b.z-a.z)*(c.x-b.x))<1e-3)w.splice(i,1)}
  return {w,out:bo?{dx:bo.dx,dz:bo.dz}:null,inn:bi?{dx:bi.dx,dz:bi.dz}:null}}
 function buildSeg(p,tgt){killSeg(p.id);const R0=routeFor(p,tgt),w=R0.w,pts=[],arcs=[];
- {const jj=jn(tgt);if(jj&&SEG[jj.id]){const e=jPort(jj,arcAt(SEG[jj.id],jj.d)?.7:.35)[0];w[w.length-1]={x:e.x,z:e.z}}}
+ {const jj=jn(tgt);if(jj&&SEG[jj.id]){const e=jPort(jj,arcAt(SEG[jj.id],jj.d)?.7:TSW)[0];w[w.length-1]={x:e.x,z:e.z}}}
  const dist=(a,b)=>Math.hypot(b.x-a.x,b.z-a.z),push=(x,z)=>pts.push({x,z,y:gy(x,z)+BDECK});
  const line=(a,b)=>{const n=Math.max(1,Math.ceil(dist(a,b)/1.4));for(let i=(pts.length?1:0);i<=n;i++)push(a.x+(b.x-a.x)*i/n,a.z+(b.z-a.z)*i/n)};
  // corner radii
@@ -153,7 +153,7 @@ function killSeg(id){const s=SEG[id];if(!s)return;const _jj=jn(s.tgt);if(s.vis){
 const _belMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.6,side:THREE.DoubleSide});
 const slatGeo=new THREE.BoxGeometry(1.0,.05,.14);const slatMat=new THREE.MeshStandardMaterial({color:'#3b3647',roughness:.7});
 function segVisual(seg){const grp=new THREE.Group();let hideR=null;const carve=[];for(const k in S.links){const j=jn(S.links[k]);if(j&&j.id===seg.id)carve.push(j)}
- const arcs=seg.arcs||[],spans=[];{let c=0;for(const a of arcs){if(a.ds>c+.3)spans.push([c,a.ds]);c=a.de}if(seg.len>c+.3)spans.push([c,seg.len])}
+ const arcs=seg.arcs||[],spans=[];{const gaps=arcs.map(a=>[a.ds,a.de]).concat(carve.filter(c=>!arcAt(seg,c.d)).map(c=>[c.d-TSX,c.d+TSX])).sort((x,y)=>x[0]-y[0]);let c=0;for(const g of gaps){if(g[0]>c+.3)spans.push([c,g[0]]);c=Math.max(c,g[1])}if(seg.len>c+.3)spans.push([c,seg.len])}
  const mods=[];for(const [s0,s1] of spans){const n=Math.max(1,Math.round((s1-s0)/2.4)),L=(s1-s0)/n;for(let i=0;i<n;i++)mods.push({d:s0+(i+.5)*L,L})}
  const N=mods.length,Lmax=Math.max(1,...mods.map(m=>m.L));
  const cream=std('#e4dcc8',{roughness:.5}),yel=std('#e8b02c',{roughness:.45}),dkm=std('#1f1c26',{roughness:.85}),teal=std('#2fb0ac',{roughness:.55}),grey=std('#8d94a3',{roughness:.45,metalness:.25}),slate=std('#5a6080',{roughness:.55});
@@ -180,11 +180,7 @@ function tStrip(x0,z0,x1,z1,y0,y1,hideDir){const L=Math.hypot(x1-x0,z1-z0),dx=(x
    for(let k=0;k<ns;k++){const i0=base+k*2;Idx.push(i0,i0+1,i0+2,i0+1,i0+3,i0+2)}}
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(Ppos,3));g.setAttribute('color',new THREE.Float32BufferAttribute(Pcol,3));g.setIndex(Idx);g.computeVertexNormals();
   const me=new THREE.Mesh(g,_belMat);me.castShadow=true;me.receiveShadow=true;grp.add(me)}
- for(const a of arcs){const Ppos=[],Pcol=[],Idx=[],ns=14,cv=carve.filter(c=>c.d>=a.ds-.01&&c.d<=a.de+.01);
-  if(cv.length){ // dedicated T-piece instead of the rounded corner
-   const o1={},o2={};segAt(seg,a.ds,o1);segAt(seg,a.de,o2);const hu={x:Math.round(Math.sin(o1.yaw)),z:Math.round(Math.cos(o1.yaw))},hv={x:Math.round(Math.sin(o2.yaw)),z:Math.round(Math.cos(o2.yaw))};
-   const Vx=o1.x+hu.x*a.R,Vz=o1.z+hu.z*a.R,yv=(o1.y+o2.y)/2;
-   {const HW=.58,RF=.6,XB=.8,XR=a.R,WR=a.R,Y=yv,W3=(x,w)=>[Vx+hv.x*x-hu.x*w,Vz+hv.z*x-hu.z*w];
+function tPiece(Vx,Vz,yv,hu,hv,XB,XR,WR){const HW=.58,RF=.6,Y=yv,W3=(x,w)=>[Vx+hv.x*x-hu.x*w,Vz+hv.z*x-hu.z*w];
     // deck: one flat T-shaped plate with rounded inner corners
     const P=[[-XB,-HW],[XR,-HW],[XR,HW]];for(let k=0;k<=8;k++){const g=(270-90*k/8)*Math.PI/180;P.push([HW+RF+RF*Math.cos(g),HW+RF+RF*Math.sin(g)])}
     P.push([HW,WR],[-HW,WR]);for(let k=0;k<=8;k++){const g=(0-90*k/8)*Math.PI/180;P.push([-HW-RF+RF*Math.cos(g),HW+RF+RF*Math.sin(g)])}P.push([-XB,HW]);
@@ -199,18 +195,30 @@ function tStrip(x0,z0,x1,z1,y0,y1,hideDir){const L=Math.hypot(x1-x0,z1-z0),dx=(x
     sweep([[-XB,-HW],[XR,-HW]],-1);                                                                   // outer wall of the bar
     const L=[[-XB,HW],...arcP(-HW-RF,HW+RF,-90,0).map(q=>q),[-HW,WR]];sweep(L,1);                  // left inner corner
     const Rr=[[XR,HW],...arcP(HW+RF,HW+RF,270,180),[HW,WR]];sweep(Rr,-1);                          // right inner corner
+    const rim=(path,sg)=>{const n=path.length,v=[];for(let q=0;q<n;q++){const a0=path[Math.max(0,q-1)],a1=path[Math.min(n-1,q+1)];let tx=a1[0]-a0[0],tw=a1[1]-a0[1];const l=Math.hypot(tx,tw)||1;tx/=l;tw/=l;const nn=sg>0?[-tw,tx]:[tw,-tx];const w=W3(path[q][0]+nn[0]*.08,path[q][1]+nn[1]*.08);v.push(new THREE.Vector3(w[0],Y+.12,w[1]))}
+     const t=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(v,false,'catmullrom',.1),Math.max(8,n*3),.085,8),yel);t.castShadow=true;grp.add(t)};
+    rim([[-XB,-HW],[XR,-HW]],-1);rim(L,1);rim(Rr,-1);
     // grey pipe handrails around the two inner corners
-    const rail=(pts)=>{const v=pts.map(q=>{const w=W3(q[0],q[1]);return new THREE.Vector3(w[0],Y+.62,w[1])});const t=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(v),24,.055,6),grey);t.castShadow=true;grp.add(t);
-     for(const q of [v[0],v[Math.floor(v.length/2)],v[v.length-1]]){const pc=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,.62,6),grey);pc.position.set(q.x,Y+.3,q.z);grp.add(pc)}};
+    const rail=(pts)=>{const v=pts.map(q=>{const w=W3(q[0],q[1]);return new THREE.Vector3(w[0],Y+.62,w[1])});const t=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(v),28,.085,8),grey);t.castShadow=true;grp.add(t);
+     for(const q of [v[0],v[Math.floor(v.length/2)],v[v.length-1]]){const pc=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,.62,8),grey);pc.position.set(q.x,Y+.3,q.z);grp.add(pc)}};
     const arcR=(cx,cw,g0,g1,r)=>{const o=[];for(let k=0;k<=8;k++){const g=(g0+(g1-g0)*k/8)*Math.PI/180;o.push([cx+r*Math.cos(g),cw+r*Math.sin(g)])}return o};
     rail([[-HW-RF-.9,HW+.25],...arcR(-HW-RF,HW+RF,-90,0,RF-.25),[-HW-.25,HW+RF+.9]]);
     rail([[HW+RF+.9,HW+.25],...arcR(HW+RF,HW+RF,270,180,RF-.25),[HW+.25,HW+RF+.9]]);
     for(let x=-XB+.5;x<XR-.2;x+=.95){const w=W3(x,0),sl=new THREE.Mesh(slatGeo,slatMat);sl.position.set(w[0],Y+.04,w[1]);sl.rotation.y=Math.atan2(hv.x,hv.z);grp.add(sl)}
     for(let y=HW+.7;y<WR-.2;y+=.95){const w=W3(0,y),sl=new THREE.Mesh(slatGeo,slatMat);sl.position.set(w[0],Y+.04,w[1]);sl.rotation.y=Math.atan2(hu.x,hu.z);grp.add(sl)}
     // teal display + frame on the outer wall, and legs
-    const yaw=Math.atan2(hu.x,hu.z),dpos=W3(.45,-HW-.27);const fr=rbox(.95,.5,.14,.05,grey);fr.position.set(dpos[0],Y-.3,dpos[1]);fr.rotation.y=yaw;grp.add(fr);
-    const scr=rbox(.7,.32,.06,.03,std('#5fe3c0',{roughness:.3,emissive:'#2fb89a',emissiveIntensity:.7}));scr.position.set(dpos[0]+hu.x*.08,Y-.3,dpos[1]+hu.z*.08);scr.rotation.y=yaw;grp.add(scr);
+    const yaw=Math.atan2(hu.x,hu.z),dpos=W3(.45,-HW-.27);const fr=rbox(1.3,.62,.16,.06,grey);fr.position.set(dpos[0],Y-.3,dpos[1]);fr.rotation.y=yaw;grp.add(fr);
+    const scr=rbox(1.02,.42,.06,.03,std('#5fe3c0',{roughness:.3,emissive:'#2fb89a',emissiveIntensity:.7}));scr.position.set(dpos[0]+hu.x*.08,Y-.3,dpos[1]+hu.z*.08);scr.rotation.y=yaw;grp.add(scr);
+    for(const ox of [-.32,-.12]){const a0=W3(.45+ox,-HW-.3),a1=W3(.45+ox+.25,-HW-.42),a2=W3(.45+ox+.9,-HW-.25),a3=W3(.45+ox+1.25,-HW-.05);
+     const cv=new THREE.CatmullRomCurve3([new THREE.Vector3(a0[0],Y-.62,a0[1]),new THREE.Vector3(a1[0],Y-.85,a1[1]),new THREE.Vector3(a2[0],Y-.8,a2[1]),new THREE.Vector3(a3[0],Y-.5,a3[1])]);
+     const cb=new THREE.Mesh(new THREE.TubeGeometry(cv,16,.05,6),teal);cb.castShadow=true;grp.add(cb)}
     for(const [lx,lw] of [[-.45,-.4],[1.35,-.4],[0,1.45],[-.45,.4]]){const w=W3(lx,lw);leg(w[0],w[1],Y-.5)}}
+  for(const c of carve){if(arcAt(seg,c.d))continue;const o={};segAt(seg,c.d,o);const hx=Math.round(Math.sin(o.yaw)),hz=Math.round(Math.cos(o.yaw));tPiece(o.x,o.z,o.y,{x:c.s*hz,z:-c.s*hx},{x:hx,z:hz},TSX,TSX,TSW)}
+ for(const a of arcs){const Ppos=[],Pcol=[],Idx=[],ns=14,cv=carve.filter(c=>c.d>=a.ds-.01&&c.d<=a.de+.01);
+  if(cv.length){ // dedicated T-piece instead of the rounded corner
+   const o1={},o2={};segAt(seg,a.ds,o1);segAt(seg,a.de,o2);const hu={x:Math.round(Math.sin(o1.yaw)),z:Math.round(Math.cos(o1.yaw))},hv={x:Math.round(Math.sin(o2.yaw)),z:Math.round(Math.cos(o2.yaw))};
+   const Vx=o1.x+hu.x*a.R,Vz=o1.z+hu.z*a.R,yv=(o1.y+o2.y)/2;
+   tPiece(Vx,Vz,yv,hu,hv,.8,a.R,a.R);
    (hideR=hideR||[]).push([a.ds,a.de]);continue}
   for(let ei=0;ei<PR.length-1;ei++){const base=Ppos.length/3;const p0=PR[ei],p1=PR[ei+1];
    for(let k=0;k<=ns;k++){const t=k/ns,ang=a.a0+a.sw*t;segAt(seg,a.ds+(a.de-a.ds)*t,po);const cs=Math.cos(ang),sn=Math.sin(ang);
