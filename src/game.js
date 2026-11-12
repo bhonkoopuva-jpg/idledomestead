@@ -28,7 +28,7 @@ const cap=()=>60+40*S.up.cargo;
 const toolPow=()=>TOOLS[S.tool].pow;
 const reach=()=>3.5+.45*S.up.reach;
 const bl=id=>(S.base&&S.base[id])||0;
-const EV={pod:null,next:70+Math.random()*50,surge:0,bar:null};const machMul=()=>EV.surge>0?1.5:1;
+const EV={pod:null,next:70+Math.random()*50,surge:0,storm:0,bar:null};const machMul=()=>EV.surge>0?1.5:1;
 const droneMul=()=>(1+.15*bl('dish'));
 const regrowMul=()=>1+.35*bl('dome');
 const refineMul=()=>(1+.1*S.up.refine)*(1+.1*bl('pad'));
@@ -96,6 +96,25 @@ function trackStep(dt){if(!TRK.im)trackInit();
  for(const p of PADS)if(p.gath&&p.gobj&&p.gobj.visible!==false)trackFollow(p.id,p.gobj.position.x,p.gobj.position.z,2.3,.95);
  let ch=false;for(let i=0;i<TRK.n;i++){if(TRK.age[i]>=TRK.life){if(TRK.al[i]!==0){TRK.al[i]=0;ch=true}continue}TRK.age[i]+=dt;const k=Math.max(0,1-TRK.age[i]/TRK.life);TRK.al[i]=Math.min(1,k*1.6);ch=true}
  if(ch)TRK.im.geometry.attributes.aA.needsUpdate=true}
+
+// ================= ATMOSPHERE: day/night cycle (one per sol) + dust storms =================
+const ATM={n:0,sf:0,mats:null,scanT:0,hemi:null,streak:null};
+const _tNight=new THREE.Color(.62,.6,.86),_tDusk=new THREE.Color(1.06,.9,.82);const _cDay={fog:new THREE.Color(),bg:new THREE.Color()},_cNight=new THREE.Color('#6f5a86'),_cNightBg=new THREE.Color('#5e4a78'),_cStorm=new THREE.Color('#d49a6a'),_cDusk=new THREE.Color('#ff9d70'),_sunDay=new THREE.Color('#ffe8cc'),_sunNight=new THREE.Color('#b8b4ff');
+function atmoStep(dt){
+ const ph=((S.playT/240)+.3)%1,c=Math.cos(ph*6.2832);const nT=Math.max(0,Math.min(1,(c-.35)/.55));ATM.n+=(nT-ATM.n)*Math.min(1,dt*2);const n=ATM.n*.85,dusk=Math.max(0,1-Math.abs(c-.3)/.3)*.6;
+ ATM.sf+=((EV.storm>0?1:0)-ATM.sf)*Math.min(1,dt*.5);const sf=ATM.sf;
+ // colours (baseStep has just set the day colours incl. terraforming)
+ scene.fog.color.lerp(_cDusk,dusk*.18).lerp(_cNight,n*.55).lerp(_cStorm,sf*.6);scene.background.lerp(_cDusk,dusk*.2).lerp(_cNightBg,n*.6).lerp(_cStorm,sf*.55);
+ sun.intensity=2.4*(1-.55*n)*(1-.35*sf);sun.color.copy(_sunDay).lerp(_cDusk,dusk*.35).lerp(_sunNight,n*.7);fillL.intensity=.5*(1-.4*n);
+ if(!ATM.hemi)ATM.hemi=scene.children.find(o=>o.isHemisphereLight);if(ATM.hemi)ATM.hemi.intensity=.3*(1+.4*n);
+ ATMT.setRGB(1,1,1).lerp(_tNight,n).lerp(_tDusk,dusk*.5);const postOn=LOOK.on&&POST.ok&&POST.rt;renderer.toneMappingExposure=.95*(postOn?1:(ATMT.r+ATMT.g+ATMT.b)/3)*(1-.06*sf);FOGK=1-.6*sf;
+ // machine lamps glow brighter at night
+ ATM.scanT-=dt;if(ATM.scanT<=0){ATM.scanT=8;const set=new Set();scene.traverse(o=>{if(!o.isMesh)return;const ms=Array.isArray(o.material)?o.material:[o.material];for(const m of ms)if(m&&m.emissive&&m.emissiveIntensity>0&&m.emissive.getHex()!==0&&m!==TRK.im?.material)set.add(m)});for(const m of set)if(m.userData._eb===undefined)m.userData._eb=m.emissiveIntensity;ATM.mats=[...set]}
+ if(ATM.mats)for(const m of ATM.mats)m.emissiveIntensity=m.userData._eb*(1+1.6*n);
+ // blowing dust streaks during a storm
+ if(!ATM.streak&&sf>.01){const N=420,pos=new Float32Array(N*3);for(let i=0;i<N;i++){pos[i*3]=(Math.random()-.5)*70;pos[i*3+1]=Math.random()*14;pos[i*3+2]=(Math.random()-.5)*70}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  ATM.streak=new THREE.Points(g,new THREE.PointsMaterial({color:'#f3c79a',size:.32,transparent:true,opacity:0,depthWrite:false}));ATM.streak.frustumCulled=false;scene.add(ATM.streak)}
+ if(ATM.streak){ATM.streak.visible=sf>.01;if(sf>.01){ATM.streak.material.opacity=.7*sf;const a=ATM.streak.geometry.attributes.position.array;for(let i=0;i<a.length;i+=3){a[i]+=dt*(18+(i%7)*2);a[i+2]+=dt*4;a[i+1]+=Math.sin(a[i]*.3)*dt*.6;if(a[i]>35)a[i]-=70;if(a[i+2]>35)a[i+2]-=70}ATM.streak.geometry.attributes.position.needsUpdate=true;ATM.streak.position.set(P.x,gy(P.x,P.z),P.z)}}}
 function baseStep(dt){if(!BASE_ON)return;shipStep(dt);const t=performance.now()*.001;
  {const qi=S.qa[0];if(qi!==baseStep.lastQ){baseStep.lastQ=qi;const q=QUESTS[qi],o=q&&q.at?q.at():null;if(o&&BASE.includes(o))S.track={x:o.x,z:o.z,t:90}}}
  {const k=Math.min(1,dt*.6),ta=bl('air')?1:0,tw=bl('water')?1:0,tg=bl('bio')?1:0;TERRA.a.value+=(ta-TERRA.a.value)*k;TERRA.w.value+=(tw-TERRA.w.value)*k;TERRA.g.value+=(tg-TERRA.g.value)*k;const m=TERRA.a.value*.4;scene.fog.color.set('#e6987a').lerp(_skyC,m);scene.background.set('#dc7d52').lerp(_skyC,m)}
@@ -136,16 +155,17 @@ function podReward(){const p=EV.pod;const r=Math.random();let txt;
  chips(p.x,p.y+1.5,p.z,'#ffe9a0',50,10,.3,1.3,1.4);floater(p.x,p.y+4,p.z,txt,'#ffd24a',1);UI.banner('POD OPENED',txt);AU.coin(0);shake=.25;podClear();save()}
 function eventStep(dt){if(EDIT.on)return;
  if(EV.surge>0){EV.surge-=dt;if(EV.surge<=0){EV.surge=0;UI.toast('Solar surge ended')}}
+ if(EV.storm>0){EV.storm-=dt;if(EV.storm<=0){EV.storm=0;UI.toast('The dust storm has passed')}}
  if(!EV.bar){const b=document.createElement('div');b.style.cssText='position:fixed;top:calc(env(safe-area-inset-top,0px) + 58px);left:50%;transform:translateX(-50%);padding:5px 14px;border-radius:999px;background:linear-gradient(#ffe08a,#ffc24a);color:#6a3a08;font:700 13px Fredoka,system-ui,sans-serif;box-shadow:0 3px 10px rgba(80,30,0,.3);display:none;z-index:20;pointer-events:none';document.body.appendChild(b);EV.bar=b}
- if(EV.surge>0){EV.bar.style.display='block';EV.bar.textContent='☀ Solar surge: +50% production · '+Math.ceil(EV.surge)+'s'}else EV.bar.style.display='none';
+ if(EV.surge>0){EV.bar.style.display='block';EV.bar.textContent='☀ Solar surge: +50% production · '+Math.ceil(EV.surge)+'s'}else if(EV.storm>0){EV.bar.style.display='block';EV.bar.textContent='🌪 Dust storm'+(bl('solar')?': solar power halved':'')+' · '+Math.ceil(EV.storm)+'s'}else EV.bar.style.display='none';
  const p=EV.pod;
  if(p){const t=performance.now()*.001;p.t-=dt;p.fall=Math.max(0,p.fall-dt*1.6);p.g.position.y=p.y+p.fall*18+Math.sin(t*2)*.12;p.g.rotation.y+=dt*.6;p.beam.material.opacity=.18+.1*Math.sin(t*4);p.ring.userData.m1&&(p.ring.userData.m1.material.opacity=.4+.4*(.5+.5*Math.sin(t*4)));
   if(p.fall<=0&&Math.hypot(P.x-p.x,P.z-p.z)<4.6){podReward();return}
   if(p.t<=0){podClear();UI.toast('The supply pod faded away')}
   return}
- if(S.playT<60||EV.surge>0)return;EV.next-=dt;if(EV.next>0)return;EV.next=110+Math.random()*90;
+ if(S.playT<60||EV.surge>0||EV.storm>0)return;EV.next-=dt;if(EV.next>0)return;EV.next=110+Math.random()*90;
  const hasM=Object.keys(S.mach).length>0;
- if(hasM&&Math.random()<.4){EV.surge=45;UI.banner('SOLAR SURGE','+50% production for 45s');AU.unlock();shake=.2}else podSpawn()}
+ const rr=Math.random();if(hasM&&rr<.35){EV.surge=45;UI.banner('SOLAR SURGE','+50% production for 45s');AU.unlock();shake=.2}else if(S.playT>300&&rr<.6){EV.storm=40;UI.banner('DUST STORM',bl('solar')?'Solar panels covered: half solar power for 40s':'Low visibility for 40s');shake=.15}else podSpawn()}
 // ================= NODES =================
 const nodes=[];const VAR={};
 function variant(type,kind,v){const k=type+kind+v;if(VAR[k])return VAR[k];seed=v*977+type.length*31+kind.length*7+11;let g;

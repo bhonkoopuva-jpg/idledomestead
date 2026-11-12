@@ -5,7 +5,7 @@ const renderer=new THREE.WebGLRenderer({canvas:glc,antialias:true,powerPreferenc
 let RPR=Math.min(devicePixelRatio,2);renderer.setPixelRatio(RPR);renderer.setSize(innerWidth,innerHeight,false);
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.95;renderer.outputColorSpace=THREE.SRGBColorSpace;
-const scene=new THREE.Scene();scene.background=new THREE.Color('#dc7d52');scene.fog=new THREE.Fog('#e6987a',48,118);
+let FOGK=1;const ATMT=new THREE.Color(1,1,1);const scene=new THREE.Scene();scene.background=new THREE.Color('#dc7d52');scene.fog=new THREE.Fog('#e6987a',48,118);
 const cam=new THREE.PerspectiveCamera(32,innerWidth/innerHeight,1,260);
 scene.add(new THREE.HemisphereLight('#ffd8c0','#8c3a28',.3));
 const sun=new THREE.DirectionalLight('#ffe8cc',2.4);sun.castShadow=true;sun.shadow.mapSize.set(MOBILE?1536:3072,MOBILE?1536:3072);
@@ -222,7 +222,7 @@ const camT=new THREE.Vector3(0,0,6);
 function layoutCam(){const asp=innerWidth/innerHeight;cam.aspect=asp;cam.fov=asp<1?36:32;cam.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight,false)}
 addEventListener('resize',layoutCam);layoutCam();
 let zoomT=1,zoomC=1;const setZoom=z=>{zoomT=Math.max(.5,Math.min(1.9,z));if(typeof S!=='undefined')S.zoom=zoomT};
-function placeCam(tx,tz,snap){const asp=innerWidth/innerHeight;zoomC+=(zoomT-zoomC)*(snap?1:.2);const k=Math.min(1.5,Math.max(1,1.2/asp))*1.45*zoomC;scene.fog.near=48*k*1.05;scene.fog.far=118*k*1.05;camT.x+=(tx-camT.x)*(snap?1:.12);camT.z+=(tz-camT.z)*(snap?1:.12);const ty=gy(camT.x,camT.z)*.6;if(LOOK.on)cam.position.set(camT.x,ty+28*k*.9,camT.z+37*k*.9);else cam.position.set(camT.x,ty+35*k,camT.z+35*k);cam.lookAt(camT.x,ty,camT.z+1.5);
+function placeCam(tx,tz,snap){const asp=innerWidth/innerHeight;zoomC+=(zoomT-zoomC)*(snap?1:.2);const k=Math.min(1.5,Math.max(1,1.2/asp))*1.45*zoomC;scene.fog.near=48*k*1.05*FOGK;scene.fog.far=118*k*1.05*(.4+.6*FOGK);camT.x+=(tx-camT.x)*(snap?1:.12);camT.z+=(tz-camT.z)*(snap?1:.12);const ty=gy(camT.x,camT.z)*.6;if(LOOK.on)cam.position.set(camT.x,ty+28*k*.9,camT.z+37*k*.9);else cam.position.set(camT.x,ty+35*k,camT.z+35*k);cam.lookAt(camT.x,ty,camT.z+1.5);
  sun.position.set(camT.x+SUNOFF.x,SUNOFF.y,camT.z+SUNOFF.z);sun.target.position.set(camT.x,0,camT.z)}
 
 // drifting dust motes

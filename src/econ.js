@@ -24,7 +24,7 @@ const goodsOnly=c=>{const o={};for(const k in c)if(GOODS[k])o[k]=c[k];return o};
 const ECON={items:[],dead:[],events:[],feedAcc:0,transit:{wood:0,stone:0,ore:0,crystal:0,plank:0,slab:0,stick:0},busy:false,waiting:'',sellT:0,craftT:0};
 function ensureEcon(){S.goods=Object.assign({brick:0,plate:0,circuit:0,cell:0,module:0,core:0,plank:0,slab:0,stick:0},S.goods);const f=S.fac=S.fac||{};f.off=f.off||{};f.q=f.q||{};for(const k of ['brick','plate','circuit','cell','module','core'])if(f.q[k]===undefined)f.q[k]=0;f.in=Object.assign({wood:0,stone:0,ore:0,crystal:0},f.in);f.made=Object.assign({brick:0,plate:0,circuit:0,cell:0,module:0,core:0,plank:0,slab:0,stick:0},f.made);f.prog=f.prog||0;f.rr=f.rr||0;f.adv=f.adv||0;f.jobs=f.jobs||[];S.links=S.links||{};S.feeder=S.feeder||0;S.stats.crafted=S.stats.crafted||0}
 // ---- power ----
-const powSupply=()=>12+14*bl('solar')+60*bl('reactor');
+const powSupply=()=>12+14*bl('solar')*(typeof EV!=='undefined'&&EV.storm>0?.5:1)+60*bl('reactor');
 function powDemand(){let d=8+(S.fac.adv?6:0);for(const p of PADS){const l=machLv(p);if(l)d+=2+l}return d+1.5*S.drones}
 const powSat=()=>Math.max(.2,Math.min(1,powSupply()/powDemand()));
 // ---- belt segments ----
