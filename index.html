@@ -987,7 +987,8 @@ const renderer=new THREE.WebGLRenderer({canvas:glc,antialias:true,powerPreferenc
 let RPR=Math.min(devicePixelRatio,2);renderer.setPixelRatio(RPR);renderer.setSize(innerWidth,innerHeight,false);
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.95;renderer.outputColorSpace=THREE.SRGBColorSpace;
-let FOGK=1;const ATMT=new THREE.Color(1,1,1);const scene=new THREE.Scene();scene.background=new THREE.Color('#dc7d52');scene.fog=new THREE.Fog('#e6987a',48,118);
+let FOGK=1;const CAVE={X:520,Z:0,R:30,in:false};function caveRad(a){return CAVE.R*(1+.13*Math.sin(3*a+.6)+.07*Math.sin(5*a+2.1))}function caveH(x,z){return .22*Math.sin(x*.35)*Math.cos(z*.3)+.12*Math.sin(x*.9+z*.7)}
+const ATMT=new THREE.Color(1,1,1);const scene=new THREE.Scene();scene.background=new THREE.Color('#dc7d52');scene.fog=new THREE.Fog('#e6987a',48,118);
 const cam=new THREE.PerspectiveCamera(32,innerWidth/innerHeight,1,260);
 scene.add(new THREE.HemisphereLight('#ffd8c0','#8c3a28',.3));
 const sun=new THREE.DirectionalLight('#ffe8cc',2.4);sun.castShadow=true;sun.shadow.mapSize.set(MOBILE?1536:3072,MOBILE?1536:3072);
@@ -1100,7 +1101,7 @@ function heightRaw(x,z){const r0=Math.hypot(x,z);let h=(fbm(x*.07+3,0,z*.07)-.5)
 // flat building plateaus: terrain eases toward the centre height so machines sit level
 applyLayoutZones(ZONES);
 const FLATS=[];function addFlat(x,z,R){FLATS.push({x,z,R,R2:R*1.7,h:undefined})}
-function heightAt(x,z){let h=heightRaw(x,z);for(let i=0;i<FLATS.length;i++){const f=FLATS[i],dx=x-f.x,dz=z-f.z;if(dx>f.R2||dx<-f.R2||dz>f.R2||dz<-f.R2)continue;const d=Math.hypot(dx,dz);if(d>=f.R2)continue;if(f.h===undefined)f.h=heightRaw(f.x,f.z);h+=(f.h-h)*(1-smoothstep(f.R,f.R2,d))}return h}
+function heightAt(x,z){if(x>CAVE.X-80)return caveH(x,z);let h=heightRaw(x,z);for(let i=0;i<FLATS.length;i++){const f=FLATS[i],dx=x-f.x,dz=z-f.z;if(dx>f.R2||dx<-f.R2||dz>f.R2||dz<-f.R2)continue;const d=Math.hypot(dx,dz);if(d>=f.R2)continue;if(f.h===undefined)f.h=heightRaw(f.x,f.z);h+=(f.h-h)*(1-smoothstep(f.R,f.R2,d))}return h}
 ZONES.forEach(z=>(z.pads||[]).forEach(p=>addFlat(z.x+p.x,z.z+p.z,p.gath?9:p.mill?7:6)));
 addFlat(LAY.store.x,LAY.store.z,12);addFlat(LAY.uc.x,LAY.uc.z,21);for(const b of Object.values(BASE_POS)){const a=b.a*Math.PI/180;addFlat(Math.cos(a)*b.r,Math.sin(a)*b.r,6)}
 const gy=heightAt;
@@ -1342,7 +1343,9 @@ const HOPPER={x:15,z:-2};
 const PADS=[];
 const HOME_PADS=[{x:-6,z:12,k:'wood'},{x:18,z:10,k:'stone'},{x:-13,z:-9,k:'ore'}];
 // home pads removed: only the area-1 gatherer and later-zone machines remain
+const CAVEPADS=[[-13,-6],[0,-14],[13,-6]];
 ZONES.forEach((z,zi)=>{(z.pads||[]).forEach((p,i)=>PADS.push({id:z.id+i,x:z.x+p.x,z:z.z+p.z,k:p.k,zone:zi,mill:p.mill?1:0,gath:p.gath?1:0,h:(LAY.pads[z.id+i]||{}).h||0,sc:(LAY.pads[z.id+i]||{}).s||1}))});
+PADS.forEach(p=>{if(p.zone===3){const c=CAVEPADS[+p.id.replace('canyon','')]||[0,0];p.x=CAVE.X+c[0];p.z=CAVE.Z+c[1];p.cave=1}});
 PADS.forEach(p=>{if(p.gath){let c=ZONES[p.zone].clusters[0],bd=1e9;for(const cc of ZONES[p.zone].clusters){if(cc.type!=='tree')continue;const d=Math.hypot(cc.x-p.x,cc.z-p.z);if(d<bd){bd=d;c=cc}}p.wx=c.x+c.r*.72;p.wz=c.z+2}});
 
 // ================= COLONY BASE =================
@@ -1398,6 +1401,67 @@ function trackStep(dt){if(!TRK.im)trackInit();
  let ch=false;for(let i=0;i<TRK.n;i++){if(TRK.age[i]>=TRK.life){if(TRK.al[i]!==0){TRK.al[i]=0;ch=true}continue}TRK.age[i]+=dt;const k=Math.max(0,1-TRK.age[i]/TRK.life);TRK.al[i]=Math.min(1,k*1.6);ch=true}
  if(ch)TRK.im.geometry.attributes.aA.needsUpdate=true}
 
+// ================= CRYSTAL CAVE (separate underground room, far away from the surface) =================
+const CENT={x:0,z:0,obj:null},SEAL={x:CAVE.X,z:CAVE.Z-(CAVE.R-8),obj:null,t:0,hint:0},CHEST={x:CAVE.X,z:CAVE.Z-(CAVE.R-4.2),obj:null,lid:null},CEXIT={x:CAVE.X,z:CAVE.Z+CAVE.R*.78};
+function caveNodes(){seed=777;const zi=3;const placed=[[CEXIT.x,CEXIT.z,6],[SEAL.x,SEAL.z,7],...PADS.filter(p=>p.cave).map(p=>[p.x,p.z,5.5])];
+ const ok=(x,z,r)=>{const dx=x-CAVE.X,dz=z-CAVE.Z;if(Math.hypot(dx,dz)>caveRad(Math.atan2(dz,dx))-4-r)return false;return placed.every(q=>Math.hypot(x-q[0],z-q[1])>q[2]+r+1)};
+ const add=(type,n,s0,s1)=>{for(let k=0,t=0;k<n&&t<600;t++){const a=R()*6.283,rr=Math.sqrt(R())*CAVE.R,x=CAVE.X+Math.cos(a)*rr,z=CAVE.Z+Math.sin(a)*rr,sc=RR(s0,s1),r=1.3*sc;if(!ok(x,z,r))continue;const nd=spawnNode(type,'',x,z,sc,zi,Math.floor(R()*3));nd.cave=1;if(!S.unl[3])nd.obj.visible=false;placed.push([x,z,nd.r]);k++}};
+ add('ore',16,.9,1.35);add('crystal',11,.85,1.25);add('stone',6,.7,1.1)}
+function buildCave(){const G=new THREE.Group();G.position.set(CAVE.X,0,CAVE.Z);scene.add(G);CAVE.grp=G;
+ const R0=CAVE.R;
+ // floor
+ {const g=new THREE.CircleGeometry(R0*1.4,96,0,6.2832);g.rotateX(-Math.PI/2);const p=g.attributes.position,col=[];const c1=new THREE.Color('#5a4866'),c2=new THREE.Color('#6e5a78'),c3=new THREE.Color('#3a2c44');
+  for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i);p.setY(i,caveH(CAVE.X+x,CAVE.Z+z));const n=.5+.5*Math.sin(x*.21+Math.cos(z*.17)*2)*Math.cos(z*.13);const d=Math.hypot(x,z)/caveRad(Math.atan2(z,x));const c=c1.clone().lerp(c2,n*.6).lerp(c3,Math.max(0,Math.min(1,(d-.85)*4)));col.push(c.r,c.g,c.b)}
+  g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));g.computeVertexNormals();const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({vertexColors:true,roughness:.95}));m.receiveShadow=true;G.add(m)}
+ // dark void beyond the walls
+ {const g=new THREE.RingGeometry(R0*1.3,R0*5,48);g.rotateX(-Math.PI/2);const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:'#120c18'}));m.position.y=-.05;G.add(m)}
+ // rock walls (low on the camera side so you can see in)
+ const rockM=new THREE.MeshStandardMaterial({color:'#463852',roughness:.9,flatShading:true}),rockM2=new THREE.MeshStandardMaterial({color:'#5a4868',roughness:.9,flatShading:true});
+ for(let i=0;i<70;i++){const a=i/70*6.283+R()*.05,r=caveRad(a)+1.2+R()*1.6,x=Math.cos(a)*r,z=Math.sin(a)*r;const south=Math.max(0,Math.sin(a));const h=(7+R()*7)*(1-south*.82);const s=2.2+R()*2.2;
+  const m=new THREE.Mesh(new THREE.DodecahedronGeometry(1,0),i%3?rockM:rockM2);m.scale.set(s,h*.5,s*1.1);m.position.set(x,h*.25,z);m.rotation.set(R()*.3,R()*6,R()*.3);m.castShadow=true;m.receiveShadow=true;G.add(m)}
+ // stalagmites
+ for(let i=0;i<22;i++){const a=R()*6.283,rr=caveRad(a)-2.5-R()*2,x=Math.cos(a)*rr,z=Math.sin(a)*rr;if(Math.sin(a)>.5)continue;const h=1.4+R()*2.6;const m=new THREE.Mesh(new THREE.ConeGeometry(.45+R()*.4,h,7),rockM2);m.position.set(x,h/2,z);m.castShadow=true;G.add(m)}
+ // glowing crystal clusters along the walls + coloured lights
+ const cm=[new THREE.MeshStandardMaterial({color:'#7fe8ff',emissive:'#38c8e8',emissiveIntensity:.9,roughness:.25}),new THREE.MeshStandardMaterial({color:'#c3a2ff',emissive:'#9a6cff',emissiveIntensity:.9,roughness:.25})];
+ for(let i=0;i<16;i++){const a=i/16*6.283+.2,rr=caveRad(a)-1.2,x=Math.cos(a)*rr,z=Math.sin(a)*rr;const gg=new THREE.Group();gg.position.set(x,0,z);for(let k=0;k<4;k++){const c=new THREE.Mesh(new THREE.OctahedronGeometry(.45+R()*.35),cm[i%2]);c.scale.y=2.4+R();c.position.set((R()-.5)*1.2,.6,(R()-.5)*1.2);c.rotation.set((R()-.5)*.7,R()*3,(R()-.5)*.7);gg.add(c)}G.add(gg)}
+ [['#5fe0ff',-14,-10],['#b48cff',14,-8],['#5fe0ff',10,12],['#b48cff',-12,10]].forEach(([c,x,z])=>{const l=new THREE.PointLight(c,55,30,1.6);l.position.set(x,5,z);G.add(l)});
+ // exit: shaft of daylight
+ {const r=padRing('#ffe9a0',CEXIT.x,CEXIT.z,1.1);r.position.set(CEXIT.x,gy(CEXIT.x,CEXIT.z)+.15,CEXIT.z);scene.add(r);const b=new THREE.Mesh(new THREE.CylinderGeometry(1.6,2.8,16,20,1,true),new THREE.MeshBasicMaterial({color:'#ffe2a8',transparent:true,opacity:.18,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending}));b.position.set(CEXIT.x,8,CEXIT.z);scene.add(b)}
+ // glowing seal + treasure chest behind it
+ {const s=new THREE.Group();const m=new THREE.Mesh(new THREE.IcosahedronGeometry(2.3,1),new THREE.MeshStandardMaterial({color:'#b996ff',emissive:'#8a5cff',emissiveIntensity:.8,roughness:.2,flatShading:true,transparent:true,opacity:.92}));m.scale.y=1.25;m.position.y=2.2;s.add(m);s.position.set(SEAL.x,0,SEAL.z);scene.add(s);SEAL.obj=s;if(S.caveSeal)s.visible=false}
+ {const c=new THREE.Group();const wood=new THREE.MeshStandardMaterial({color:'#a8693c',roughness:.7}),gold=new THREE.MeshStandardMaterial({color:'#ffcc4a',roughness:.35,metalness:.4});
+  const b=new THREE.Mesh(new THREE.BoxGeometry(1.6,.9,1.0),wood);b.position.y=.45;c.add(b);const band=new THREE.Mesh(new THREE.BoxGeometry(1.65,.12,1.05),gold);band.position.y=.75;c.add(band);
+  const lid=new THREE.Group();lid.position.set(0,.9,-.5);const lm=new THREE.Mesh(new THREE.CylinderGeometry(.5,.5,1.6,12,1,false,0,Math.PI),wood);lm.rotation.z=Math.PI/2;lm.position.z=.5;lid.add(lm);c.add(lid);CHEST.lid=lid;if(S.caveChest)lid.rotation.x=-1.9;
+  c.position.set(CHEST.x,gy(CHEST.x,CHEST.z),CHEST.z);c.traverse(o=>{if(o.isMesh)o.castShadow=true});scene.add(c);CHEST.obj=c}}
+function buildCaveEntrance(){const z=ZONES[3];CENT.x=z.x;CENT.z=z.z;const y=gy(CENT.x,CENT.z);const G=new THREE.Group();G.position.set(CENT.x,y,CENT.z);scene.add(G);CENT.obj=G;
+ const rm=new THREE.MeshStandardMaterial({color:'#8a5a4a',roughness:.9,flatShading:true}),rm2=new THREE.MeshStandardMaterial({color:'#a06a52',roughness:.9,flatShading:true});
+ // rock mound with an arch opening facing the camera (+z)
+ const mound=new THREE.Mesh(new THREE.DodecahedronGeometry(1,1),rm);mound.scale.set(6.5,4.6,5);mound.position.set(0,1.6,-2.4);mound.castShadow=true;mound.receiveShadow=true;G.add(mound);
+ for(const [x,h,s] of [[-3.3,4.6,1.7],[3.3,4.4,1.7]]){const p=new THREE.Mesh(new THREE.DodecahedronGeometry(1,0),rm2);p.scale.set(s,h*.55,s);p.position.set(x,h*.45,1.2);p.castShadow=true;G.add(p)}
+ const top=new THREE.Mesh(new THREE.DodecahedronGeometry(1,0),rm2);top.scale.set(4.4,1.3,1.8);top.position.set(0,4.6,1.1);top.castShadow=true;G.add(top);
+ const hole=new THREE.Mesh(new THREE.CircleGeometry(2.3,28),new THREE.MeshBasicMaterial({color:'#100a14'}));hole.scale.y=1.25;hole.position.set(0,2.0,2.35);G.add(hole);
+ const cm=new THREE.MeshStandardMaterial({color:'#7fe8ff',emissive:'#38c8e8',emissiveIntensity:1,roughness:.25});for(const [x,y2,z2,r] of [[-2.6,4.8,1.6,.2],[2.4,5.1,1.4,-.3],[-3.6,1,2,.4],[3.5,.9,2.1,-.2]]){const c=new THREE.Mesh(new THREE.OctahedronGeometry(.45),cm);c.scale.y=2.2;c.position.set(x,y2,z2);c.rotation.z=r;G.add(c)}
+ const ring=padRing('#7fe8ff',CENT.x,CENT.z+4.5,1);ring.position.set(CENT.x,gy(CENT.x,CENT.z+4.5)+.2,CENT.z+4.5);scene.add(ring);CENT.ring=ring;
+ CENT.ex=CENT.x;CENT.ez=CENT.z+4.5}
+function caveFade(fn){let f=document.getElementById('cavefade');if(!f){f=document.createElement('div');f.id='cavefade';f.style.cssText='position:fixed;inset:0;background:#0b0710;opacity:0;pointer-events:none;transition:opacity .35s;z-index:50';document.body.appendChild(f)}
+ f.style.opacity=1;setTimeout(()=>{fn();setTimeout(()=>{f.style.opacity=0},120)},380)}
+function caveSet(on){CAVE.in=on;if(on){P.x=CEXIT.x;P.z=CEXIT.z-3.5;P.face=Math.PI}else{P.x=CENT.ex;P.z=CENT.ez+2.5;P.face=0}P.vx=P.vz=0;P.moveTo=null;P.lx=P.x;P.lz=P.z;placeCam(P.x,P.z,true)}
+function caveCollide(){const dx=P.x-CAVE.X,dz=P.z-CAVE.Z,d=Math.hypot(dx,dz),r=caveRad(Math.atan2(dz,dx))-2.2;if(d>r){P.x=CAVE.X+dx/d*r;P.z=CAVE.Z+dz/d*r}
+ if(!S.caveSeal){const sx=P.x-SEAL.x,sz=P.z-(SEAL.z+.4),sd=Math.hypot(sx,sz),m=2.4+1.55;if(sd<m&&sd>1e-4){P.x=SEAL.x+sx/sd*m;P.z=SEAL.z+.4+sz/sd*m}}
+ {const cx=P.x-CHEST.x,cz=P.z-CHEST.z,cd=Math.hypot(cx,cz),m=1.1+1.55;if(cd<m&&cd>1e-4){P.x=CHEST.x+cx/cd*m;P.z=CHEST.z+cz/cd*m}}}
+let caveCool=0;
+function caveStep(dt){if(!CAVE.grp){buildCave();buildCaveEntrance();for(const p of PADS)if(p.cave&&S.links[p.id])dropLink(p,true);if(P.x>CAVE.X-80){CAVE.in=true}}
+ caveCool=Math.max(0,caveCool-dt);const t=performance.now()*.001;
+ if(CENT.ring)CENT.ring.visible=!!S.unl[3]&&!CAVE.in;
+ if(!CAVE.in){if(S.unl[3]&&!caveCool&&!UI.openId&&Math.hypot(P.x-CENT.ex,P.z-CENT.ez)<2.4){caveCool=1.5;caveFade(()=>{caveSet(true);if(!S.caveIn){S.caveIn=1;UI.banner('CRYSTAL CAVES','Rich ore and glowing crystals. Walk into the light to leave.')}})}return}
+ if(!caveCool&&!UI.openId&&Math.hypot(P.x-CEXIT.x,P.z-CEXIT.z)<2.2){caveCool=1.5;caveFade(()=>caveSet(false));return}
+ if(SEAL.obj&&!S.caveSeal){SEAL.obj.children[0].rotation.y+=dt*.3;SEAL.obj.children[0].material.emissiveIntensity=.7+.25*Math.sin(t*2.5);
+  const near=Math.hypot(P.x-SEAL.x,P.z-SEAL.z)<4.6;
+  if(near&&S.tool<3){if(!SEAL.hint){SEAL.hint=1;UI.toast('A glowing seal. Needs the Plasma Pick to break.')}}else if(!near)SEAL.hint=0;
+  if(near&&S.tool>=3){SEAL.t+=dt;if(Math.random()<dt*20)chips(SEAL.x+(Math.random()-.5)*2,2+Math.random()*2,SEAL.z+1,'#c3a2ff',2,4,.2,.6,.6);if(SEAL.t>3){S.caveSeal=1;SEAL.obj.visible=false;chips(SEAL.x,2,SEAL.z,'#c3a2ff',60,10,.3,1.4,1.5);shake=.35;AU.unlock&&AU.unlock();UI.banner('SEAL BROKEN','Something is hidden behind it...')}}else SEAL.t=Math.max(0,SEAL.t-dt)}
+ if(S.caveSeal&&!S.caveChest&&Math.hypot(P.x-CHEST.x,P.z-CHEST.z)<3.2){S.caveChest=1;S.coins+=2500;S.earned=(S.earned||0)+2500;S.inv.crystal=(S.inv.crystal||0)+25;S.stats.crystal=(S.stats.crystal||0)+25;chips(CHEST.x,1.4,CHEST.z,'#ffd24a',50,8,.3,1.2,1.4);UI.banner('TREASURE!','+2,500 coins and 25 crystals');AU.unlock&&AU.unlock()}
+ if(CHEST.lid&&S.caveChest&&CHEST.lid.rotation.x>-1.9)CHEST.lid.rotation.x=Math.max(-1.9,CHEST.lid.rotation.x-dt*3)}
+
 // ================= VISIBLE ROBOT UPGRADES (pick tier, cargo bay, rocket treads, long reach arm, power cell) =================
 const GEAR={key:'',g:null,fl:[],tip:null};
 function gearStep(dt){const r=P.robot;if(!r)return;const u=S.up,key=[S.tool,u.cargo,u.boost,u.reach,u.battery].join(',');
@@ -1434,13 +1498,14 @@ function atmoStep(dt){
  sun.intensity=2.4*(1-.55*n)*(1-.35*sf);sun.color.copy(_sunDay).lerp(_cDusk,dusk*.35).lerp(_sunNight,n*.7);fillL.intensity=.5*(1-.4*n);
  if(!ATM.hemi)ATM.hemi=scene.children.find(o=>o.isHemisphereLight);if(ATM.hemi)ATM.hemi.intensity=.3*(1+.4*n);
  ATMT.setRGB(1,1,1).lerp(_tNight,n).lerp(_tDusk,dusk*.5);const postOn=LOOK.on&&POST.ok&&POST.rt;renderer.toneMappingExposure=.95*(postOn?1:(ATMT.r+ATMT.g+ATMT.b)/3)*(1-.06*sf);FOGK=1-.6*sf;
+ if(CAVE.in){scene.fog.color.set('#1c1426');scene.background.set('#120c18');sun.intensity=1.0;sun.color.set('#cbbcff');fillL.intensity=.35;if(ATM.hemi)ATM.hemi.intensity=.35;ATMT.setRGB(1,1,1);renderer.toneMappingExposure=1.0;FOGK=1}
  // machine lamps glow brighter at night
  ATM.scanT-=dt;if(ATM.scanT<=0){ATM.scanT=8;const set=new Set();scene.traverse(o=>{if(!o.isMesh)return;const ms=Array.isArray(o.material)?o.material:[o.material];for(const m of ms)if(m&&m.emissive&&m.emissiveIntensity>0&&m.emissive.getHex()!==0&&m!==TRK.im?.material)set.add(m)});for(const m of set)if(m.userData._eb===undefined)m.userData._eb=m.emissiveIntensity;ATM.mats=[...set]}
  if(ATM.mats)for(const m of ATM.mats)m.emissiveIntensity=m.userData._eb*(1+1.6*n);
  // blowing dust streaks during a storm
  if(!ATM.streak&&sf>.01){const N=420,pos=new Float32Array(N*3);for(let i=0;i<N;i++){pos[i*3]=(Math.random()-.5)*70;pos[i*3+1]=Math.random()*14;pos[i*3+2]=(Math.random()-.5)*70}const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));
   ATM.streak=new THREE.Points(g,new THREE.PointsMaterial({color:'#f3c79a',size:.32,transparent:true,opacity:0,depthWrite:false}));ATM.streak.frustumCulled=false;scene.add(ATM.streak)}
- if(ATM.streak){ATM.streak.visible=sf>.01;if(sf>.01){ATM.streak.material.opacity=.7*sf;const a=ATM.streak.geometry.attributes.position.array;for(let i=0;i<a.length;i+=3){a[i]+=dt*(18+(i%7)*2);a[i+2]+=dt*4;a[i+1]+=Math.sin(a[i]*.3)*dt*.6;if(a[i]>35)a[i]-=70;if(a[i+2]>35)a[i+2]-=70}ATM.streak.geometry.attributes.position.needsUpdate=true;ATM.streak.position.set(P.x,gy(P.x,P.z),P.z)}}}
+ if(ATM.streak){ATM.streak.visible=sf>.01&&!CAVE.in;if(sf>.01){ATM.streak.material.opacity=.7*sf;const a=ATM.streak.geometry.attributes.position.array;for(let i=0;i<a.length;i+=3){a[i]+=dt*(18+(i%7)*2);a[i+2]+=dt*4;a[i+1]+=Math.sin(a[i]*.3)*dt*.6;if(a[i]>35)a[i]-=70;if(a[i+2]>35)a[i+2]-=70}ATM.streak.geometry.attributes.position.needsUpdate=true;ATM.streak.position.set(P.x,gy(P.x,P.z),P.z)}}}
 function baseStep(dt){if(!BASE_ON)return;shipStep(dt);const t=performance.now()*.001;
  {const qi=S.qa[0];if(qi!==baseStep.lastQ){baseStep.lastQ=qi;const q=QUESTS[qi],o=q&&q.at?q.at():null;if(o&&BASE.includes(o))S.track={x:o.x,z:o.z,t:90}}}
  {const k=Math.min(1,dt*.6),ta=bl('air')?1:0,tw=bl('water')?1:0,tg=bl('bio')?1:0;TERRA.a.value+=(ta-TERRA.a.value)*k;TERRA.w.value+=(tw-TERRA.w.value)*k;TERRA.g.value+=(tg-TERRA.g.value)*k;const m=TERRA.a.value*.4;scene.fog.color.set('#e6987a').lerp(_skyC,m);scene.background.set('#dc7d52').lerp(_skyC,m)}
@@ -1511,7 +1576,7 @@ function spawnNode(type,kind,x,z,sc,zi,v){if(type==='stone'&&typeof SCAN2!=='und
  const r=type==='tree'?1.15*sc:type==='stone'?1.25*sc:type==='ore'?1.05*sc:.95*sc;
  const n={id:nid++,v,type,kind,x,z,y,sc,base,rot,obj,stump,r,prog:0,alive:true,t:0,grow:1,shake:0,rsv:null,zone:zi,hitT:0,cd:0};
  nodes.push(n);return n}
-function placeZoneNodes(zi){const z=ZONES[zi];seed=zi*131+17;const placed=[];
+function placeZoneNodes(zi){if(zi===3){caveNodes();return}const z=ZONES[zi];seed=zi*131+17;const placed=[];
  const free=(x,zz,rad,gap=2.2)=>{rad*=1.35;if(PADS.some(q=>q.gath&&Math.hypot(x-q.wx,zz-q.wz)<rad+5.5))return false;if(zi===1&&Math.hypot(x-FACT2.x,zz-FACT2.z)<12)return false;if(zi===0&&(Math.hypot(x,zz)<26||(x>-14&&x<18&&zz>10&&zz<28)))return false;if(zi>0){if(ownerOf(x,zz)!==zi||terrS(z,x,zz)<rad+3)return false}else if(terrS(z,x,zz)<rad+3)return false;
   for(const g of GATES)if(Math.hypot(x-g.x,zz-g.z)<8)return false;
   for(const c of craters)if(Math.hypot(x-c.x,zz-c.z)<c.R*.9+rad)return false;
@@ -1625,9 +1690,10 @@ function collide(){
  for(const b of BASE){if(!BASE_ON||!bl(b.id)||!BCOLR[b.id])continue;const dx=P.x-b.x,dz=P.z-b.z,d=Math.hypot(dx,dz),m=BCOLR[b.id]+PR;if(d<m&&d>1e-4){P.x=b.x+dx/d*m;P.z=b.z+dz/d*m}}
  if(S.unl[1]&&S.storeBuilt){const dx=P.x-FACT2.x,dz=P.z-FACT2.z,cr=Math.cos(LAY.store.r||0),sr=Math.sin(LAY.store.r||0),lx=dx*cr-dz*sr,lz=dx*sr+dz*cr,d=Math.hypot(lx*.75,lz*1.0),m=6.4;if(d<m&&d>1e-4){const k=m/d,nx=lx*k,nz=lz*k;P.x=FACT2.x+nx*cr+nz*sr;P.z=FACT2.z-nx*sr+nz*cr}}
  {const dx=P.x-FACT.x,dz=P.z-FACT.z,d=Math.hypot(dx,dz);if(d>1e-4){const f=((Math.atan2(dz,dx)+(FACROT-.698)+Math.PI*5)%(Math.PI*2))/(2*Math.PI)*48,i0=Math.floor(f)%48,i1=(i0+1)%48,t=f-Math.floor(f),m=FAC_R[i0]*(1-t)+FAC_R[i1]*t+1.2;if(d<m){const k=m/d;P.x=FACT.x+dx*k;P.z=FACT.z+dz*k}}}
- if(!EDIT.on){const lim=-6,band=4,v0=terrVal(P.x,P.z);if(P.lx!==undefined&&v0<lim+band){const e=.5,gx=(terrVal(P.x+e,P.z)-terrVal(P.x-e,P.z))/(2*e),gz=(terrVal(P.x,P.z+e)-terrVal(P.x,P.z-e))/(2*e),gm=Math.hypot(gx,gz);
+ if(CAVE.in){caveCollide()}
+ if(!EDIT.on&&!CAVE.in){const lim=-6,band=4,v0=terrVal(P.x,P.z);if(P.lx!==undefined&&v0<lim+band){const e=.5,gx=(terrVal(P.x+e,P.z)-terrVal(P.x-e,P.z))/(2*e),gz=(terrVal(P.x,P.z+e)-terrVal(P.x,P.z-e))/(2*e),gm=Math.hypot(gx,gz);
   if(gm>.05){const ux=gx/gm,uz=gz/gm,dn=-((P.x-P.lx)*ux+(P.z-P.lz)*uz);if(dn>0){const t=Math.max(0,Math.min(1,(lim+band-v0)/band)),f=t*t*(3-2*t);P.x+=ux*dn*f;P.z+=uz*dn*f}}}}
- if(!EDIT.on){const lim=-6;if(terrVal(P.x,P.z)<lim){for(let it=0;it<6;it++){const v=terrVal(P.x,P.z);if(v>=lim)break;const e=.4,gx=(terrVal(P.x+e,P.z)-terrVal(P.x-e,P.z))/(2*e),gz=(terrVal(P.x,P.z+e)-terrVal(P.x,P.z-e))/(2*e),gm=Math.hypot(gx,gz);if(gm<.05)break;const st=Math.min(3,(lim-v)/Math.max(gm,.3));P.x+=gx/gm*st;P.z+=gz/gm*st}}}P.lx=P.x;P.lz=P.z}
+ if(!EDIT.on&&!CAVE.in){const lim=-6;if(terrVal(P.x,P.z)<lim){for(let it=0;it<6;it++){const v=terrVal(P.x,P.z);if(v>=lim)break;const e=.4,gx=(terrVal(P.x+e,P.z)-terrVal(P.x-e,P.z))/(2*e),gz=(terrVal(P.x,P.z+e)-terrVal(P.x,P.z-e))/(2*e),gm=Math.hypot(gx,gz);if(gm<.05)break;const st=Math.min(3,(lim-v)/Math.max(gm,.3));P.x+=gx/gm*st;P.z+=gz/gm*st}}}P.lx=P.x;P.lz=P.z}
 // ================= HARVEST =================
 function nodeReachDist(n){return n.r+PR+reach()}
 function bestTarget(){let best=null,bd=1e9;for(const n of nodes){if(!n.alive||n.grow<.9)continue;const dx=n.x-P.x,dz=n.z-P.z;if(Math.abs(dx)>12||Math.abs(dz)>12)continue;const d=Math.hypot(dx,dz);if(d<nodeReachDist(n)&&d<bd){bd=d;best=n}}return best}
@@ -1734,7 +1800,7 @@ function upF2Cap(){if((S.f2cl||0)>=F2MAXL)return false;const c=f2upCost();if(S.c
 function upMachine(p){const l=machLv(p);if(l>=MAXLV)return false;const c=upCost(p);if(S.coins<c){AU.deny();UI.toast('Not enough coins',1);return false}S.coins-=c;S.mach[p.id]=l+1;p.pop=1;chips(p.x,p.y+2,p.z,'#ffe9a0',24,8,.18,1,1.2);AU.buy();UI.pulse('coins');save();return true}
 // ================= DRONES =================
 const drones=[];const beamGeo=new THREE.CylinderGeometry(.06,.06,1,6);beamGeo.translate(0,.5,0);beamGeo.rotateX(Math.PI/2);
-function droneAllowed(n){const t=NT[n.type];if(n.type==='ore')return S.up.dtier>=1;if(n.type==='crystal')return S.up.dtier>=2;return true}
+function droneAllowed(n){if(n.cave)return false;const t=NT[n.type];if(n.type==='ore')return S.up.dtier>=1;if(n.type==='crystal')return S.up.dtier>=2;return true}
 function syncDrones(){while(drones.length<S.drones){const o=makeDrone(1.15);const beam=new THREE.Mesh(beamGeo,new THREE.MeshBasicMaterial({color:'#7ff6ff',transparent:true,opacity:.8,blending:THREE.AdditiveBlending,depthWrite:false}));beam.visible=false;scene.add(beam);scene.add(o);
   const carry=new THREE.Mesh(lootGeo.wood,lootMat.wood);carry.scale.setScalar(.8);carry.visible=false;scene.add(carry);
   const i=drones.length;drones.push({o,beam,carry,x:DEPOT.x+Math.cos(i*1.1)*3,z:DEPOT.z+Math.sin(i*1.1)*3,y:5,st:'idle',n:null,t:0,res:null,amt:0,ph:i*1.7,idleT:i*.4})}}
@@ -1842,11 +1908,13 @@ const QUESTS=[
  {t:'Build a Comms Dish',goal:1,c:()=>bl('dish'),r:700,at:()=>BASE[2]},
  {t:'Upgrade Cargo Bay to Lv 3',goal:3,c:()=>S.up.cargo,r:500,shop:1},
  {t:'Clear Sandstorm: Crystal Caves',goal:1,c:()=>S.unl[3],r:800,at:()=>ZONES[3].gate},
+ {t:'Enter the cave in the Crystal Caves',goal:1,c:()=>S.caveIn?1:0,r:600,at:()=>({x:CENT.ex,z:CENT.ez})},
  {t:'Build the Landing Pad',goal:1,c:()=>bl('pad'),r:1000,at:()=>BASE[3]},
  {t:'Own 4 drones',goal:4,c:()=>S.drones,r:900,shop:1},
  {t:'Earn 10,000 coins',goal:10000,c:s=>s.earned,r:1500},
  {t:'Clear Sandstorm: Sky Dunes',goal:1,c:()=>S.unl[4],r:2000,at:()=>ZONES[4].gate},
  {t:'Buy the Plasma Pick',goal:1,c:()=>S.tool>=3?1:0,r:2500,shop:1},
+ {t:'Break the glowing seal deep in the cave',goal:1,c:()=>S.caveSeal?1:0,r:1500,at:()=>CAVE.in?SEAL:{x:CENT.ex,z:CENT.ez}},
  {t:'Build 8 machines',goal:8,c:()=>Object.keys(S.mach).length,r:3000,at:()=>nearestPad()},
  {t:'Make 30 slabs at the Slab Press',goal:30,c:()=>S.fac.made.slab,r:3500,at:()=>PADS.find(p=>p.mill&&p.k==='stone'&&machLv(p))},
  {t:'Build the Quantum Reactor',goal:1,c:()=>bl('reactor'),r:4000,at:()=>BASE.find(b=>b.id==='reactor')},
@@ -2195,7 +2263,7 @@ function linkNear(p,px,pz){ // walk-up targeting: the machine/terminal the playe
   else if(!isF2(p)&&!(p.gath&&S.storeBuilt)&&S.links[q.id]){const pa=segPath(q.id);if(!pa||pa.some(s=>s.id===p.id))continue;const en=segEnd(q.id);if(en&&!isT(en)){const m=padById(en);if(p.mill||m.k!==p.k)continue}cand(q.id,q.x,q.z,q.y+6,6)}}
  if(!isF2(p)&&!p.mill){const jc=junctionFor(p,px,pz,5);if(jc&&jc.dist<(best?bd:1e9)){best={tgt:jc.tgt,x:jc.x,z:jc.z,y:jc.y}}}
  return best}
-function startLink(p){LINK.from=p;UI.toast(p.gath&&S.storeBuilt?'Walk to the Log Storage or to a belt':p===FAC2B?'Walk to the Stick Lathe':p.fixed?'Walk to the Plank Mill':p.mill?'Walk to a connected machine':'Walk to a Mill or a connected machine');}
+function startLink(p){if(p.cave){UI.toast('Belts can\'t leave the cave: pick up the output by hand');return}LINK.from=p;UI.toast(p.gath&&S.storeBuilt?'Walk to the Log Storage or to a belt':p===FAC2B?'Walk to the Stick Lathe':p.fixed?'Walk to the Plank Mill':p.mill?'Walk to a connected machine':'Walk to a Mill or a connected machine');}
 function cancelLink(){if(LINK.from){LINK.from=null;UI.toast('Belt cancelled')}}
 function tryLink(x,z){if(!LINK.from)return false;const p=LINK.from;const tgt=linkTarget(p,x,z);if(!tgt){cancelLink();return true}
  if(makeLink(p,tgt)){LINK.from=null}return true}
@@ -2670,7 +2738,7 @@ function playerStep(dt){
 }
 const xray=new THREE.MeshBasicMaterial({color:'#8ff4ff',transparent:true,opacity:.85,depthFunc:THREE.GreaterDepth,depthWrite:false});
 function logic(dt){frameN++;
- playerStep(dt);nodeVisuals(dt);machineStep(dt);econStep(dt);droneStep(dt);gateStep(dt);ffStep(dt);baseStep(dt);roverStep(dt);lostStep(dt);eventStep(dt);trackStep(dt);atmoStep(dt);updateLoot(dt);updateDrops(dt);gridStep(dt);updateParticles(dt);updateFloaters(dt);propsStep(dt);econVis(dt);dustStep(dt,P.x,P.z);craterStep(dt);
+ playerStep(dt);nodeVisuals(dt);machineStep(dt);econStep(dt);droneStep(dt);gateStep(dt);ffStep(dt);baseStep(dt);roverStep(dt);lostStep(dt);eventStep(dt);trackStep(dt);atmoStep(dt);caveStep(dt);updateLoot(dt);updateDrops(dt);gridStep(dt);updateParticles(dt);updateFloaters(dt);propsStep(dt);econVis(dt);dustStep(dt,P.x,P.z);craterStep(dt);
  S.playT+=dt;S.sol=1+Math.floor(S.playT/240);
  qT+=dt;if(qT>.4){qT=0;if(questStep())save()}
  svT+=dt;if(svT>6){svT=0;save()}
@@ -2704,7 +2772,7 @@ function init(){
   $('go').onclick=()=>{AU.init();AU.unlock();S.seenIntro=1;UI.closeAll();save()};UI.openId='intro'}
  addEventListener('beforeunload',save);document.addEventListener('visibilitychange',()=>{if(document.hidden)save()});
  console.log('init ms',Math.round(performance.now()-T0));frame();window.__ready=true}
-window.__g={ownerOf,GEAR,gearStep,draw,atmoStep,ATM,sun,dropLink,econStep,segAt,trackStep,TRK,junctionFor,SEG,segPathTo,ECON,PADS,BASE,showBase,buildBase,QUESTS,EV,podSpawn,eventStep,makeLink,showMachine,padById,makeScanUC,makeScanRobot,makeUpgradeCenter,DECOR,scene,makeRobot,linkNear,cancelLink,icon,gy,makeGeode,makeStoneStage,makeTree,makeTreeStage,bake,THREE,SEG,routeFor,reqOk,zoneAvail,unlockZone,sellNow,buildStorage,sellStorage,gcarry,FAC2,FACT2,buyTool,DROPS,dropLoot,breakNode,sellGoods,buyTool,nodeReachDist,canPay,buildAll,buyDrone,finCap,placeCam,camT,zoneAvail,zoneState,reqOk,reqProg,LOST,ownerOf,GATES,craters,heightAt,stageObj,logic,draw,S,P,nodes,PADS,ZONES,drones,UI,AU,scene,cam,renderer,setZoom,DECOR,terrVal,buyMachine,startLink,tryLink,dropLink,LINK,makeLink,linkCost,ECON,powSupply,powDemand,buildBase,BASE,rovers,unlockZone,sell,save,questStep,QUESTS,giveRes,addCoins,chips};
+window.__g={caveDbg:()=>[caveCool,CAVE.in],placeCam,CAVE,CENT,SEAL,CHEST,CEXIT,caveSet,caveStep,ownerOf,GEAR,gearStep,draw,atmoStep,ATM,sun,dropLink,econStep,segAt,trackStep,TRK,junctionFor,SEG,segPathTo,ECON,PADS,BASE,showBase,buildBase,QUESTS,EV,podSpawn,eventStep,makeLink,showMachine,padById,makeScanUC,makeScanRobot,makeUpgradeCenter,DECOR,scene,makeRobot,linkNear,cancelLink,icon,gy,makeGeode,makeStoneStage,makeTree,makeTreeStage,bake,THREE,SEG,routeFor,reqOk,zoneAvail,unlockZone,sellNow,buildStorage,sellStorage,gcarry,FAC2,FACT2,buyTool,DROPS,dropLoot,breakNode,sellGoods,buyTool,nodeReachDist,canPay,buildAll,buyDrone,finCap,placeCam,camT,zoneAvail,zoneState,reqOk,reqProg,LOST,ownerOf,GATES,craters,heightAt,stageObj,logic,draw,S,P,nodes,PADS,ZONES,drones,UI,AU,scene,cam,renderer,setZoom,DECOR,terrVal,buyMachine,startLink,tryLink,dropLink,LINK,makeLink,linkCost,ECON,powSupply,powDemand,buildBase,BASE,rovers,unlockZone,sell,save,questStep,QUESTS,giveRes,addCoins,chips};
 setTimeout(()=>{try{init()}catch(e){document.body.insertAdjacentHTML('beforeend','<pre style="position:fixed;inset:0;z-index:999;background:#300;color:#fff;padding:12px;font-size:12px;white-space:pre-wrap">'+e.stack+'</pre>');throw e}},30);
 
 // ================= EDIT MODE: drag buildings to where you want them =================

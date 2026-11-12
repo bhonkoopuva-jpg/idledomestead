@@ -321,7 +321,7 @@ function linkNear(p,px,pz){ // walk-up targeting: the machine/terminal the playe
   else if(!isF2(p)&&!(p.gath&&S.storeBuilt)&&S.links[q.id]){const pa=segPath(q.id);if(!pa||pa.some(s=>s.id===p.id))continue;const en=segEnd(q.id);if(en&&!isT(en)){const m=padById(en);if(p.mill||m.k!==p.k)continue}cand(q.id,q.x,q.z,q.y+6,6)}}
  if(!isF2(p)&&!p.mill){const jc=junctionFor(p,px,pz,5);if(jc&&jc.dist<(best?bd:1e9)){best={tgt:jc.tgt,x:jc.x,z:jc.z,y:jc.y}}}
  return best}
-function startLink(p){LINK.from=p;UI.toast(p.gath&&S.storeBuilt?'Walk to the Log Storage or to a belt':p===FAC2B?'Walk to the Stick Lathe':p.fixed?'Walk to the Plank Mill':p.mill?'Walk to a connected machine':'Walk to a Mill or a connected machine');}
+function startLink(p){if(p.cave){UI.toast('Belts can\'t leave the cave: pick up the output by hand');return}LINK.from=p;UI.toast(p.gath&&S.storeBuilt?'Walk to the Log Storage or to a belt':p===FAC2B?'Walk to the Stick Lathe':p.fixed?'Walk to the Plank Mill':p.mill?'Walk to a connected machine':'Walk to a Mill or a connected machine');}
 function cancelLink(){if(LINK.from){LINK.from=null;UI.toast('Belt cancelled')}}
 function tryLink(x,z){if(!LINK.from)return false;const p=LINK.from;const tgt=linkTarget(p,x,z);if(!tgt){cancelLink();return true}
  if(makeLink(p,tgt)){LINK.from=null}return true}

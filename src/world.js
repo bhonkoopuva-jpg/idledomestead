@@ -5,7 +5,8 @@ const renderer=new THREE.WebGLRenderer({canvas:glc,antialias:true,powerPreferenc
 let RPR=Math.min(devicePixelRatio,2);renderer.setPixelRatio(RPR);renderer.setSize(innerWidth,innerHeight,false);
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.95;renderer.outputColorSpace=THREE.SRGBColorSpace;
-let FOGK=1;const ATMT=new THREE.Color(1,1,1);const scene=new THREE.Scene();scene.background=new THREE.Color('#dc7d52');scene.fog=new THREE.Fog('#e6987a',48,118);
+let FOGK=1;const CAVE={X:520,Z:0,R:30,in:false};function caveRad(a){return CAVE.R*(1+.13*Math.sin(3*a+.6)+.07*Math.sin(5*a+2.1))}function caveH(x,z){return .22*Math.sin(x*.35)*Math.cos(z*.3)+.12*Math.sin(x*.9+z*.7)}
+const ATMT=new THREE.Color(1,1,1);const scene=new THREE.Scene();scene.background=new THREE.Color('#dc7d52');scene.fog=new THREE.Fog('#e6987a',48,118);
 const cam=new THREE.PerspectiveCamera(32,innerWidth/innerHeight,1,260);
 scene.add(new THREE.HemisphereLight('#ffd8c0','#8c3a28',.3));
 const sun=new THREE.DirectionalLight('#ffe8cc',2.4);sun.castShadow=true;sun.shadow.mapSize.set(MOBILE?1536:3072,MOBILE?1536:3072);
@@ -118,7 +119,7 @@ function heightRaw(x,z){const r0=Math.hypot(x,z);let h=(fbm(x*.07+3,0,z*.07)-.5)
 // flat building plateaus: terrain eases toward the centre height so machines sit level
 applyLayoutZones(ZONES);
 const FLATS=[];function addFlat(x,z,R){FLATS.push({x,z,R,R2:R*1.7,h:undefined})}
-function heightAt(x,z){let h=heightRaw(x,z);for(let i=0;i<FLATS.length;i++){const f=FLATS[i],dx=x-f.x,dz=z-f.z;if(dx>f.R2||dx<-f.R2||dz>f.R2||dz<-f.R2)continue;const d=Math.hypot(dx,dz);if(d>=f.R2)continue;if(f.h===undefined)f.h=heightRaw(f.x,f.z);h+=(f.h-h)*(1-smoothstep(f.R,f.R2,d))}return h}
+function heightAt(x,z){if(x>CAVE.X-80)return caveH(x,z);let h=heightRaw(x,z);for(let i=0;i<FLATS.length;i++){const f=FLATS[i],dx=x-f.x,dz=z-f.z;if(dx>f.R2||dx<-f.R2||dz>f.R2||dz<-f.R2)continue;const d=Math.hypot(dx,dz);if(d>=f.R2)continue;if(f.h===undefined)f.h=heightRaw(f.x,f.z);h+=(f.h-h)*(1-smoothstep(f.R,f.R2,d))}return h}
 ZONES.forEach(z=>(z.pads||[]).forEach(p=>addFlat(z.x+p.x,z.z+p.z,p.gath?9:p.mill?7:6)));
 addFlat(LAY.store.x,LAY.store.z,12);addFlat(LAY.uc.x,LAY.uc.z,21);for(const b of Object.values(BASE_POS)){const a=b.a*Math.PI/180;addFlat(Math.cos(a)*b.r,Math.sin(a)*b.r,6)}
 const gy=heightAt;
