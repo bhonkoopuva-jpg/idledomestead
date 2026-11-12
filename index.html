@@ -1882,7 +1882,13 @@ function segPathTo(id){const out=[];let cur=id,g=0;while(cur&&g++<30){const s=SE
 // nearest straight stretch of a belt to a point (for T-splits)
 function beltSpot(a,px,pz){let best=null;const pts=a.pts;for(let i=1;i<pts.length;i++){const A=pts[i-1],B=pts[i],dx=B.x-A.x,dz=B.z-A.z,l2=dx*dx+dz*dz;if(l2<1e-6)continue;const u=Math.max(0,Math.min(1,((px-A.x)*dx+(pz-A.z)*dz)/l2)),x=A.x+dx*u,z=A.z+dz*u,d=A.d+(B.d-A.d)*u;
   if(d<3||d>a.len-3)continue;if((a.arcs||[]).some(r=>d>r.ds-TSX-.4&&d<r.de+TSX+.4))continue;const hl=Math.hypot(dx,dz);if(Math.abs(dx/hl)<.97&&Math.abs(dz/hl)<.97)continue;const dist=Math.hypot(px-x,pz-z);if(!best||dist<best.dist)best={x,z,y:A.y+(B.y-A.y)*u,d,dist}}return best}
-function junctionFor(p,px,pz,maxd){let best=null;for(const k in SEG){if(k===p.id)continue;const a=SEG[k];const rr=segPathTo(k);if(!rr)continue;const pa=segPath(k);if(!pa||pa.some(q=>q.id===p.id))continue;
+function junctionFor(p,px,pz,maxd){if(p.gath)return gathJunction(p,px,pz,maxd);return junctionAny(p,px,pz,maxd)}
+// harvesters always join at the same spot: the bend of the main belt closest to the harvester (as long as you stand near that belt)
+function gathJunction(p,px,pz,maxd){let best=null;for(const k in SEG){if(k===p.id)continue;const a=SEG[k];if(!(a.arcs||[]).length)continue;const rr=segPathTo(k);if(!rr||rr.dest!=='F2')continue;const pa=segPath(k);if(!pa||pa.some(q=>q.id===p.id))continue;
+  let near=1e9;for(const q of a.pts)near=Math.min(near,Math.hypot(q.x-px,q.z-pz));if(near>maxd)continue;
+  for(const r of a.arcs){if(r.ds<3||r.de>a.len-3)continue;const c=arcCorner(a,r,1);const dh=Math.hypot(p.x-c.V.x,p.z-c.V.z);if(best&&dh>=best.dh)continue;
+   best={tgt:'J|'+k+'|'+((r.ds+r.de)/2).toFixed(2)+'|-1',x:c.V.x,z:c.V.z,y:gy(c.V.x,c.V.z)+BDECK+2.4,dist:near,dh}}}return best}
+function junctionAny(p,px,pz,maxd){let best=null;for(const k in SEG){if(k===p.id)continue;const a=SEG[k];const rr=segPathTo(k);if(!rr)continue;const pa=segPath(k);if(!pa||pa.some(q=>q.id===p.id))continue;
   const dest=rr.dest;if(dest==='F2'){if(!p.gath)continue}else if(!isT(dest)){const m=padById(dest);if(!m||p.mill||m.k!==p.k)continue}else if(p.gath&&S.storeBuilt)continue;
   const sp=beltSpot(a,px,pz);if(!sp||sp.dist>maxd||(best&&sp.dist>=best.dist))continue;
   const o={};segAt(a,sp.d,o);const hx=Math.round(Math.sin(o.yaw)),hz=Math.round(Math.cos(o.yaw)),nx=-hz,nz=hx;const side=((p.x-sp.x)*nx+(p.z-sp.z)*nz)>=0?1:-1;
