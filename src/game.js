@@ -97,6 +97,31 @@ function trackStep(dt){if(!TRK.im)trackInit();
  let ch=false;for(let i=0;i<TRK.n;i++){if(TRK.age[i]>=TRK.life){if(TRK.al[i]!==0){TRK.al[i]=0;ch=true}continue}TRK.age[i]+=dt;const k=Math.max(0,1-TRK.age[i]/TRK.life);TRK.al[i]=Math.min(1,k*1.6);ch=true}
  if(ch)TRK.im.geometry.attributes.aA.needsUpdate=true}
 
+// ================= VISIBLE ROBOT UPGRADES (pick tier, cargo bay, rocket treads, long reach arm, power cell) =================
+const GEAR={key:'',g:null,fl:[],tip:null};
+function gearStep(dt){const r=P.robot;if(!r)return;const u=S.up,key=[S.tool,u.cargo,u.boost,u.reach,u.battery].join(',');
+ if(key!==GEAR.key){GEAR.key=key;if(GEAR.g){r.remove(GEAR.g);GEAR.g.traverse(o=>{if(o.geometry)o.geometry.dispose()})}const G=new THREE.Group();GEAR.g=G;GEAR.fl=[];r.add(G);
+  const M=(c,o)=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.5},o||{}));const cream=M('#72c6b6'),yel=M('#e8b02c',{roughness:.4}),grey=M('#8d94a3',{roughness:.4,metalness:.3}),dk=M('#3a3646',{roughness:.6});
+  const box=(w,h,d,m,x,y,z)=>{const b=new THREE.Mesh(rbox(w,h,d,Math.min(w,h,d)*.22,m).geometry,m);b.position.set(x,y,z);G.add(b);return b};
+  const cyl=(r1,r2,h,m,x,y,z,rx)=>{const c=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,14),m);c.position.set(x,y,z);if(rx)c.rotation.x=rx;G.add(c);return c};
+  // cargo bay: backpack crates
+  if(u.cargo>=1){box(.8,.52,.4,cream,0,1.22,-1.0);box(.82,.07,.37,yel,0,1.48,-.98);box(.08,.5,.38,yel,-.25,1.22,-.98);box(.08,.5,.38,yel,.25,1.22,-.98)}
+  if(u.cargo>=6){box(.86,.07,.43,yel,0,1.0,-1.0)}
+  if(u.cargo>=12){cyl(.06,.06,.06,M('#ffe08a',{emissive:'#ffc24a',emissiveIntensity:1.2}),0,1.53,-1.05)}
+  // power cell: battery cells with green lights
+  const nb=Math.min(4,Math.ceil(u.battery/2));for(let i=0;i<nb;i++){const x=(i-(nb-1)/2)*.17;box(.13,.24,.12,dk,x,.86,-.93);box(.08,.05,.03,M('#7dff9a',{emissive:'#3fd86a',emissiveIntensity:1}),x,.93,-1.0)}
+  // rocket treads: nozzles at the back of the tracks (+ flames when driving)
+  if(u.boost>=1){const big=u.boost>=5;for(const sx of [-1,1]){const nz=cyl(big?.13:.1,big?.17:.13,.26,grey,sx*.6,.42,-.86,Math.PI/2);const fm=new THREE.Mesh(new THREE.ConeGeometry(big?.1:.08,.38,10),new THREE.MeshBasicMaterial({color:'#ff9a4a',transparent:true,opacity:.0,depthWrite:false}));fm.rotation.x=-Math.PI/2;fm.position.set(sx*.6,.42,-1.2);G.add(fm);GEAR.fl.push(fm)}}
+  // long reach arm: telescopic extension on the tool
+  const T={x:-1.02,y:1.1,z:.95};GEAR.tip=T;
+  if(u.reach>=1){const L=.12+.07*u.reach;const t=cyl(.07,.07,L,grey,T.x,T.y,T.z+L/2,Math.PI/2);cyl(.085,.085,.05,yel,T.x,T.y,T.z+.04,Math.PI/2);if(u.reach>=4)cyl(.08,.08,.04,yel,T.x,T.y,T.z+L*.6,Math.PI/2)}
+  // pick tier: coloured glowing tool head
+  const tc=[null,'#c9d0dc','#5fd6c8','#ffa860','#b98cff'][S.tool];if(tc){const L=u.reach>=1?.12+.07*u.reach:0;const hd=cyl(.1,.06,.16,M(tc,{emissive:S.tool>=2?tc:'#000',emissiveIntensity:S.tool>=3?.9:.35,metalness:.3,roughness:.35}),T.x,T.y,T.z+L+.08,Math.PI/2);
+   if(S.tool>=3){const gl=new THREE.Mesh(new THREE.SphereGeometry(.1,12,8),new THREE.MeshBasicMaterial({color:tc,transparent:true,opacity:.55,depthWrite:false}));gl.position.set(T.x,T.y,T.z+L+.2);G.add(gl);GEAR.glow=gl}else GEAR.glow=null}else GEAR.glow=null;
+  G.traverse(o=>{if(o.isMesh){o.castShadow=true;o.layers.enable(1)}})}
+ const sp=Math.min(1,(P.speedNow||Math.hypot(P.vx||0,P.vz||0))/10);for(const f of GEAR.fl){f.material.opacity=.6*sp;f.scale.set(1,.5+.8*sp+Math.random()*.2*sp,1)}
+ if(GEAR.glow){const t=performance.now()*.004;GEAR.glow.scale.setScalar(1+.25*Math.sin(t))}}
+
 // ================= ATMOSPHERE: day/night cycle (one per sol) + dust storms =================
 const ATM={n:0,sf:0,mats:null,scanT:0,hemi:null,streak:null};
 const _tNight=new THREE.Color(.62,.6,.86),_tDusk=new THREE.Color(1.06,.9,.82);const _cDay={fog:new THREE.Color(),bg:new THREE.Color()},_cNight=new THREE.Color('#6f5a86'),_cNightBg=new THREE.Color('#5e4a78'),_cStorm=new THREE.Color('#d49a6a'),_cDusk=new THREE.Color('#ff9d70'),_sunDay=new THREE.Color('#ffe8cc'),_sunNight=new THREE.Color('#b8b4ff');
